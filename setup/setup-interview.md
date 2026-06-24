@@ -77,7 +77,9 @@ The system can't screen PRs/issues for fit without knowing what "fits."
 19. **Which jobs do you want running, and how often?** (scoreboard refresh, chat monitor, mentions
     sweep, announcements, label-sync, issue-autoclose, the watchdog, a fleet heartbeat.) Start with
     a few; add as you climb the autonomy ladder. → [scheduled jobs](../docs/playbooks/scheduled-jobs.md).
-20. **Where do job outputs go?** (Digest to which channel; alarms to whom.)
+20. **How does steward output reach you?** Default is a pull-based index you check (discovery);
+    pushing a digest to a chat channel is an optional add-on. Also: where should watchdog alarms go?
+    → [the output loop](../docs/playbooks/output-loop.md).
 
 ---
 

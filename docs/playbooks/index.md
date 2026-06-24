@@ -19,3 +19,6 @@ Patterns that span multiple lifecycle areas.
 - **[Resilience & self-healing](resilience-and-self-healing.md)** — keeping the maintenance system
   itself healthy: layered supervision (OS + app watchdog), the pre-restart guard, the reconcile
   pattern for hand-maintained ledgers, and the flake ledger.
+- **[The output loop](output-loop.md)** — the bridge from "the steward produced a draft" to "the
+  human found it, acted, and the state reflects it": discovery over delivery, audit trail vs.
+  actionable output, and keeping local state honest.

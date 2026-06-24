@@ -58,6 +58,10 @@ job), not for every cron.
 - A job that exits non-zero or times out should *alert*, not fail silently. Silent-on-no-op is for
   *success* with nothing to do — never for errors.
 - Pair long autonomous jobs with a completion or error notification so a broken job can't hide.
+- **Don't make push delivery the only path to the human.** If a job's output is delivered to a chat
+  platform, treat that as an enhancement — a misconfigured or unsupported target can fail silently
+  and leave the human blind. Keep a pull-based fallback so the output is always discoverable. See
+  [the output loop](output-loop.md).
 
 ## A good scheduled job, summarized
 > Deterministic if it can be · incremental · idempotent · silent when there's nothing to do · loud
@@ -66,4 +70,5 @@ job), not for every cron.
 
 ---
 
-_Related: [the watchdog pattern](watchdog-pattern.md) · [the autonomy ladder](autonomy-ladder.md)._
+_Related: [the watchdog pattern](watchdog-pattern.md) · [the autonomy ladder](autonomy-ladder.md) ·
+[the output loop](output-loop.md)._
