@@ -85,6 +85,13 @@ handled item, and reconcile to live ground truth rather than blindly appending. 
 state and reality disagree, every consumer downstream has to verify by hand — and the local state has
 become a liability instead of a convenience.
 
+The trick is *how* the steward learns an action was taken — and the answer is to re-derive it from
+the live system, not to wait for the human to tell it. On the next run, for each open item, check the
+ground truth the action would have changed: does the issue now have a maintainer reply? Is the PR
+merged? Was the draft issue actually filed? If so, the item is done — flip its status and archive it.
+This is the [watchdog](watchdog-pattern.md) instinct applied to your own queue: the action's own
+record says *what to check*, live state says whether it happened.
+
 ## What this can look like
 
 One layout that satisfies the loop. **Adapt the names and locations to your project** — the rules
@@ -108,7 +115,13 @@ The human reviews `index.md`, opens the linked draft, acts, and the next steward
 `[x]` and moves the file to `archive/`. **Retention:** give the disposable classes (run logs,
 archived drafts) a window so they don't grow without bound; never prune the persistent state
 (scoreboard, ledgers, trust data) — that's the system's memory. Pick the windows that fit your
-cadence; the framework doesn't dictate them.
+cadence — as a rough starting point, deployments have found ~7–14 days works for hourly jobs and
+30+ days for daily ones — then tune. The framework doesn't dictate the numbers.
+
+**Already running with mixed output?** Migrating is a one-time, non-destructive move: split the
+existing files into the two classes (audit-trail vs. actionable), start a fresh index from the items
+still open, and let the next run's reconcile pass archive anything that's already been actioned. No
+history is lost — the audit trail just moves to its own place.
 
 ## The payoff
 

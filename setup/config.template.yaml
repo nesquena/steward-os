@@ -78,6 +78,6 @@ scheduled_jobs:                 # start with a few; add as you climb the autonom
     # Discovery is the default: actionable output lands in a pull-based index the human always
     # checks. Delivery (push to a chat channel) is an optional enhancement on top — if it fails,
     # the index still has the work. See docs/playbooks/output-loop.md.
-    index_path: ""              # pull-based review queue the human checks (e.g. a state/index.md)
+    index_path: ""              # pull-based review queue the human checks (e.g. state/index.md)
     digest_to: ""               # optional: push routine digests here (enhancement, not the only path)
     alarms_to: ""               # where watchdog alarms go (a human)
