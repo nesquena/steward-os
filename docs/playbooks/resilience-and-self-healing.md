@@ -63,6 +63,52 @@ outcomes weren't logged" — detect the gap, auto-close the safe part, surface t
 
 ---
 
+## Verify every class of stored state (the three axes)
+
+The reconcile pattern above keeps *ledgers* honest. It's one instance of a broader rule: **stored
+state is never authoritative — only live source is — so every class of stored state needs a path
+back to live truth.** An autonomous maintainer accumulates three distinct classes of stored state,
+and each needs its own verification against a different ground truth:
+
+| Axis | Verifies that… | Against | Pattern |
+|------|----------------|---------|---------|
+| **Action correctness** | autonomous actions did what they claimed (a close stuck; a label still matches its signal) | the live public surface | [the watchdog pattern](watchdog-pattern.md) |
+| **Ledger honesty** | hand-maintained records and review queues match reality (nothing merged unlogged; no actioned item still shows pending) | the live system state | the reconcile pattern (above) + [the output loop](output-loop.md#3-keep-the-state-honest) |
+| **Artifact freshness** | stored artifacts that *cite code* — handoff notes, design docs, "this lives at path X" memories — still match the code they reference | the live source at HEAD | *this section* |
+
+The third axis is the easiest to miss, because a stale artifact keeps *working* — it just stops
+being *true*. A note that says "the retry logic is in `client.go`, near the `doRequest` function" is
+silently wrong the moment that file is rewritten or the function renamed. Unlike a stale ledger entry
+(which is merely *absent* information), a stale artifact is **active misinformation** — worse than
+nothing, because a reader (human or agent) trusts it and acts on a fiction. The watchdog checks
+*actions*; the reconcile pattern checks *ledgers*; neither looks at artifacts-that-cite-code.
+
+**The freshness-audit shape** — a documented default; adapt the storage to your project, the *shape*
+is the contract, not any path:
+
+- Iterate the artifacts that cite code (wherever you keep them).
+- For each, extract the paths / symbols / line references it names.
+- Re-read those against the current source at HEAD.
+- Flag the mismatches — file gone, symbol renamed, references shifted past a threshold you pick.
+- **Silent on all-clear**, like every good scheduled job; surface only the stale ones, each with its
+  citation and what changed, for a human (or a follow-up fix job) to correct.
+
+Like the watchdog, a freshness audit **verifies but does not fix** — a stale artifact needs the truth
+re-derived deliberately, not an auto-edit that guesses.
+
+### Detect on a schedule, not only on the way past
+
+Every axis has a weak form and a strong form. The **weak form is on-demand**: re-verify a piece of
+stored state only when a run happens to touch it (re-read a cited path before acting on the issue
+that references it). That's necessary but insufficient — it only ever checks the state you stumble
+across, and the rot you never revisit stays invisible. The **strong form is a scheduled, read-only
+(Band A) detector** that proactively sweeps the whole class — every action in the ledger, every queue
+item, every artifact — on a cadence, independent of whatever today's runs happened to touch. Do both:
+verify-before-action for the item in front of you, and a scheduled sweep so nothing rots in a corner
+no run has visited.
+
+---
+
 ## Flakes self-heal too
 
 A recurring flaky test is the test-suite's version of "alive but silently wrong." The mechanism that
@@ -78,9 +124,10 @@ tolerate, drive to zero.
 - If it's alive but *wrong*, does someone **find out**? (health watchdog + alerting)
 - If it auto-acts on a public surface, is each action **independently verified**? ([watchdog pattern](watchdog-pattern.md))
 - Does its own bookkeeping **self-heal** when an event slips through? (reconcile)
+- Do its stored artifacts that cite code **stay true** as the code moves? (freshness audit)
 - Do recurring failures **get fixed, not re-run-away**? (flake ledger)
 
-If you can't answer all five, the subsystem isn't truly autonomous yet — it's automated-until-it-isn't.
+If you can't answer all six, the subsystem isn't truly autonomous yet — it's automated-until-it-isn't.
 
 ---
 

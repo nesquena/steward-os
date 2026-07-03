@@ -81,6 +81,16 @@ instant crash-restart, e.g. systemd) and an [app-level health watchdog](../playb
 **Reconcile pattern** — a scheduled job that diffs a hand-maintained ledger against ground truth,
 auto-records only the unambiguous gaps, and surfaces the judgment ones for a human.
 
+**Three verification axes** — the principle that stored state is never authoritative, only live
+source is, so each class of stored state needs its own check against live truth: *action correctness*
+(the [watchdog](../playbooks/watchdog-pattern.md)), *ledger honesty* (the reconcile pattern), and
+*artifact freshness* (the [freshness audit](../playbooks/resilience-and-self-healing.md#verify-every-class-of-stored-state-the-three-axes)).
+
+**Freshness audit** — a scheduled, read-only check that re-reads the code paths / symbols cited by
+stored artifacts (handoff notes, design docs, "it lives at X" memories) against the source at HEAD and
+flags the stale ones. A stale artifact is *active misinformation*, not just missing data — worse than
+none.
+
 **Confidence-tiered capture→action** — gating an autonomous public write (e.g. filing an issue from
 a chat report) by confidence: HIGH auto-acts (privacy-scrubbed), MEDIUM drafts-for-human-approval,
 LOW captures only.

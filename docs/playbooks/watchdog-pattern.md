@@ -57,6 +57,13 @@ correct. That independent check is the watchdog.
    the watchdog *in the same change*. The rule: nothing mutates the public surface without a
    corresponding fact-check.
 
+> **Scope — this verifies *actions*, not all stored state.** The watchdog re-checks what autonomous
+> actions did. Two sibling checks cover the other classes of stored state: the reconcile pattern
+> keeps hand-maintained *ledgers* honest, and a freshness audit keeps *artifacts that cite code*
+> (notes, handoffs, docs) true as the code moves. They verify against different ground truth, so
+> don't stretch the watchdog to cover them — see
+> [the three verification axes](resilience-and-self-healing.md#verify-every-class-of-stored-state-the-three-axes).
+
 ## What to check (examples)
 - **Autonomous issue closes:** is the issue still closed? Is the cited PR really merged and does it
   really link the issue? Does the cited release tag actually contain the merge commit? Was it

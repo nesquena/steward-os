@@ -64,6 +64,15 @@ a configured delivery fails, **log the error and keep going** — the item is st
 > Delivery is an enhancement layer. Discovery is the contract. If you can only build one, build the
 > index.
 
+**The sanctioned middle path is notify-on-findings.** The two obvious delivery modes are both traps:
+push *every* run to a chat and you train the human to ignore the channel (and an active session gets
+interrupted by "nothing to do" noise); push *nothing* and a run with real findings sits unseen until
+someone thinks to check the index. Neither is right. The middle path: **always write to the index
+(discovery), and push a one-line summary only on the runs that produced actionable items** — silent
+otherwise, exactly like [silent-on-no-op](scheduled-jobs.md#silent-on-no-op-the-most-important-rule).
+The human is neither spammed nor blind, and the index stays the durable source of truth regardless of
+whether any push succeeded.
+
 ### 2. Separate the audit trail from the actionable output
 A job produces two kinds of files, with different consumers and different lifecycles. Don't mix them:
 
@@ -91,6 +100,13 @@ ground truth the action would have changed: does the issue now have a maintainer
 merged? Was the draft issue actually filed? If so, the item is done — flip its status and archive it.
 This is the [watchdog](watchdog-pattern.md) instinct applied to your own queue: the action's own
 record says *what to check*, live state says whether it happened.
+
+**Reconcile in both directions.** It's not enough to remove items that are done — the index must also
+*gain* the items it never saw. A run only ever writes about the work it touched, so an item that was
+open the whole time but simply never came up in a run is silently absent from the queue: still live,
+never actioned, invisible. So reconcile the index against the **complete** live open set both ways:
+drop what reached a terminal state, and add any still-open item missing from the index. Otherwise the
+queue quietly drifts from "everything that needs a human" to "the subset a run happened to mention."
 
 ## What this can look like
 
