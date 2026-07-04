@@ -122,6 +122,64 @@ The other should *read*, not *write*.
 
 ---
 
+## The minimalism ladder
+
+The best change is the one you never had to write. Unrequested code is untested surface,
+maintenance you signed others up for, and more for every future reader to hold in their head.
+So before writing code, climb to the **first rung that holds** — but only *after* you
+understand the problem. Read the task and the code it touches, trace the real flow, then
+climb. A small diff in the wrong place isn't minimal; it's a second bug.
+
+1. **Does this need to exist?** Speculative need → skip it, and say so in one line. (This is
+   principle 3 applied before you type.)
+2. **Already in this codebase?** A helper, utility, type, or pattern that already lives here →
+   reuse it, don't re-implement it. Look before you write; rebuilding what sits a few files
+   over is the most common form of avoidable bloat, and it doubles the surface a future fix
+   has to touch. (The forward-looking half of principle 8: reading isn't only to avoid
+   breaking a consumer — it's to *find the thing you don't need to build*.)
+3. **Does the standard library do it?** Use it. When two stdlib options are the same size,
+   take the one that's correct on the edge cases — minimal means less code, not the flimsier
+   algorithm.
+4. **Does a platform or runtime capability cover it?** Use it before reaching for a
+   dependency or hand-rolled code. A built-in beats a library; a declarative constraint beats
+   imperative enforcement. (Web examples: a native form control over a picker library; a CSS
+   feature over a JavaScript handler; a database constraint over application-level checks.)
+   This is a frequent reason to bounce a change — someone hand-builds what the platform
+   already does, smaller and with fewer failure modes. Ask "would the runtime already do
+   this?" before writing the handler.
+5. **Does an already-installed dependency solve it?** Use it. Never add a *new* dependency for
+   what a few lines can do — a new dependency is supply-chain surface, an upgrade treadmill,
+   and a portability cost forever. (Pairs with the security spine's capability minimalism.)
+6. **Can it be one line?** Make it one line.
+7. **Only then:** write the minimum code that works.
+
+**Never minimal about:** understanding the problem, input validation at trust boundaries,
+error handling that prevents data loss, security, accessibility, and the regression test the
+change earns. Minimalism shortens the *solution*, never the *reading* or the *safety*.
+Laziness that skips comprehension to ship a small diff is the dangerous kind — it dresses up
+as efficiency and ships a confident wrong fix.
+
+### Mark deliberate simplifications
+
+A shortcut a reviewer can't distinguish from an oversight *is* an oversight. When you
+simplify on purpose and the simplification has a known limit, mark it — name the ceiling
+**and** the upgrade path, in one comment beside the code:
+
+```
+# ceiling: single global lock; move to per-key locks if throughput matters
+# ceiling: linear scan, fine below a few thousand rows; index if the list grows
+```
+
+This keeps deliberate debt legible: a reviewer accepts a marked shortcut with a sound named
+limit instead of flagging it for deletion, and the "when to revisit" travels with the code
+instead of living in someone's memory. A real ceiling with *no* marker is the thing to flag.
+
+> The ordered-rung framing here is adapted from the [ponytail](https://github.com/DietrichGebert/ponytail)
+> ruleset (MIT) — folded into these principles rather than adopted as an always-on external
+> dependency, so the discipline stays in one place and applies on your terms.
+
+---
+
 ## Public-repo discipline
 
 If the project is public (or has any external contributors), a few rules are non-negotiable

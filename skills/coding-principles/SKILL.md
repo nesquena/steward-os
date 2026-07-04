@@ -23,24 +23,31 @@ Full reasoning: [coding principles reference](../../docs/reference/coding-princi
    (red) before the fix.
 
 ## While you write
-5. **Surgical edits only.** Change exactly what the task needs. No drive-by cleanups, renames, or
+5. **Climb the minimalism ladder.** Take the first rung that holds, *after* you understand the flow:
+   need it at all? → already in this codebase (reuse, don't rebuild)? → stdlib? → platform/runtime
+   capability (native control, CSS, DB constraint) before a dependency or hand-rolled code? → an
+   already-installed dependency? → one line? → only then, minimum code that works. Never add a new
+   dependency for what a few lines do. Mark a deliberate shortcut with a `ceiling:` comment naming
+   the limit *and* the upgrade path. Never minimize away validation, data-loss handling, security, or
+   the regression test. See [reference](../../docs/reference/coding-principles.md#the-minimalism-ladder).
+6. **Surgical edits only.** Change exactly what the task needs. No drive-by cleanups, renames, or
    "while we're here" additions. No speculative features.
-6. **One state, one owner.** Don't add a second writer for state something else already controls.
+7. **One state, one owner.** Don't add a second writer for state something else already controls.
    The other side reads, never writes. When you hide/disable a control, guard what depends on it.
-7. **Don't blend conflicting patterns.** If an old and new pattern contradict, pick one, commit, and
+8. **Don't blend conflicting patterns.** If an old and new pattern contradict, pick one, commit, and
    flag the other for separate cleanup — never make both coexist (the runtime-coexistence bug).
-8. **Match the codebase's conventions** over personal taste. Raise disagreements as a separate
+9. **Match the codebase's conventions** over personal taste. Raise disagreements as a separate
    refactor proposal, not a competing style inside this change.
 
 ## Before you call it done
-9. **Verify the real scenario.** Syntax-check, run the tests to completion, and confirm the exact
-   "done" scenario from step 2 actually works in the *running* code. Iterate until it does — don't
-   stop at the first green checkmark. "Looks right" / "tests pass" / "diff looks correct" are not
-   done.
-10. **Tests assert intent.** Each new test must be order-independent and must *fail* when the
+10. **Verify the real scenario.** Syntax-check, run the tests to completion, and confirm the exact
+    "done" scenario from step 2 actually works in the *running* code. Iterate until it does — don't
+    stop at the first green checkmark. "Looks right" / "tests pass" / "diff looks correct" are not
+    done.
+11. **Tests assert intent.** Each new test must be order-independent and must *fail* when the
     implementation is reverted (red-before-green). Assert the contract, not an incidental surface
     string.
-11. **Fail loud.** Report the actual state: separate what you **verified** from what you **assumed**.
+12. **Fail loud.** Report the actual state: separate what you **verified** from what you **assumed**.
     Name any skipped step, excluded test, or unverified assumption. Never paper over a partial
     failure.
 

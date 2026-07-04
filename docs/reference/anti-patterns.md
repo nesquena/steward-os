@@ -105,6 +105,17 @@ source of truth first; if it doesn't recover, the bug is in the write path. See 
 **The vacuous test.** A test that can't fail when the implementation is reverted protects nothing and
 gives false confidence. Confirm red-before-green. See [bug-shape catalog](bug-shapes.md#6-the-vacuous-test).
 
+**Reinventing what the platform or codebase already gives you.** Hand-rolling what the standard
+library, a native platform capability, or an existing in-repo helper already does — or pulling in a
+new dependency for what a few lines cover. It's more code, more surface, and more to maintain than
+the built-in it duplicates. Climb the minimalism ladder: reuse, stdlib, and native capabilities
+before hand-written code or a new dependency. See [coding principles](coding-principles.md#the-minimalism-ladder).
+
+**An unmarked deliberate shortcut.** A simplification a reviewer can't tell apart from an oversight
+*is* an oversight. When a shortcut has a known limit, mark it with the ceiling and the upgrade path
+so the debt stays legible instead of being silently flagged for deletion — or silently forgotten.
+See [coding principles](coding-principles.md#mark-deliberate-simplifications).
+
 ## Secret & safety anti-patterns
 
 **A secret in a prompt or config file.** Tokens belong only in a permission-locked file read by a
