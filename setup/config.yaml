@@ -1,0 +1,74 @@
+# Steward — project configuration for steward-os itself (dogfood instance).
+# A truthful filled example of setup/config.template.yaml. Steward runs on Steward.
+# NEVER put secrets here — only paths. See `secrets:` below.
+
+project:
+  name: "Steward — an operating model for running a software project with an AI agent as co-maintainer"
+  trunk_branch: "main"
+  release_model:
+    style: "continuous"          # docs site: merge to main auto-deploys via GitHub Pages
+    changelog_file: ""           # no changelog yet
+    shipped_means: "merged-to-main-and-pages-deployed"
+
+repositories:
+  - host: "github.com"
+    owner: "nesquena"
+    name: "steward-os"
+    role: "site"
+    visibility: "public"
+
+scope:
+  anchors:
+    - "advances the project-agnostic operating model for AI co-maintenance"
+    - "keeps the reading-cheap / public-writing-gated safety thesis intact"
+    - "improves adoptability of the framework (clarity, on-ramp, worked examples)"
+  philosophy_veto:
+    - "runtime-specific lock-in presented as the general model"
+    - "tutorial bloat over principle-dense prose"
+    - "autonomy claims not backed by an honest live/aspirational split"
+  bypass_scope_gate:
+    - "bug-fix-on-shipped-feature"
+    - "security-fix"
+    - "reliability-fix"
+
+community:
+  chat:
+    platform: ""                 # no chat community — monitoring disabled
+    server_id: ""
+    bug_channels: []
+    monitor: false
+    capture_reaction: "white_check_mark"
+  mentions_sweep:
+    enabled: false
+    disambiguate_against: "steward (unrelated projects sharing the name)"
+
+ci_and_gates:
+  test_command: "bundle exec jekyll build"
+  test_runtime_estimate: "<1 min"
+  ci_present: true               # .github/workflows/pages.yml builds + deploys
+  code_review_tool: ""
+  adversarial_review_tool: ""
+  visual_preview_tool: ""
+  ui_viewports: []
+
+autonomy:                        # honest: supervised today, conservative bands
+  pr_labeling: "B"
+  issue_triage_replies: "B"
+  issue_autoclose: "C"
+  announcements: "C"
+  pr_merge: "B"
+  human_reachable_at: "GitHub (@nesquena) — issue and PR review"
+
+secrets:
+  credentials_file: ""           # none configured; no autonomous public writes yet
+  execute_contributor_code: false
+  sandbox_available: false
+
+scheduled_jobs:                  # honest: nothing runs unattended on this repo yet
+  jobs:
+    - { name: "scoreboard-refresh", every: "2h",  enabled: false, agent: false }
+    - { name: "action-watchdog",    every: "6h",  enabled: false, agent: false }
+  outputs:
+    index_path: ""               # not yet running unattended; supervised sessions only
+    digest_to: ""
+    alarms_to: ""
