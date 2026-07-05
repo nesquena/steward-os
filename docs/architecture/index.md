@@ -1,7 +1,7 @@
 ---
 title: Architecture
 layout: default
-nav_order: 2
+nav_order: 3
 ---
 
 # Architecture — the operating model

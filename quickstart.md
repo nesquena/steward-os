@@ -1,0 +1,80 @@
+---
+title: Quickstart
+layout: default
+nav_order: 2
+---
+
+# Quickstart — adopt Steward in ~15 minutes
+{: .fs-8 }
+
+Get an agent co-maintaining your repo, in supervised mode, on Claude Code. No autonomy yet -
+this is the on-ramp: read the model, wire the config, run one loop by hand, then climb.
+{: .fs-5 .fw-300 }
+
+---
+
+## Before you start
+
+- **Claude Code** installed and working in your repo.
+- A **GitHub repository** you maintain, with the **`gh` CLI** authenticated (`gh auth status`).
+- ~15 minutes and one real open issue or PR to practice on.
+
+You do **not** need any autonomy, scheduled jobs, or a chat integration to start. Those come later,
+on the [adoption ladder](docs/reference/adoption-levels.md).
+
+## 1. Read the model (5 min)
+
+Skim the [architecture overview](docs/architecture/index.md) - the four roles, the autonomy bands,
+and the one idea everything rests on: *reading is cheap; writing to a public surface in the
+project's voice is the irreversible act that stays human-gated.* You don't need the whole site yet.
+
+## 2. Get the skills into your repo
+
+Copy Steward's loadable procedures into your repo's Claude Code skills directory:
+
+```bash
+# from your project root, with steward-os checked out alongside it
+mkdir -p .claude/skills
+cp -R /path/to/steward-os/skills/* .claude/skills/
+```
+
+Claude Code discovers these on next launch. They're the procedures the setup interview and the
+lifecycle playbooks tell the agent to load.
+
+## 3. Wire it to your project
+
+In Claude Code, load the **`project-system-setup`** skill and say:
+
+> run the setup interview
+
+The agent works through the [setup interview](setup/setup-interview.md) - your repos, scope anchors,
+CI, review tools, autonomy posture - and writes a `config.yaml` for your project. It asks only what
+it needs, accepts "skip" for anything optional, and never guesses.
+
+Want to see a finished one first? Read Steward's own
+[`setup/config.yaml`](https://github.com/nesquena/steward-os/blob/main/setup/config.yaml) - the real,
+honest config this project runs on.
+
+## 4. Prove it with one supervised loop (Level 1)
+
+Pick one real issue or PR. Ask the agent to run the matching playbook **in a supervised session** -
+you watch, it proposes, you approve every public write:
+
+- An issue → load `issue-triage`, ask it to triage that issue and draft (not post) a reply.
+- A PR → load `pr-triage`, ask it to run the [fit screen](docs/lifecycle/pr-lifecycle.md) and
+  summarize.
+
+Nothing is posted without your say-so. This is Level 1: the playbooks in supervised sessions. The
+value is real on day one, and the risk is zero.
+
+## 5. Climb
+
+You've done the read→run step. From here you add capability deliberately, one rung at a time:
+
+- **Level 2:** a read-only [triage scoreboard](docs/playbooks/triage-scoreboard.md) and digests.
+- **Level 3:** promote mechanical, reversible, watched actions to autonomy behind the
+  [watchdog pattern](docs/playbooks/watchdog-pattern.md).
+- **Level 4:** the full pipeline.
+
+See the [adoption levels](docs/reference/adoption-levels.md) for the whole ladder, and
+[Steward on Steward](docs/reference/steward-on-steward.md) for a real instance you can inspect.
