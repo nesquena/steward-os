@@ -40,7 +40,7 @@ community:
     capture_reaction: "white_check_mark"
   mentions_sweep:
     enabled: false
-    disambiguate_against: "steward (unrelated projects sharing the name)"
+    disambiguate_against: ""      # sweep disabled; set if enabled later
 
 ci_and_gates:
   test_command: "bundle exec jekyll build"

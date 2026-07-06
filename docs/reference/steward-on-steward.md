@@ -26,8 +26,8 @@ nothing runs unattended here yet.
   approves every public write. This is Level 1, and it's how the docs you're reading were built.
 - **Human-gated PR review.** Every change lands via pull request with a human in the loop. See
   [#1](https://github.com/nesquena/steward-os/pull/1) (the output-loop playbook) and
-  [#3](https://github.com/nesquena/steward-os/pull/3) (the minimalism ladder) - real PRs that ran the
-  [PR lifecycle](../lifecycle/pr-lifecycle.md) fit screen before merge.
+  [#3](https://github.com/nesquena/steward-os/pull/3) (the minimalism ladder) - real PRs that went
+  through human-gated [PR lifecycle](../lifecycle/pr-lifecycle.md) review before merge.
 - **The editorial loop.** Discovery over delivery: work is proposed, reviewed, and trimmed in the
   open, exactly as the [output-loop playbook](../playbooks/output-loop.md) prescribes.
 

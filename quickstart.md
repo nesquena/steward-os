@@ -17,6 +17,7 @@ this is the on-ramp: read the model, wire the config, run one loop by hand, then
 
 - **Claude Code** installed and working in your repo.
 - A **GitHub repository** you maintain, with the **`gh` CLI** authenticated (`gh auth status`).
+- **Steward checked out locally** (`git clone https://github.com/nesquena/steward-os`) - you'll copy its skills in step 2.
 - ~15 minutes and one real open issue or PR to practice on.
 
 You do **not** need any autonomy, scheduled jobs, or a chat integration to start. Those come later,
