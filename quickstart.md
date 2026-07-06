@@ -7,7 +7,7 @@ nav_order: 2
 # Quickstart: adopt Steward in ~15 minutes
 {: .fs-8 }
 
-Get an agent co-maintaining your repo, in supervised mode, on Claude Code. No autonomy yet -
+Get an agent co-maintaining your repo, in supervised mode, on Claude Code. No autonomy yet —
 this is the on-ramp: read the model, wire the config, run one loop by hand, then climb.
 {: .fs-5 .fw-300 }
 
@@ -17,15 +17,19 @@ this is the on-ramp: read the model, wire the config, run one loop by hand, then
 
 - **Claude Code** installed and working in your repo.
 - A **GitHub repository** you maintain, with the **`gh` CLI** authenticated (`gh auth status`).
-- **Steward checked out locally** (`git clone https://github.com/nesquena/steward-os`) - you'll copy its skills in step 2.
+- **Steward checked out locally** (`git clone https://github.com/nesquena/steward-os`) — you'll copy its skills in step 2.
 - ~15 minutes and an open issue or PR you can practice on.
 
 You do **not** need any autonomy, scheduled jobs, or a chat integration to start. Those come later,
 on the [adoption ladder](docs/reference/adoption-levels.md).
 
+This quickstart uses Claude Code, the first supported on-ramp. The operating model and the skills
+are portable `SKILL.md` procedures, so nothing here is tied to one runtime — another agent that can
+load skills can run the same loop.
+
 ## 1. Read the model (5 min)
 
-Skim the [architecture overview](docs/architecture/index.md) - the four roles, the autonomy bands,
+Skim the [architecture overview](docs/architecture/index.md) — the four roles, the autonomy bands,
 and the one idea everything rests on: *reading is cheap; writing to a public surface in the
 project's voice is the irreversible act that stays human-gated.* You don't need the whole site yet.
 
@@ -48,8 +52,8 @@ In Claude Code, load the **`project-system-setup`** skill and say:
 
 > run the setup interview
 
-The agent works through the [setup interview](setup/setup-interview.md) - your repos, scope anchors,
-CI, review tools, autonomy posture - and writes a `config.yaml` for your project. It asks only what
+The agent works through the [setup interview](setup/setup-interview.md) — your repos, scope anchors,
+CI, review tools, autonomy posture — and writes a `config.yaml` for your project. It asks only what
 it needs, accepts "skip" for anything optional, and never guesses.
 
 To see a finished one, read Steward's own

@@ -18,7 +18,7 @@ capability isn't running yet, this page says so, which is the same discipline th
 This repo's own [`setup/config.yaml`](https://github.com/nesquena/steward-os/blob/main/setup/config.yaml)
 is a filled instance of the [template](https://github.com/nesquena/steward-os/blob/main/setup/config.template.yaml):
 one public repo, trunk `main`, continuous deploy (merge to main → GitHub Pages), the Jekyll build as
-the gate, no chat community, conservative autonomy bands, and **no scheduled jobs enabled** - because
+the gate, no chat community, conservative autonomy bands, and **no scheduled jobs enabled** — because
 nothing runs unattended here yet.
 
 ## What's live today
