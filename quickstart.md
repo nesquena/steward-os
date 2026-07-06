@@ -7,7 +7,7 @@ nav_order: 2
 # Quickstart: adopt Steward in ~15 minutes
 {: .fs-8 }
 
-Get an agent co-maintaining your repo, in supervised mode, on Claude Code. No autonomy yet —
+Get an agent co-maintaining your repo, in supervised mode. No autonomy yet —
 this is the on-ramp: read the model, wire the config, run one loop by hand, then climb.
 {: .fs-5 .fw-300 }
 
@@ -15,7 +15,8 @@ this is the on-ramp: read the model, wire the config, run one loop by hand, then
 
 ## Before you start
 
-- **Claude Code** installed and working in your repo.
+- **A coding agent that can load skills** — anything that reads a `SKILL.md`-style procedure or a
+  project rules file. Examples below use Claude Code, but nothing here depends on it.
 - A **GitHub repository** you maintain, with the **`gh` CLI** authenticated (`gh auth status`).
 - **Steward checked out locally** (`git clone https://github.com/nesquena/steward-os`) — you'll copy its skills in step 2.
 - ~15 minutes and an open issue or PR you can practice on.
@@ -23,9 +24,10 @@ this is the on-ramp: read the model, wire the config, run one loop by hand, then
 You do **not** need any autonomy, scheduled jobs, or a chat integration to start. Those come later,
 on the [adoption ladder](docs/reference/adoption-levels.md).
 
-This quickstart uses Claude Code, the first supported on-ramp. The operating model and the skills
-are portable `SKILL.md` procedures, so nothing here is tied to one runtime — another agent that can
-load skills can run the same loop.
+The [skills](https://github.com/nesquena/steward-os/tree/main/skills) are runtime-agnostic
+`SKILL.md` procedures. Wherever a step names a Claude Code path or command, it's a worked example —
+the equivalent in your own agent works the same way. See
+[adapting a skill to your runtime](https://github.com/nesquena/steward-os/tree/main/skills#adapting-a-skill-to-your-agent-runtime).
 
 ## 1. Read the model (5 min)
 
@@ -35,7 +37,8 @@ project's voice is the irreversible act that stays human-gated.* You don't need 
 
 ## 2. Get the skills into your repo
 
-Copy Steward's loadable procedures into your repo's Claude Code skills directory:
+Put Steward's loadable procedures where your agent discovers skills. In Claude Code that's
+`.claude/skills/`:
 
 ```bash
 # from your project root, with steward-os checked out alongside it
@@ -43,12 +46,13 @@ mkdir -p .claude/skills
 cp -R /path/to/steward-os/skills/* .claude/skills/
 ```
 
-Claude Code discovers these on next launch. They're the procedures the setup interview and the
-lifecycle playbooks tell the agent to load.
+Your agent picks these up on next launch. (Using a different runtime? Drop them wherever it loads
+skills, or point its rules file at them — the `SKILL.md` bodies are the same.) They're the
+procedures the setup interview and the lifecycle playbooks tell the agent to load.
 
 ## 3. Wire it to your project
 
-In Claude Code, load the **`project-system-setup`** skill and say:
+Have your agent load the **`project-system-setup`** skill and tell it:
 
 > run the setup interview
 
@@ -62,7 +66,7 @@ configures this repo.
 
 ## 4. Prove it with one supervised loop (Level 1)
 
-Pick an open issue or PR. Ask the agent to run the matching playbook **in a supervised session** -
+Pick an open issue or PR. Ask the agent to run the matching playbook **in a supervised session** —
 you watch, it proposes, you approve every public write:
 
 - An issue → load `issue-triage`, ask it to triage that issue and draft (not post) a reply.

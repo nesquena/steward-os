@@ -42,7 +42,7 @@ the recipes, and the questions it needs to ask you to wire itself up.
 
 ## Find your way
 
-- **[Quickstart](quickstart.md)** - adopt Steward on your repo in ~15 minutes (Claude Code). Start
+- **[Quickstart](quickstart.md)** — adopt Steward on your repo in ~15 minutes. Start
   here to *run* it; read the sections below to understand it.
 - **[Architecture](docs/architecture/)** — the four roles, the autonomy bands, the security spine.
   Everything else builds on it.
