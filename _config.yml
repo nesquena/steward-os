@@ -54,6 +54,7 @@ relative_links:
 exclude:
   - skills/
   - setup/config.template.yaml
+  - setup/config.yaml
   - README.md
   - CONTRIBUTING.md
   - LICENSE

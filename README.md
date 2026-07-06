@@ -84,6 +84,7 @@ docs/
 setup/
   setup-interview.md   the documented question list the agent runs with you
   config.template.*    the config the interview produces
+  config.yaml          this repo's own filled config (a worked example)
 skills/            loadable agent procedures, linked from the playbooks
 ```
 
