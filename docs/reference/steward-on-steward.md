@@ -8,11 +8,12 @@ nav_order: 8
 # Steward on Steward
 {: .no_toc }
 
-Steward runs on Steward. This page is the honest reference instance: the real config, the real
-artifacts, and a plain split of what's actually live versus what's still aspirational. No demo
-fiction - the credibility is in the honesty, which is the whole [output-loop](../playbooks/output-loop.md) value.
+Steward runs on Steward. This page shows how: the config it uses, the pull requests it has shipped,
+and a plain split of what's live today versus what's still aspirational. Nothing here is a demo. If a
+capability isn't running yet, this page says so, which is the same discipline the
+[output-loop](../playbooks/output-loop.md) asks for everywhere else.
 
-## The real config
+## The config
 
 This repo's own [`setup/config.yaml`](https://github.com/nesquena/steward-os/blob/main/setup/config.yaml)
 is a filled instance of the [template](https://github.com/nesquena/steward-os/blob/main/setup/config.template.yaml):
@@ -26,8 +27,8 @@ nothing runs unattended here yet.
   approves every public write. This is Level 1, and it's how the docs you're reading were built.
 - **Human-gated PR review.** Every change lands via pull request with a human in the loop. See
   [#1](https://github.com/nesquena/steward-os/pull/1) (the output-loop playbook) and
-  [#3](https://github.com/nesquena/steward-os/pull/3) (the minimalism ladder) - real PRs that went
-  through human-gated [PR lifecycle](../lifecycle/pr-lifecycle.md) review before merge.
+  [#3](https://github.com/nesquena/steward-os/pull/3) (the minimalism ladder), both merged after
+  human-gated [PR lifecycle](../lifecycle/pr-lifecycle.md) review.
 - **The editorial loop.** Discovery over delivery: work is proposed, reviewed, and trimmed in the
   open, exactly as the [output-loop playbook](../playbooks/output-loop.md) prescribes.
 
@@ -40,6 +41,6 @@ nothing runs unattended here yet.
 - **Autonomous public writes.** No credentials file is configured; the agent never posts as the
   project unsupervised.
 
-That gap is deliberate. Steward is designed to be adopted one rung at a time, and this instance is
-honestly near the bottom of its own [adoption ladder](adoption-levels.md) - which is exactly where a
-careful project should start.
+That gap is deliberate. Steward is meant to be adopted one rung at a time, and this repo sits near
+the bottom of its own [adoption ladder](adoption-levels.md), which is a reasonable place for a
+careful project to start.

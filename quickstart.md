@@ -4,7 +4,7 @@ layout: default
 nav_order: 2
 ---
 
-# Quickstart — adopt Steward in ~15 minutes
+# Quickstart: adopt Steward in ~15 minutes
 {: .fs-8 }
 
 Get an agent co-maintaining your repo, in supervised mode, on Claude Code. No autonomy yet -
@@ -18,7 +18,7 @@ this is the on-ramp: read the model, wire the config, run one loop by hand, then
 - **Claude Code** installed and working in your repo.
 - A **GitHub repository** you maintain, with the **`gh` CLI** authenticated (`gh auth status`).
 - **Steward checked out locally** (`git clone https://github.com/nesquena/steward-os`) - you'll copy its skills in step 2.
-- ~15 minutes and one real open issue or PR to practice on.
+- ~15 minutes and an open issue or PR you can practice on.
 
 You do **not** need any autonomy, scheduled jobs, or a chat integration to start. Those come later,
 on the [adoption ladder](docs/reference/adoption-levels.md).
@@ -52,21 +52,21 @@ The agent works through the [setup interview](setup/setup-interview.md) - your r
 CI, review tools, autonomy posture - and writes a `config.yaml` for your project. It asks only what
 it needs, accepts "skip" for anything optional, and never guesses.
 
-Want to see a finished one first? Read Steward's own
-[`setup/config.yaml`](https://github.com/nesquena/steward-os/blob/main/setup/config.yaml) - the real,
-honest config this project runs on.
+To see a finished one, read Steward's own
+[`setup/config.yaml`](https://github.com/nesquena/steward-os/blob/main/setup/config.yaml), which
+configures this repo.
 
 ## 4. Prove it with one supervised loop (Level 1)
 
-Pick one real issue or PR. Ask the agent to run the matching playbook **in a supervised session** -
+Pick an open issue or PR. Ask the agent to run the matching playbook **in a supervised session** -
 you watch, it proposes, you approve every public write:
 
 - An issue → load `issue-triage`, ask it to triage that issue and draft (not post) a reply.
 - A PR → load `pr-triage`, ask it to run the [fit screen](docs/lifecycle/pr-lifecycle.md) and
   summarize.
 
-Nothing is posted without your say-so. This is Level 1: the playbooks in supervised sessions. The
-value is real on day one, and the risk is zero.
+Nothing is posted without your say-so. That's Level 1: the playbooks run in supervised sessions, so
+you get value on day one without handing over any autonomy.
 
 ## 5. Climb
 
@@ -78,4 +78,4 @@ You've done the read→run step. From here you add capability deliberately, one 
 - **Level 4:** the full pipeline.
 
 See the [adoption levels](docs/reference/adoption-levels.md) for the whole ladder, and
-[Steward on Steward](docs/reference/steward-on-steward.md) for a real instance you can inspect.
+[Steward on Steward](docs/reference/steward-on-steward.md) to see it applied to this repo.
