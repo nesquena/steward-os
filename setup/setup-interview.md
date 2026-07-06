@@ -84,7 +84,9 @@ The system can't screen PRs/issues for fit without knowing what "fits."
 ---
 
 ## What the interview produces
-- A filled **[`config.yaml`](https://github.com/nesquena/steward-os/blob/main/setup/config.template.yaml)** capturing every answer.
+- A filled **[`config.yaml`](https://github.com/nesquena/steward-os/blob/main/setup/config.template.yaml)**
+  capturing every answer. See Steward's own filled
+  [`setup/config.yaml`](https://github.com/nesquena/steward-os/blob/main/setup/config.yaml) for a real example.
 - A short **TODO list** of any sections you skipped, so it's clear what's not yet wired.
 - A recommended **starting job set** based on your autonomy posture.
 

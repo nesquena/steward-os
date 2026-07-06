@@ -60,14 +60,16 @@ it's what makes running the whole thing unattended *safe*.
 
 ## Start here
 
-1. **Read the [architecture overview](docs/architecture/index.md)** — the four roles, the bands,
+1. **[Quickstart](quickstart.md)** — adopt Steward on your repo in ~15 minutes on Claude Code:
+   get the skills in, run the setup interview, and run one supervised loop.
+2. **Read the [architecture overview](docs/architecture/index.md)** — the four roles, the bands,
    the security spine. ~15 minutes; everything else builds on it.
-2. **Run the [setup interview](setup/setup-interview.md)** — the agent asks you the questions it
+3. **Run the [setup interview](setup/setup-interview.md)** — the agent asks you the questions it
    needs (your repos, chat platform, CI, review tools) and writes your project's config.
-3. **Pick your lifecycle area** — [issues](docs/lifecycle/issue-lifecycle.md),
+4. **Pick your lifecycle area** — [issues](docs/lifecycle/issue-lifecycle.md),
    [pull requests](docs/lifecycle/pr-lifecycle.md), [quality gates](docs/lifecycle/quality-gates.md),
    [community](docs/lifecycle/community.md), [contributor recognition](docs/lifecycle/contributor-recognition.md).
-4. **Load the [skills](skills/)** as you enter each phase.
+5. **Load the [skills](skills/)** as you enter each phase.
 
 Full map: **[docs/README.md](docs/README.md)** · Published site: **<https://nesquena.github.io/steward-os/>**
 
