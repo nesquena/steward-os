@@ -65,7 +65,7 @@ secrets:
   sandbox_available: false
 
 scheduled_jobs:                  # honest: nothing runs unattended on this repo yet
-  jobs:
+  jobs:                          # subset of the template's menu: only the jobs relevant to a docs repo, all off for now
     - { name: "scoreboard-refresh", every: "2h",  enabled: false, agent: false }
     - { name: "action-watchdog",    every: "6h",  enabled: false, agent: false }
   outputs:

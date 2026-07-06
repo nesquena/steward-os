@@ -1,7 +1,9 @@
 # Documentation map
 
-Everything in the system, organized by what you're trying to do. New here? Read the
-[architecture overview](architecture/index.md) first — it's the model everything else applies.
+Everything in the system, organized by what you're trying to do. New here? The
+[Quickstart](../quickstart.md) gets you running on your repo in ~15 minutes; the
+[architecture overview](architecture/index.md) is the model it all rests on. Read whichever fits
+where you are.
 
 ## Architecture — the operating model
 The four ideas the whole system is built on.
@@ -47,6 +49,8 @@ Patterns that span multiple areas.
 - [Config template](../setup/config.template.yaml) — what the interview produces.
 
 ## Reference
+- [Steward on Steward](reference/steward-on-steward.md) - the config and the pull requests behind
+  this repo, with an honest split of what's live vs. aspirational.
 - [Glossary](reference/glossary.md) — the system's vocabulary.
 - [FAQ](reference/faq.md) — short answers to the common adoption questions.
 - [Adoption levels](reference/adoption-levels.md) — minimal to full; start small, climb.

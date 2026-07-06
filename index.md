@@ -12,7 +12,8 @@ issue triage, PR review, quality gates, community, and the safety model that mak
 action trustworthy.
 {: .fs-6 .fw-300 }
 
-[Get started](docs/architecture/index.md){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[Get started](quickstart.md){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[Read the architecture](docs/architecture/index.md){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [View on GitHub](https://github.com/nesquena/steward-os){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ---

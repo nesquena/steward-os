@@ -62,8 +62,8 @@ Pick an open issue or PR. Ask the agent to run the matching playbook **in a supe
 you watch, it proposes, you approve every public write:
 
 - An issue → load `issue-triage`, ask it to triage that issue and draft (not post) a reply.
-- A PR → load `pr-triage`, ask it to run the [fit screen](docs/lifecycle/pr-lifecycle.md) and
-  summarize.
+- A PR → load `pr-triage`, ask it to run the [fit screen](docs/lifecycle/pr-lifecycle.md#0-fit--scope-screen)
+  and summarize.
 
 Nothing is posted without your say-so. That's Level 1: the playbooks run in supervised sessions, so
 you get value on day one without handing over any autonomy.
