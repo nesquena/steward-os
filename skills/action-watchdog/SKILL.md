@@ -20,6 +20,11 @@ description: Independently fact-check the autonomous actions the system took (is
      reopened with a complaint? → any mismatch = 🔴.
    - **Autonomous labels:** does every applied label still match its source signal? Did it override
      a human's label? → mislabel = 🟡 (unless human-applied).
+   - **Autonomous announcements** ([`release-announce`](../release-announce/SKILL.md)): does each
+     ledger'd announcement correspond to a real release tag with merged content? Was it posted to the
+     fixed channel **exactly once** (no duplicate for the same release)? Does the posted text match
+     the changelog entry it claims to render? → a duplicate, or an announcement of an absent/unshipped
+     release, or text that adds claims beyond the changelog = 🔴; a drifted last-announced marker = 🟡.
    - **(Add a check here for every new autonomous action — same change that adds the action.)**
 3. **Classify severities.** 🔴 = correctness failure (an action was *wrong* — act now). 🟡 = drift
    (stale, reconcile soon).

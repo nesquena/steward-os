@@ -11,6 +11,7 @@ they read your project's [`config.yaml`](../setup/config.template.yaml) for the 
 | [`pr-triage`](pr-triage/SKILL.md) | Steward/Reviewer | [PR lifecycle](../docs/lifecycle/pr-lifecycle.md) [0]–[2] | B |
 | [`pr-deep-review`](pr-deep-review/SKILL.md) | Reviewer/Builder | [PR lifecycle](../docs/lifecycle/pr-lifecycle.md) [3]–[4] + [quality gates](../docs/lifecycle/quality-gates.md) | B |
 | [`release-pipeline`](release-pipeline/SKILL.md) | Builder/Steward | [PR lifecycle](../docs/lifecycle/pr-lifecycle.md) [5]–[6] + [contributor recognition](../docs/lifecycle/contributor-recognition.md) | B |
+| [`release-announce`](release-announce/SKILL.md) | Steward | [community lifecycle](../docs/lifecycle/community.md) announcements + [watchdog](../docs/playbooks/watchdog-pattern.md) | A |
 | [`issue-triage`](issue-triage/SKILL.md) | Steward | [issue lifecycle](../docs/lifecycle/issue-lifecycle.md) | A/B |
 | [`triage-scoreboard`](triage-scoreboard/SKILL.md) | Steward | [scoreboard playbook](../docs/playbooks/triage-scoreboard.md) | A |
 | [`action-watchdog`](action-watchdog/SKILL.md) | Steward | [watchdog pattern](../docs/playbooks/watchdog-pattern.md) | A |
