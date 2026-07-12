@@ -53,6 +53,9 @@ relative_links:
 
 exclude:
   - skills/
+  - bin/
+  - lib/
+  - test/
   - setup/config.template.yaml
   - setup/config.yaml
   - README.md

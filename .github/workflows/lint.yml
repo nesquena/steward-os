@@ -1,0 +1,23 @@
+name: Lint
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  skills-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+      - name: Unit tests
+        run: ruby test/skills_contract_test.rb
+      - name: Skills-contract lint
+        run: ./bin/skills-contract-lint
