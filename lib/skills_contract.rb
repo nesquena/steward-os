@@ -5,7 +5,7 @@ require 'set'
 
 # Enforces the skills-vs-docs contract: every skill the playbooks and the config
 # template name must have a runnable skills/<name>/SKILL.md — or be declared as
-# not-yet-built. See .claude/artifacts/specs (design) and _data/skills.yml (policy).
+# not-yet-built. See _data/skills.yml (policy).
 #
 # Split into a pure checker (SkillsContract.check — sets in, violations out) and
 # an Extract module that reads the repo. The checker has no IO so it is trivially

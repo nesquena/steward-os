@@ -7,7 +7,6 @@
 # Skills named/wired but intentionally not yet built. The repo stays green because
 # these are expected. A NEW dangling reference not listed here fails the lint.
 # This list only shrinks — author the skill, then delete its line here.
-# Tracked in .claude/artifacts/innovations-2026-07-12.md.
 planned:
   - chat-monitor
   - mentions-sweep
