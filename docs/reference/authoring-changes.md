@@ -105,8 +105,8 @@ owner](coding-principles.md#one-state-one-owner) extended from *correctness* to 
 
 ## Validate at the point of use, and scope by complete identity
 
-Two adversarial-input habits that a naive check misses (both detailed in the
-[security spine](security-spine.md)):
+Two adversarial-input habits that a naive check misses — the authoring-time edge of the
+trust-boundary discipline the [security spine](security-spine.md) governs:
 
 - **Check-then-use gaps are exploitable.** State can change between the moment you validate it and
   the moment you use it. Where the platform allows, validate the *thing you will actually use* — hold
@@ -123,6 +123,22 @@ config aliases, path traversal). This is the input-side of **fail closed**: when
 
 ---
 
+## Place a visible control by attention, not by code-proximity
+
+For a change that adds a visible control, where it lives should be decided by how often it's used
+and by where comparable apps in the same category put the equivalent — not by where the diff already
+happens to be. A rarely-used per-item action belongs in an overflow/`⋮` menu; a global or data
+action belongs in settings; only a genuinely frequent control earns a spot on a hot, always-visible
+surface. Placing a control next to the code that produces it is the most common way a low-value
+affordance ends up taxing attention on every future visit.
+
+Then verify it *visually* — this half has a home in the [visual-verification
+gate](../lifecycle/quality-gates.md#the-gates-in-order): capture before/after at the real viewports
+(wide and narrow), and confirm nothing is clipped, no overflow-collapse is tripped, and no
+hover-only affordance is stranded on touch.
+
+---
+
 ## Already covered by the craft principles
 
 These authoring habits are correctness rules that already have a home in this repo — apply them, no
@@ -134,7 +150,7 @@ need to relearn them here:
 | Assert observable behavior, not a source string or a mock of the thing under test | [coding principles #5](coding-principles.md#5-test-isolation-and-tests-that-assert-intent) |
 | Extend the existing mechanism (fallback, helper, extension point) — don't copy a parallel block | [the minimalism ladder](coding-principles.md#the-minimalism-ladder) |
 | The diff is the task and nothing else; run neighboring tests, not just yours | [coding principles #2](coding-principles.md#2-surgical-edits-only) · [anti-patterns](anti-patterns.md#code-craft-anti-patterns) |
-| For a visible change, place a control by frequency-of-use and by where mainstream apps put it — then verify it visually at real viewports | [quality gates #4](../lifecycle/quality-gates.md#the-gates-in-order) |
+| Inspect any visible change visually at real viewports — tests say nothing about how it looks | [quality gates #4](../lifecycle/quality-gates.md#the-gates-in-order) |
 | Match the codebase's conventions over personal taste | [coding principles #10](coding-principles.md#10-match-the-codebases-conventions-over-personal-taste) |
 
 ---
