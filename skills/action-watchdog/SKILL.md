@@ -18,8 +18,11 @@ description: Independently fact-check the autonomous actions the system took (is
    - **Autonomous closes:** is the issue still closed? Is the cited PR actually merged and does it
      still link the issue? Does the cited release tag actually contain the merge commit? Was it
      reopened with a complaint? → any mismatch = 🔴.
-   - **Autonomous labels:** does every applied label still match its source signal? Did it override
-     a human's label? → mislabel = 🟡 (unless human-applied).
+   - **Autonomous labels** ([`label-sync`](../label-sync/SKILL.md)): for each ledger'd label, does it
+     still match its source signal, is it within the declared `labels:` allowlist, and was it
+     *add-only* — i.e. did the job avoid removing, reassigning, or overriding a human-applied label?
+     → a mislabel, an out-of-allowlist label, or an overridden human label = 🟡 (a human's label
+     always wins).
    - **Autonomous announcements** ([`release-announce`](../release-announce/SKILL.md)): does each
      ledger'd announcement correspond to a real release tag with merged content? Was it posted to the
      fixed channel **exactly once** (no duplicate for the same release)? Does the posted text match

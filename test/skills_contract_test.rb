@@ -140,9 +140,8 @@ class RepoContractTest < Minitest::Test
     errors = v.select { |x| x.severity == :error }
     assert_empty errors, "unexpected contract errors: #{errors.map(&:to_line).join("\n")}"
 
-    # the seven known-missing skills are accounted for as planned (info)
+    # the remaining known-missing skills are accounted for as planned (info)
     infos = v.select { |x| x.severity == :info }.map(&:skill)
-    assert_includes infos, 'label-sync'
     assert_includes infos, 'chat-monitor'
   end
 end

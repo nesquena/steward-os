@@ -57,6 +57,15 @@ autonomy:                       # starting band per action: A | B | C
   pr_merge: "B"
   human_reachable_at: ""        # channel/DM for Band-B decisions and Band-C approvals
 
+labels:                         # declared taxonomy for the deterministic `label-sync` job (add-only)
+  add_only: true                # never remove or override a human's label; skip labels already present
+  # PRs: size from the diff, area from changed paths, type from the title prefix.
+  # Issues: area/type from structured issue-template fields (never the free-text body); size is N/A.
+  # The allowlist label-sync may apply is exactly the label values named below.
+  size: { by: diff_lines,   buckets: { S: 50, M: 200, L: 500, XL: null } }  # PRs only; null = open-ended top bucket
+  area: { by: paths,        map: { "skills/**": "area:skills", "docs/**": "area:docs", "setup/**": "area:setup" } }
+  type: { by: title_prefix, map: { feat: "type:feature", fix: "type:bug", docs: "type:docs", chore: "type:chore" } }
+
 secrets:
   # Secrets live ONLY in a permission-locked file read by helper scripts. Record the PATH here,
   # never the value. Helpers read it and never return it to the agent's context.
