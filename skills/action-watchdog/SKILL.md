@@ -15,9 +15,9 @@ description: Independently fact-check the autonomous actions the system took (is
    closed, what it labeled). The ledger is the list of *what to check*, never the evidence of
    correctness.
 2. **Re-verify each action against LIVE ground truth, independently:**
-   - **Autonomous closes:** is the issue still closed? Is the cited PR actually merged and does it
-     still link the issue? Does the cited release tag actually contain the merge commit? Was it
-     reopened with a complaint? → any mismatch = 🔴.
+   - **Autonomous closes** ([`issue-autoclose`](../issue-autoclose/SKILL.md)): is the issue still
+     closed? Is the cited PR actually merged and does it still link the issue? Does the cited release
+     tag actually contain the merge commit? Was it reopened with a complaint? → any mismatch = 🔴.
    - **Autonomous labels** ([`label-sync`](../label-sync/SKILL.md)): for each ledger'd label, does it
      still match its source signal, is it within the declared `labels:` allowlist, and was it
      *add-only* — i.e. did the job avoid removing, reassigning, or overriding a human-applied label?

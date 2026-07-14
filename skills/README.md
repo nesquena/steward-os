@@ -14,6 +14,7 @@ they read your project's [`config.yaml`](../setup/config.template.yaml) for the 
 | [`release-announce`](release-announce/SKILL.md) | Steward | [community lifecycle](../docs/lifecycle/community.md) announcements + [watchdog](../docs/playbooks/watchdog-pattern.md) | A |
 | [`issue-triage`](issue-triage/SKILL.md) | Steward | [issue lifecycle](../docs/lifecycle/issue-lifecycle.md) | A/B |
 | [`label-sync`](label-sync/SKILL.md) | Steward | [issue lifecycle](../docs/lifecycle/issue-lifecycle.md) label step + [watchdog](../docs/playbooks/watchdog-pattern.md) | A |
+| [`issue-autoclose`](issue-autoclose/SKILL.md) | Steward | [issue lifecycle](../docs/lifecycle/issue-lifecycle.md) close-with-credit + [watchdog](../docs/playbooks/watchdog-pattern.md) | A |
 | [`triage-scoreboard`](triage-scoreboard/SKILL.md) | Steward | [scoreboard playbook](../docs/playbooks/triage-scoreboard.md) | A |
 | [`action-watchdog`](action-watchdog/SKILL.md) | Steward | [watchdog pattern](../docs/playbooks/watchdog-pattern.md) | A |
 
