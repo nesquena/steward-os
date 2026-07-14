@@ -2,7 +2,7 @@
 title: Bug-shape catalog
 layout: default
 parent: Reference
-nav_order: 5
+nav_order: 6
 ---
 
 # Bug-shape catalog

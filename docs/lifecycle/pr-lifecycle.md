@@ -15,6 +15,10 @@ gates are strict and the merge is never on a single agent's say-so.
 > **Steward** ranks it and runs the release. Merge is **Band B** (human owns the final call) or
 > Band A only for the narrowest mechanical cases with a watchdog.
 
+> Author-side counterpart: this page is how a change is *received and shipped*. For how a
+> contributor (human or agent) should *write and present* one so it lands in a single round, see
+> [Authoring a change that lands](../reference/authoring-changes.md).
+
 ---
 
 ## The pipeline at a glance

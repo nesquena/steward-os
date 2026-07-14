@@ -14,6 +14,8 @@ Look-it-up material, ordered from orientation to deep guardrails:
 - **[Adoption levels](adoption-levels.md)** — minimal to full; start small and climb.
 - **[Coding principles](coding-principles.md)** — the craft-level discipline for writing and editing
   code, the companion to the quality gates.
+- **[Authoring a change that lands](authoring-changes.md)** — the contributor-side habits (human or
+  agent) that get a change merged in one review round instead of several.
 - **[Bug-shape catalog](bug-shapes.md)** — the recurring bug classes that pass tests and survive CI,
   with how to catch each.
 - **[Anti-patterns](anti-patterns.md)** — the tempting shortcuts this system exists to prevent.
