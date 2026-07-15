@@ -41,10 +41,9 @@ part — true for a markdown file, a database row, or a runtime's memory store a
    when the next actor needs it. Write it somewhere outside the context window before you rely on it.
 
 2. **Discoverable at a known location — pull, don't push.** The consumer must be able to *find* the
-   handoff without being told it exists. A known path, a known table, a known queue that the next
+   handoff without being told it exists: a known path, a known table, a known queue that the next
    actor always checks. This is [discovery over delivery](output-loop.md#1-discovery-over-delivery)
-   applied between agents: pushing a notification is a convenience layered on top, never the only
-   path, because push fails silently and the consumer is then blind.
+   applied between agents — a pushed notification is a convenience on top, never the only path.
 
 3. **Never authoritative — re-derive from live truth.** Stored handoff state is a *pointer to what to
    check*, not proof of what is true. This is the [three verification axes](resilience-and-self-healing.md#verify-every-class-of-stored-state-the-three-axes)
