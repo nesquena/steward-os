@@ -22,3 +22,6 @@ Patterns that span multiple lifecycle areas.
 - **[The output loop](output-loop.md)** — the bridge from "the steward produced a draft" to "the
   human found it, acted, and the state reflects it": discovery over delivery, audit trail vs.
   actionable output, and keeping local state honest.
+- **[The state handoff](state-handoff.md)** — the agent-to-agent sibling of the output loop: how
+  state left by one role (or one run) is found, trusted, and acted on by the next — the
+  mechanism-neutral contract, a recommended markdown default, and other mechanisms with trade-offs.

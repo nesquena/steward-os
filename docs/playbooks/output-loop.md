@@ -149,4 +149,4 @@ glance at the queue instead of re-deriving reality from the live system every ti
 ---
 
 _Related: [designing scheduled jobs](scheduled-jobs.md) · [the triage scoreboard](triage-scoreboard.md) ·
-[the watchdog pattern](watchdog-pattern.md)._
+[the watchdog pattern](watchdog-pattern.md) · [the state handoff](state-handoff.md) (the agent-to-agent sibling of this playbook)._
