@@ -80,7 +80,7 @@ Sort the cleared PRs by where they should go:
 - **Deep lane** — medium/large, touches sensitive subsystems, or needs a design judgment.
 - **Screenshot/UX gate** — anything with a visible surface. Request before/after screenshots at the
   relevant viewports; a visible change is verified visually, not just by tests. (See
-  [quality gates](quality-gates.md#visual-verification).)
+  [quality gates](quality-gates.md#4-visual-verification).)
 - **Hold / draft** — parked or not-ready. Skip entirely; never act on a held or draft PR.
 
 ## [3] Deep review (Reviewer + Builder)

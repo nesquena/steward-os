@@ -98,8 +98,8 @@ show it is cleaned up or invalidated on **every** exit path, not just success: e
 replacement, shrink/clear, and teardown.
 
 Happy-path testing structurally cannot see these leaks, because the leak is on the path the happy
-test never takes. Walk the exits deliberately. This is [one state, one
-owner](coding-principles.md#one-state-one-owner) extended from *correctness* to *lifetime*.
+test never takes. Walk the exits deliberately. This is
+[one state, one owner](coding-principles.md#one-state-one-owner) extended from *correctness* to *lifetime*.
 
 ---
 
@@ -132,8 +132,8 @@ action belongs in settings; only a genuinely frequent control earns a spot on a 
 surface. Placing a control next to the code that produces it is the most common way a low-value
 affordance ends up taxing attention on every future visit.
 
-Then verify it *visually* — this half has a home in the [visual-verification
-gate](../lifecycle/quality-gates.md#the-gates-in-order): capture before/after at the real viewports
+Then verify it *visually* — this half has a home in the
+[visual-verification gate](../lifecycle/quality-gates.md#the-gates-in-order): capture before/after at the real viewports
 (wide and narrow), and confirm nothing is clipped, no overflow-collapse is tripped, and no
 hover-only affordance is stranded on touch.
 
