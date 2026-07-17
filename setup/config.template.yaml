@@ -66,6 +66,15 @@ labels:                         # declared taxonomy for the deterministic `label
   area: { by: paths,        map: { "skills/**": "area:skills", "docs/**": "area:docs", "setup/**": "area:setup" } }
   type: { by: title_prefix, map: { feat: "type:feature", fix: "type:bug", docs: "type:docs", chore: "type:chore" } }
 
+trust:                          # the contributor trust ledger the `contributor-trust` skill aggregates
+  # Events are written at close by release-pipeline (one terminal outcome per PR); this block only
+  # controls how they are scored. NOTE: today only shipped PRs produce events, so the score is
+  # upward-biased until a reconcile job records stale/abandoned outcomes — read it with effective_n.
+  ledger_path: ""               # append-only outcome events; blank disables scoring entirely
+  prior: 0.5                    # the neutral prior a contributor starts at (zero events → exactly this)
+  shrinkage: 3.0                # pseudo-count k — roughly how many events before the score leaves the prior
+  half_life_days: 180           # decay: an event's weight halves every N days, so the score tracks recency
+
 secrets:
   # Secrets live ONLY in a permission-locked file read by helper scripts. Record the PATH here,
   # never the value. Helpers read it and never return it to the agent's context.
