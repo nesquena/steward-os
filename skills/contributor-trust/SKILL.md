@@ -71,9 +71,11 @@ Each event: `pr` (repo#number) · `author` (handle) · `outcome` (below) · `at`
 - **Today the score is upward-biased — say so, don't compute past it.** The only declared ledger
   writer is [`release-pipeline`](../release-pipeline/SKILL.md), which runs **only on the ship path**
   (it merges an *all-clear* PR). Nothing currently writes `went-stale`, `not-fixed`, `regression`, or
-  `critical-flaw`. So the ledger accrues only positives, and a high `score` with a low `effective_n`
-  may mean "never failed" *or* "failures were never recorded" — **nothing distinguishes them.** Treat
-  the score as low-confidence until a
+  `critical-flaw`. So the ledger accrues only positives **at every volume** — a high `score` is
+  inflated whether `effective_n` is low or high, because `effective_n` measures how much *positive*
+  evidence exists, not freedom from bias. A high score can mean "genuinely reliable" *or* "failures
+  were never recorded," and **nothing in the ledger distinguishes them.** Treat every score as
+  low-confidence until a
   [reconcile job](../../docs/playbooks/resilience-and-self-healing.md) records non-ship outcomes.
 - **Don't over-judge one data point.** This is enforced by shrinkage, not by a special case. If you
   find yourself adding an `if events == 1` branch, the prior is doing the job already.

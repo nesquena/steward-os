@@ -71,7 +71,7 @@ When you send a PR back, the *how* matters for whether the contributor comes bac
 ---
 
 ## Skills for this area
-- `contributor-trust` — log outcomes, compute the trust map, surface it into triage.
+- `contributor-trust` — compute the trust map from logged outcomes and surface it into triage.
 - `release-pipeline` — preserves attribution at merge and runs the credit-verification gate.
 - (Credit handling is also woven into `pr-deep-review`.)
 
