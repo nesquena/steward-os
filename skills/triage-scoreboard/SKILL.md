@@ -13,7 +13,8 @@ Band A (read-only, deterministic where possible). Ideal as a scheduled job.
 1. **Pull live metadata** for every open item (PRs/issues): CI status, mergeable/behind, size, age,
    author. Read repos from `config.yaml`.
 2. **Recompute mechanical dimensions** fresh each run (disposable): CI, conflict state, behind-count,
-   size bucket, contributor trust score (from the [trust ledger](../../docs/lifecycle/contributor-recognition.md)).
+   size bucket, contributor trust score (computed by [`contributor-trust`](../contributor-trust/SKILL.md)
+   from the [trust ledger](../../docs/lifecycle/contributor-recognition.md)).
 3. **Merge in persisted judgment dimensions** (scope_fit, criticality, risk, severity) from the
    prior board — these survive regeneration so human/agent assessments aren't lost.
 4. **Compute the composite** = weighted sum of dimensions (weights from config; tune to match "what

@@ -30,7 +30,8 @@ merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-patt
    never claim shipped from a passed gate alone.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
-   with one terminal outcome for the PR. Clean up the branch/worktree.
+   with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
+   Clean up the branch/worktree.
 
 ## The attribution-verification gate
 
