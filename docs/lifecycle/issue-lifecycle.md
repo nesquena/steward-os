@@ -43,6 +43,11 @@ captures genuinely-new actionable items to a staging queue. Two rules make captu
   (keep public voice human; see [community](community.md)).
 
 ## Investigate & file (Band B → C)
+Before any tier decision, apply the [vulnerability divert](../reference/security-spine.md#6-the-vulnerability-divert):
+a suspected vulnerability (unauthorized access, data exposure, or code execution — by wording or
+shape) is never filed to the public tracker. It goes to the private disclosure path; a human decides
+disclosure.
+
 Before a staging item becomes a tracker issue: reproduce it if possible, check it isn't a duplicate
 or already-fixed, and draft a clean, structured issue. **Filing borderline items is human-gated** —
 a human glances before it lands on the public tracker, because a noisy or wrong issue costs more

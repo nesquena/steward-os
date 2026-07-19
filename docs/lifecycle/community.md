@@ -34,6 +34,14 @@ the issue tracker, and captures actionable items to the staging queue (→ [issu
 ## Confidence-tiered capture → action (the safe way to auto-file)
 Capturing is always safe; *filing an issue to the public tracker from a chat report* is a public
 write, so gate it by **confidence tier** rather than filing everything or nothing:
+- **SECURITY** (checked first, before the tiers) → **never auto-file, never draft publicly.** A
+  report that looks like a vulnerability — unauthorized access, data exposure, or code execution, by
+  wording or by shape — diverts to the [private disclosure path](../reference/security-spine.md#6-the-vulnerability-divert):
+  a PII-scrubbed summary to the configured `security_contact`, a neutral private acknowledgement to
+  the reporter, and **no public "captured" reaction**. If no `security_contact` is set, suppress the
+  file and route to the human alarms channel — never fall back to the public tracker. Detection is
+  high-recall on purpose: a false positive is a private glance, a false negative is an irreversible
+  public leak.
 - **HIGH** (a concrete, reproducible bug naming a specific surface, that passed dedup) → **auto-file**
   a privacy-safe issue. Two hard constraints: (1) the issue body is a **structured paraphrase, never
   the reporter's raw words**, with **no reporter identity** (handle, id, mention, message link,
@@ -46,7 +54,9 @@ write, so gate it by **confidence tier** rather than filing everything or nothin
 
 The tiering is what lets you get the latency win (real bugs filed promptly) without the risk
 (autonomously filing junk or leaking a reporter's identity). Feature requests and "does it do X?"
-questions are scope/judgment calls — never auto-filed.
+questions are scope/judgment calls — never auto-filed. And the SECURITY branch is why the *most*
+concrete, reproducible reports — the ones the HIGH tier would file fastest — are exactly the ones
+checked for a vulnerability first: a live exploit is the one public write you can never take back.
 
 ### Human-in-the-loop approval over chat
 For the MEDIUM/LOW tiers, the confirmation channel has one non-obvious constraint worth knowing: a
