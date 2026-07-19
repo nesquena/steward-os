@@ -61,6 +61,7 @@ exclude:
   - README.md
   - CONTRIBUTING.md
   - LICENSE
+  - SECURITY.md
   - docs/README.md
   - .github/
   - vendor/

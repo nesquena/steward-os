@@ -11,6 +11,8 @@ The four ideas the whole system is built on.
 - **[Overview](architecture/index.md)** — the four roles, the autonomy bands, the security spine,
   the guiding principles. Start here.
 - [Security spine reference](reference/security-spine.md) — the concrete guardrail patterns.
+- [Reporting a vulnerability](../SECURITY.md) — the private disclosure path; a suspected vulnerability
+  never reaches the public tracker. The model behind it: [the vulnerability divert](reference/security-spine.md#6-the-vulnerability-divert).
 
 ## Lifecycle — end-to-end playbooks
 How work travels through the project, one area at a time. Each is a self-contained playbook with the
