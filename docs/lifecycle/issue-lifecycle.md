@@ -47,10 +47,10 @@ captures genuinely-new actionable items to a staging queue. Two rules make captu
 
 ## Investigate & file (Band B → C)
 Before any tier decision, apply the [vulnerability divert](../reference/security-spine.md#6-the-vulnerability-divert):
-a suspected vulnerability (unauthorized access, data exposure, or code execution — by wording or
-shape) is never filed to the public tracker. It goes to the private disclosure path; a human decides
-disclosure. If no private destination is configured, it is still suppressed — never a fall-back to
-public-filing.
+a suspected vulnerability (unauthorized access, data exposure, tampering, code execution, or
+attacker-triggerable service loss — by wording or shape) is never filed to the public tracker. It
+goes to the private disclosure path; a human decides disclosure. If no private destination is
+configured, it is still suppressed — never a fall-back to public-filing.
 
 Before a staging item becomes a tracker issue: reproduce it if possible, check it isn't a duplicate
 or already-fixed, and draft a clean, structured issue. **Filing borderline items is human-gated** —

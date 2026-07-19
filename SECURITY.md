@@ -2,8 +2,9 @@
 
 ## Reporting a vulnerability
 
-**Do not open a public issue for a security vulnerability.** Steward's own model treats a suspected
-vulnerability as the one report that must never reach a public tracker — see
+**Do not open a public issue _or a public pull request_ for a security vulnerability.** Steward's own
+model treats a suspected vulnerability as the one report that must never reach a public tracker — a
+public PR whose diff or description reveals the exploit is the same leak as a public issue. See
 [the vulnerability divert](docs/reference/security-spine.md#6-the-vulnerability-divert).
 
 Report privately via this repository's **[GitHub private security advisories](https://github.com/nesquena/steward-os/security/advisories/new)**.

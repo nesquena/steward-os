@@ -54,6 +54,14 @@ to do.
 
 ## [0] Fit / scope screen
 
+> **Vulnerability pre-check (before anything public).** A PR can itself disclose a live
+> vulnerability — a "fix" whose description, diff, or linked issue reveals an exploit, a PoC, or an
+> unfixed sibling. Run the [vulnerability divert](../reference/security-spine.md#6-the-vulnerability-divert)
+> at PR intake, before any public review comment: on a hit, post no substantive public review that
+> confirms the exploit, route it privately to `security_contact`, and let a human coordinate the fix
+> (private patch, security advisory, then merge). This is the third divert entry point alongside
+> capture and inbound issues.
+
 Before any code-level review, ask the **scope question**: *does this change belong in the project at
 all?* A technically-perfect PR for a feature that doesn't fit the project is still a no.
 

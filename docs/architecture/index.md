@@ -131,9 +131,10 @@ spine is the set of rules that hold regardless of what any of that content says.
    vulnerability — a report of unauthorized access, data exposure, tampering, code execution, or
    attacker-triggerable service loss — is never auto-filed to the public tracker and never drafted as
    a public issue (and never gets a public "captured" reaction, which is itself a partial
-   disclosure). It diverts to a private disclosure path where a human decides disclosure — at both
-   entry points: the agent's own capture/auto-file, and a vuln a reporter opens directly on the
-   tracker (caught at triage, no code-grounded public reply). Detection is deliberately high-recall: a
+   disclosure). It diverts to a private disclosure path where a human decides disclosure — at every
+   entry point: the agent's own capture/auto-file, a vuln a reporter opens directly as an issue, and
+   one that arrives as a public pull request (each caught before any public reply or review that would
+   confirm the exploit). Detection is deliberately high-recall: a
    false positive costs a human a private glance; a false negative is an irreversible public leak, so
    when unsure, treat it as a vulnerability. This is the public-write membrane (rule 5) applied to its
    worst case — the one public write you can never take back.

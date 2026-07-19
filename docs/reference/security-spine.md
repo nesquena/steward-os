@@ -94,14 +94,20 @@ The detector **routes, it never confirms** — confirmation and disclosure are h
 private path. Detection is high-recall by design (over-divert): the cost of a false positive is a
 human's private glance; the cost of a false negative is a public exploit leak.
 
-**Two entry points, one gate.** The divert runs at *both* points where a vulnerability can reach the
-public tracker:
+**Three entry points, one gate.** The divert runs at *every* point where a vulnerability can reach
+the public tracker:
 - **Capture / auto-file** — before confidence tiering, as above, *and before any public "captured"
   reaction is left* (the reaction is itself a partial disclosure).
 - **A public issue opened directly** — a reporter who skips the private path and files on the tracker.
   Run the same detector at triage: on a hit, the agent posts **no** substantive public reply and no
   label commentary (a code-grounded reply publicly confirms exploitability), routes the item to the
   private path, and leaves the next move — lock, minimize, edit, coordinate an advisory — to a human.
+- **A public pull request** — a "fix" whose description, diff, or linked issue reveals a live
+  vulnerability (a PoC, an exploit path, an unfixed sibling). Run the detector at PR intake, before
+  any public review comment: on a hit, post no substantive public review that confirms the
+  exploit, route it to the private path, and let a human decide (coordinate a private fix, a security
+  advisory, then merge). A public code review that says "this exploit works" is the same leak as a
+  public issue reply.
 
 **The divert.** On a hit:
 - Produce a **PII-scrubbed structured summary** (the same fail-closed scrub the HIGH tier uses) and

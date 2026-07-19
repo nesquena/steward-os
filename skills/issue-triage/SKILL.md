@@ -13,22 +13,25 @@ Mostly Band A for the mechanical parts; Band B/C for replies that make commitmen
 
 1. **Read `config.yaml`** — repos, the maintainer handle(s) (for the dropped-ball check), and the
    chat capture settings.
-2. **Initial reply (confidence-gated).** For an un-replied issue, post a substantive, code-grounded
-   response OR a targeted needinfo question — **only if** you can ground it in actual code. If you
-   can't (vague report, can't parse, not clearly about this project) → HALT, post nothing. A
-   non-response beats a wrong response. **Vulnerability check first:** run the
-   [vulnerability divert](../../docs/reference/security-spine.md#6-the-vulnerability-divert) on the
-   issue — on a hit, post **no** substantive public reply or label commentary (a code-grounded reply
-   confirms exploitability in public); route it privately to `security_contact` and let a human
-   decide the next move.
-3. **Label + milestone.** Apply mechanical, reversible metadata. Prefer a deterministic
+2. **Vulnerability check (unconditional first pass, every issue — replied or not).** Before any
+   reply, label, or other public action on an issue, run the
+   [vulnerability divert](../../docs/reference/security-spine.md#6-the-vulnerability-divert). On a
+   hit: post **no** substantive public reply and no label commentary (a code-grounded reply confirms
+   exploitability in public), route the item to the private path (`security_contact` → `alarms_to` →
+   private index; never public, never a silent no-op), and let a human decide the next move (lock,
+   edit, advisory). Then stop public triage on that issue.
+3. **Initial reply (confidence-gated).** For an un-replied issue that cleared the vuln check, post a
+   substantive, code-grounded response OR a targeted needinfo question — **only if** you can ground
+   it in actual code. If you can't (vague report, can't parse, not clearly about this project) →
+   HALT, post nothing. A non-response beats a wrong response.
+4. **Label + milestone.** Apply mechanical, reversible metadata. Prefer a deterministic
    label-sync (size/area/type) on a tight allowlist that is **add-only and never overrides a human's
    label.**
-4. **Sprint-candidate.** Mark confirmed bugs that have a fix starting.
-5. **Dropped-ball surfacer.** Find open issues where a maintainer replied, the reporter answered
+5. **Sprint-candidate.** Mark confirmed bugs that have a fix starting.
+6. **Dropped-ball surfacer.** Find open issues where a maintainer replied, the reporter answered
    *after* that, and no PR exists — sorted by days-waiting. **Surface only** (never auto-reply); it
    tells the human who to get back to.
-6. **Capture-dedupe.** New items from chat/web are deduped across the tracker (open+closed), the
+7. **Capture-dedupe.** New items from chat/web are deduped across the tracker (open+closed), the
    capture queue, and the ledger before becoming issues. Run the
    [vulnerability divert](../../docs/reference/security-spine.md#6-the-vulnerability-divert) **before
    marking** — a suspected vuln gets **no** public reaction (the mark is itself a partial disclosure)
