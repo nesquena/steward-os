@@ -180,6 +180,54 @@ instead of living in someone's memory. A real ceiling with *no* marker is the th
 
 ---
 
+## The footprint ladder
+
+The minimalism ladder shortens a change by *lines of code*. There's a second, independent axis that
+matters most in projects with a hot, shared core: **where a capability lands determines its permanent
+cost.** Some surfaces are paid for once; others are paid for on every request, by every user,
+forever. A small addition to the hot core can be far more expensive than a large addition at the
+edge.
+
+The agent-codebase example that makes it concrete: every core tool schema is sent on every model call
+for every user, so a 100-line core tool costs more, permanently, than a 1,000-line optional plugin
+that only loads when someone opts in. The same shape appears anywhere a narrow layer sits on the
+critical path — a middleware every request traverses, a base class every model inherits, a default
+that ships to everyone.
+
+So before landing a capability, pick the **highest rung that works** (each rung is cheaper than the
+one below):
+
+1. **Extend existing code** — zero new surface.
+2. **A command plus a doc/skill that teaches the agent to use it** — zero always-on footprint.
+3. **A capability-gated addition** that only appears when a prerequisite is configured.
+4. **A plugin/extension in the user's own space** — opt-in, isolated.
+5. **An external service or connector** referenced from a catalog.
+6. **A new core primitive on the hot path** — the last resort.
+
+The generalization beyond agents: **be expansive at the edges, conservative at the waist.** The
+product's outer surface (platforms, providers, integrations) can and should grow aggressively; the
+narrow core that every request flows through is where each addition taxes everyone. A review should
+ask **"which layer is this landing in?"** *before* "is this code good?" — a locally-excellent change
+in the wrong layer is still the wrong change.
+
+Two footprint-ladder closes recur, and both are coupling decisions, not quality bars — say so in the
+close so the contributor isn't left thinking their code was bad:
+
+- **Speculative infrastructure.** A hook or extension point with no concrete consumer. Adding one is
+  easy; removing it after third parties depend on it is nearly impossible. The nuance: it is *not*
+  speculative if the contributor names a real use case, even when the consumer ships separately — the
+  test is a real problem, not bundled consumer code.
+- **Third-party integrations in the core tree.** A vendor connector living in the main repo becomes
+  the maintainer's burden against a backend they don't own and can't test. Ship it as a standalone
+  plugin/extension instead. The plugin can be excellent and the in-core placement still be a close.
+
+> The footprint ladder was contributed by Teknium ([@teknium1](https://github.com/teknium1)),
+> co-founder of Nous Research, from high-volume review of the open-source Hermes agent codebase; the
+> [reviewing at volume](reviewing-at-volume.md#the-footprint-ladder-where-a-capability-lands)
+> field notes carry the maintainer-side version.
+
+---
+
 ## Public-repo discipline
 
 If the project is public (or has any external contributors), a few rules are non-negotiable

@@ -68,6 +68,26 @@ When you send a PR back, the *how* matters for whether the contributor comes bac
 - if the blocker is purely mechanical (a rebase, a couple of test fixes), consider fixing it
   yourself on their branch instead of bouncing — and still credit them.
 
+> **Field note — default to salvaging, not bouncing** (contributed by Teknium, co-founder of Nous
+> Research, from high-volume agent-codebase review). On a fast repo, most external changes are stale
+> against the trunk — that's the normal case, not a defect, and asking every contributor to rebase
+> creates weeks of latency and abandoned work. The flow that scales: sweep for duplicates *first*
+> (popular bugs draw 2–4 fixes; search open and closed with synonym variants; credit the *earliest*
+> submitter), cherry-pick their commits onto the current trunk so authorship survives, widen to
+> sibling sites as your own commit, **rebase-merge rather than squash whenever contributor commits
+> are in the branch** (squash destroys authorship — squash only when every commit is yours), then run
+> a **mandatory post-merge sweep** for duplicates that arrived while you built. The riskiest shape is
+> the investigation that quietly became a fix — you never entered "review mode," so the pre-flight
+> dedupe never fired. Full version:
+> [reviewing at volume](../reference/reviewing-at-volume.md#salvage-over-request-changes).
+
+> **Field note — fabricated contributor identities** (contributed by Teknium). A first-time
+> contributor may open a burst of changes with commits authored as invented, official-looking
+> identities. Policy: close all, salvage nothing — bundled commits can mix appropriated work with
+> unverified changes. But disambiguate first: a *known* contributor's declared, agent-assisted
+> alternate identity (long real history plus a self-declared mapping) is legitimate. The tell is
+> history plus self-declaration, not an odd-looking email alone.
+
 ---
 
 ## Skills for this area

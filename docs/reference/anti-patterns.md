@@ -58,6 +58,18 @@ cause it. (See [quality gates](../lifecycle/quality-gates.md#flakes-never-tolera
 **Fixing the instance, not the class.** Patch the reported site and miss the three sibling call
 paths with the same bug. When you find a defect, grep for its class.
 
+**The change-detector test.** A test that fails whenever data *expected to change* is updated — a
+catalog count, a version literal, an enumeration size, a hardcoded list. `assert len(providers) == 8`
+adds zero behavioral coverage and breaks CI on every routine update. The litmus: a snapshot of
+current data → delete it; a contract about how two pieces of data must relate → keep it. _(Field note
+from Teknium; see [reviewing at volume](reviewing-at-volume.md#two-test-anti-patterns-that-generate-the-most-noise).)_
+
+**Reading source code in a test.** A test that regexes a source file tests the *shape of the code*,
+not its behavior — it passes when the implementation is subtly broken, fails on correct refactors, and
+blocks structural cleanup forever. If the logic can't be called directly, extract it into a testable
+function instead of regexing around it. Agent-authored changes produce this constantly, because it's
+the cheapest way to make a test go green. _(Field note from Teknium.)_
+
 ## Scope & contributor anti-patterns
 
 **Code-reviewing before scope-screening.** Spending an hour reviewing a beautiful PR for a feature

@@ -95,6 +95,17 @@ files at the PR's head *and* on the trunk to see what changed. For every flaw, d
 
 The output of deep review is *warm-up*, not the ship decision. The ship decision is the next stage.
 
+> **Field note — the #1 reason a well-built change dies is a wrong premise, not bad code**
+> (contributed by Teknium, co-founder of Nous Research, from high-volume agent-codebase review). A
+> change can be clean, tested, and coherent while resting on a *wrong mental model of the system* or
+> treating an *intentional design as a gap*. Before accepting the premise, read the history of the
+> code that would change (`git log -p -S "<symbol>"` recovers the commit that introduced an absence —
+> it may be load-bearing) and require the author to point at the exact line where the bug manifests.
+> A confirmed reproduction on the current trunk beats a plausible rationale. Note the automation
+> boundary: `already-fixed`, `cannot-reproduce`, and `incoherent` are safe autonomous closes;
+> wrong-premise and design-taste closes stay with a human. Full version:
+> [reviewing at volume](../reference/reviewing-at-volume.md#wrong-premise-beats-bad-code).
+
 ## [4] The authoritative gate
 
 **This is the line that protects the trunk.** Run it fresh, immediately before merge, regardless of

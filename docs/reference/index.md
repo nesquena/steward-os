@@ -19,6 +19,8 @@ Look-it-up material, ordered from orientation to deep guardrails:
 - **[Bug-shape catalog](bug-shapes.md)** — the recurring bug classes that pass tests and survive CI,
   with how to catch each.
 - **[Anti-patterns](anti-patterns.md)** — the tempting shortcuts this system exists to prevent.
+- **[Reviewing at volume](reviewing-at-volume.md)** — maintainer-side field notes on what makes a
+  change land, and the failure modes seen most often at high volume (contributed by Teknium).
 - **[Security spine](security-spine.md)** — the guardrail patterns in detail.
 - **[Steward on Steward](steward-on-steward.md)** - the config and pull requests behind this repo,
   with an honest split of what's live vs. aspirational.
