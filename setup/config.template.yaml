@@ -111,5 +111,7 @@ scheduled_jobs:                 # start with a few; add as you climb the autonom
     index_path: ""              # pull-based review queue the human checks (e.g. state/index.md).
                                 # If it hosts the vuln-divert level-3 fallback, it must NOT be a public
                                 # surface — a repo-hosted index in a public repo is not a valid destination.
-    digest_to: ""               # optional: push routine digests here (enhancement, not the only path)
+    digest_to: ""               # optional: push routine digests here (enhancement, not the only path).
+                                # Must not be a public channel if the index it digests can hold a
+                                # diverted vuln (level-3 fallback) — a digest would republish it.
     alarms_to: ""               # where watchdog alarms go (a human)

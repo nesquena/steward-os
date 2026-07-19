@@ -42,5 +42,8 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
 - **Uncertain scope → escalate with a recommendation**, don't guess and don't silently sit on it.
 
 ## Verification
-- Every open PR has a routing decision and persisted judgment dims on the scoreboard.
+- Every open PR has a routing decision and persisted judgment dims on the scoreboard — *except a
+  step-2 diverted PR, which has only its private-path record and no public scoreboard entry.*
+- A diverted PR left no public trace (no comment, review, or routing record) and reached a private
+  destination.
 - Out-of-scope closes were either human-sent or ≥90%-confidence; uncertain ones escalated.
