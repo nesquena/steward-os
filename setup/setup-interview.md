@@ -72,12 +72,19 @@ The system can't screen PRs/issues for fit without knowing what "fits."
 18. **Will the system ever execute contributor code?** (e.g. run PR tests.) If yes, confirm a
     sandbox is available; if not, that capability stays disabled. →
     [security spine](../docs/reference/security-spine.md).
+19. **Where should a suspected vulnerability go?** When a captured report looks like a security
+    vulnerability, it is never filed to the public tracker — it diverts to a private path. Name the
+    destination (a person or DM, a private channel, an email, or `github-advisory` to use the repo's
+    private security advisories). Leave blank to fail closed — suppressed and routed to your alarms
+    channel, never public. Optionally list any sensitive surfaces (e.g. `auth`, `payments`) so a
+    report naming one is treated as suspected. → `security.security_contact`,
+    `security.security_sensitive_surfaces`; [the vulnerability divert](../docs/reference/security-spine.md#6-the-vulnerability-divert).
 
 ## Section 7 — Scheduled jobs *(optional, grows over time)*
-19. **Which jobs do you want running, and how often?** (scoreboard refresh, chat monitor, mentions
+20. **Which jobs do you want running, and how often?** (scoreboard refresh, chat monitor, mentions
     sweep, announcements, label-sync, issue-autoclose, the watchdog, a fleet heartbeat.) Start with
     a few; add as you climb the autonomy ladder. → [scheduled jobs](../docs/playbooks/scheduled-jobs.md).
-20. **How does steward output reach you?** Default is a pull-based index you check (discovery);
+21. **How does steward output reach you?** Default is a pull-based index you check (discovery);
     pushing a digest to a chat channel is an optional add-on. Also: where should watchdog alarms go?
     → [the output loop](../docs/playbooks/output-loop.md).
 

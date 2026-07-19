@@ -42,6 +42,10 @@ community:
     enabled: false
     disambiguate_against: ""      # sweep disabled; set if enabled later
 
+security:                       # this repo is docs-only; disclosure still routes privately, never public
+  security_contact: "github-advisory"   # nesquena/steward-os private security advisories
+  security_sensitive_surfaces: []       # a documentation site has no sensitive code surfaces
+
 ci_and_gates:
   test_command: "bundle exec jekyll build"
   test_runtime_estimate: "<1 min"
