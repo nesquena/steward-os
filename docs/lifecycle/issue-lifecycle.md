@@ -40,7 +40,10 @@ captures genuinely-new actionable items to a staging queue. Two rules make captu
   not create a duplicate.
 - **Mark what you captured.** Leave a lightweight, visible signal (a "captured" reaction/ack) so the
   reporter and the maintainer can see it was logged — without the agent writing a full public reply
-  (keep public voice human; see [community](community.md)).
+  (keep public voice human; see [community](community.md)). **Exception — a suspected vulnerability
+  gets no public mark.** Run the [vulnerability divert](../reference/security-spine.md#6-the-vulnerability-divert)
+  *before* reacting: on a hit, leave no public reaction (a visible mark is itself a partial
+  disclosure) — the reporter gets only the neutral private acknowledgement on the disclosure path.
 
 ## Investigate & file (Band B → C)
 Before any tier decision, apply the [vulnerability divert](../reference/security-spine.md#6-the-vulnerability-divert):
@@ -56,6 +59,11 @@ than the few seconds saved.
 
 ## Triage (Band A for the safe parts)
 The Steward keeps the tracker healthy:
+- **Vulnerability check first** — the [divert](../reference/security-spine.md#6-the-vulnerability-divert)
+  also runs on issues opened *directly* on the public tracker (a reporter who skips the private path).
+  On a hit: **no substantive public reply and no label commentary** — a code-grounded reply would
+  publicly confirm exploitability. Route the item privately to `security_contact` and leave the next
+  move (lock, minimize, edit, advisory) to a human.
 - **Initial reply** — a substantive, code-grounded response (or a targeted needinfo question), under
   a confidence gate: if you can't ground it in actual code, say nothing rather than post a guess.
 - **Label + milestone** — mechanical, reversible metadata. A good candidate for autonomous,

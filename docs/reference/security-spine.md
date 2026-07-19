@@ -79,9 +79,13 @@ HIGH/MEDIUM/LOW tiers at all.
 your code, so it decides on three signal classes — **any one** trips the divert:
 1. **Reporter intent** — worded or flagged as security: "vuln," "exploit," "CVE," "RCE,"
    "SQLi/XSS/SSRF/CSRF," "auth bypass," "privilege escalation," "exposed credentials/secrets/tokens,"
-   "PoC," "responsible disclosure."
-2. **Impact shape** — describes unauthorized access, data exposure, or code execution *regardless of
-   vocabulary* ("I can read other users' invoices by changing the id" trips on shape alone).
+   "DoS/denial of service," "PoC," "responsible disclosure."
+2. **Impact shape** — describes unauthorized access, data exposure, unauthorized state modification
+   (tampering), code execution, or attacker-triggerable service loss *regardless of vocabulary* ("I
+   can read other users' invoices by changing the id" trips on shape alone; so does "I can change
+   another account's email" or "one crafted request takes the whole service down"). Note the line
+   against ordinary bugs: a plain crash on bad input is *not* a vuln by shape — availability trips
+   only when the loss is **attacker-triggerable** (a crafted or amplified request, not any exception).
 3. **Configured sensitive surfaces** — a report naming a surface in the adopter's
    `security_sensitive_surfaces` list (e.g. `auth`, `payments`, `crypto`) is suspected until a human
    clears it.
@@ -89,6 +93,15 @@ your code, so it decides on three signal classes — **any one** trips the diver
 The detector **routes, it never confirms** — confirmation and disclosure are human decisions on the
 private path. Detection is high-recall by design (over-divert): the cost of a false positive is a
 human's private glance; the cost of a false negative is a public exploit leak.
+
+**Two entry points, one gate.** The divert runs at *both* points where a vulnerability can reach the
+public tracker:
+- **Capture / auto-file** — before confidence tiering, as above, *and before any public "captured"
+  reaction is left* (the reaction is itself a partial disclosure).
+- **A public issue opened directly** — a reporter who skips the private path and files on the tracker.
+  Run the same detector at triage: on a hit, the agent posts **no** substantive public reply and no
+  label commentary (a code-grounded reply publicly confirms exploitability), routes the item to the
+  private path, and leaves the next move — lock, minimize, edit, coordinate an advisory — to a human.
 
 **The divert.** On a hit:
 - Produce a **PII-scrubbed structured summary** (the same fail-closed scrub the HIGH tier uses) and
@@ -98,9 +111,13 @@ human's private glance; the cost of a false negative is a public exploit leak.
   privately"). Leave **no public "captured" reaction**: a visible reaction on a public channel is
   itself a partial disclosure ("there's a live bug here").
 
-**Fail closed when unconfigured.** If `security_contact` is unset, still suppress the auto-file and
-route the scrubbed summary to the human alarms channel. The absence of configuration must **never**
-fall back to public-filing.
+**Fail closed when unconfigured.** The divert must always have a *private* terminal destination. If
+`security_contact` is unset, suppress the auto-file and route the scrubbed summary to the human alarms
+channel; if that too is unset, hold it in the private pull index (which must never live on a public
+surface) and raise setup. The absence of configuration must **never** fall back to public-filing, and
+never to a silent "acknowledged" that reached no human — so an adopter enabling autonomous capture
+should be required to set at least one private destination (`security_contact` or the alarms channel)
+first.
 
 **How the rule behaves (the acceptance cases):**
 
@@ -108,10 +125,13 @@ fall back to public-filing.
 |---|---|---|
 | "auth bypass on `/login` — I can log in as anyone" | **divert** | reporter intent + impact shape |
 | "I can read other users' invoices by changing the `id`" | **divert** | impact shape, no keyword needed |
-| "app crashes on empty input, repro attached" | HIGH (normal tiering) | concrete + reproducible, no security signal |
+| "I can edit another account's email from my session" | **divert** | impact shape — unauthorized state modification (tampering) |
+| "one crafted request pins the CPU and takes the service down for everyone" | **divert** | impact shape — attacker-triggerable availability loss |
+| "app crashes on empty input, repro attached" | HIGH (normal tiering) | concrete + reproducible, no security signal (a plain crash isn't attacker-leveraged) |
 | "crash when I submit the password-reset form" | **divert** | names a sensitive surface (auth) if configured — over-divert |
 | "typo in the README" | LOW (normal tiering) | no security signal |
-| divert hit, `security_contact` unset | **suppress + alarms channel** | fail-closed invariant |
+| a vuln opened *directly* as a public issue | **divert at triage** | no code-grounded public reply; route private, human decides lock/edit/advisory |
+| divert hit, `security_contact` unset | **suppress + alarms channel** | fail-closed invariant (never public, never a silent no-op) |
 
 ---
 

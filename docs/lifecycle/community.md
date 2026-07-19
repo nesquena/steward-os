@@ -35,8 +35,8 @@ the issue tracker, and captures actionable items to the staging queue (→ [issu
 Capturing is always safe; *filing an issue to the public tracker from a chat report* is a public
 write, so gate it by **confidence tier** rather than filing everything or nothing:
 - **SECURITY** (checked first, before the tiers) → **never auto-file, never draft publicly.** A
-  report that looks like a vulnerability — unauthorized access, data exposure, or code execution, by
-  wording or by shape — diverts to the [private disclosure path](../reference/security-spine.md#6-the-vulnerability-divert):
+  report that looks like a vulnerability — unauthorized access, data exposure, tampering, code
+  execution, or attacker-triggerable service loss, by wording or by shape — diverts to the [private disclosure path](../reference/security-spine.md#6-the-vulnerability-divert):
   a PII-scrubbed summary to the configured `security_contact`, a neutral private acknowledgement to
   the reporter, and **no public "captured" reaction**. If no `security_contact` is set, suppress the
   file and route to the human alarms channel — never fall back to the public tracker. Detection is

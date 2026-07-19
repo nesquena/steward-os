@@ -16,7 +16,11 @@ Mostly Band A for the mechanical parts; Band B/C for replies that make commitmen
 2. **Initial reply (confidence-gated).** For an un-replied issue, post a substantive, code-grounded
    response OR a targeted needinfo question — **only if** you can ground it in actual code. If you
    can't (vague report, can't parse, not clearly about this project) → HALT, post nothing. A
-   non-response beats a wrong response.
+   non-response beats a wrong response. **Vulnerability check first:** run the
+   [vulnerability divert](../../docs/reference/security-spine.md#6-the-vulnerability-divert) on the
+   issue — on a hit, post **no** substantive public reply or label commentary (a code-grounded reply
+   confirms exploitability in public); route it privately to `security_contact` and let a human
+   decide the next move.
 3. **Label + milestone.** Apply mechanical, reversible metadata. Prefer a deterministic
    label-sync (size/area/type) on a tight allowlist that is **add-only and never overrides a human's
    label.**
@@ -25,8 +29,11 @@ Mostly Band A for the mechanical parts; Band B/C for replies that make commitmen
    *after* that, and no PR exists — sorted by days-waiting. **Surface only** (never auto-reply); it
    tells the human who to get back to.
 6. **Capture-dedupe.** New items from chat/web are deduped across the tracker (open+closed), the
-   capture queue, and the ledger before becoming issues. Mark captured items with the config'd
-   reaction; **never** post an autonomous text reply.
+   capture queue, and the ledger before becoming issues. Run the
+   [vulnerability divert](../../docs/reference/security-spine.md#6-the-vulnerability-divert) **before
+   marking** — a suspected vuln gets **no** public reaction (the mark is itself a partial disclosure)
+   and routes to the private path. Otherwise mark captured items with the config'd reaction;
+   **never** post an autonomous text reply.
 
 ## Pitfalls
 - **Confidence gate is mandatory** — a guess posted publicly erodes trust more than silence.

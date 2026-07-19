@@ -41,11 +41,14 @@ community:                      # optional — leave platform blank to disable c
     disambiguate_against: ""    # namesake to exclude, if any
 
 security:                       # the vulnerability divert — how suspected vulns leave the public path
-  # A capture that looks like a vulnerability (unauthorized access, data exposure, code execution) is
-  # NEVER auto-filed or publicly drafted. It diverts here. See docs/reference/security-spine.md #6.
+  # A capture that looks like a vulnerability (unauthorized access, data exposure, tampering, code
+  # execution, or attacker-triggerable service loss) is NEVER auto-filed or publicly drafted. It
+  # diverts here. See docs/reference/security-spine.md #6.
   security_contact: ""          # private destination: a person/DM, a private channel, an email, or
                                 # "github-advisory" to use the repo's private security advisories.
                                 # BLANK = fail closed: suppress the file, route to alarms_to, never public.
+                                # If autonomous capture is enabled, set this OR alarms_to (below) — the
+                                # divert must have a private terminal destination, never a silent no-op.
   security_sensitive_surfaces: []   # optional: surfaces a report naming is treated as suspected until
                                     # cleared (e.g. ["auth", "payments", "crypto", "session"]).
 
