@@ -137,6 +137,7 @@ first.
 | "crash when I submit the password-reset form" | **divert** | names a sensitive surface (auth) if configured — over-divert |
 | "typo in the README" | LOW (normal tiering) | no security signal |
 | a vuln opened *directly* as a public issue | **divert at triage** | no code-grounded public reply; route private, human decides lock/edit/advisory |
+| a vuln arriving as a public PR ("fix" whose diff/description shows the exploit) | **divert at PR intake** | no public review that confirms the exploit; human coordinates a private fix + advisory |
 | divert hit, `security_contact` unset | **suppress + alarms channel** | fail-closed invariant (never public, never a silent no-op) |
 
 ---

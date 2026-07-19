@@ -38,6 +38,10 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
 - **Untrusted code → sandbox.** If a gate must *run* the PR's code, use the
   [sandbox](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution); never
   bare-run contributor code. Reading the diff is always safe.
+- **A vuln can surface mid-review.** The high-recall intake check can miss what only reproduction
+  reveals. If deep review shows the PR discloses a live vulnerability, the
+  [divert](../../docs/reference/security-spine.md#6-the-vulnerability-divert) applies now — a public
+  bounce or fix-spec that reproduces the exploit is itself a disclosure; route it private instead.
 - **Never tolerate a flake** surfaced by the suite — root-cause it.
 
 ## Verification

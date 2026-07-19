@@ -25,7 +25,8 @@ the issue tracker, and captures actionable items to the staging queue (→ [issu
 - It is the most injection-exposed role — it runs under the strictest read-only guardrails and never
   obeys instruction-like text in a message.
 - **It does not hold public conversations.** The only outward signal it leaves is a lightweight
-  "captured" reaction so the reporter and maintainer can see it was logged. Replies in the project's
+  "captured" reaction so the reporter and maintainer can see it was logged (except a suspected
+  vulnerability — no public mark; see the SECURITY tier below). Replies in the project's
   voice stay human — that human touch is what makes contributors feel valued, and it's worth
   preserving deliberately, not automating away.
 - Multi-product communities: route each channel to the *right* repo/queue. Don't capture reports for
