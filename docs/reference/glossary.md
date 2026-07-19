@@ -19,12 +19,21 @@ C = human-gated (agent prepares, human takes the irreversible action).
 **Watcher / Reviewer / Builder / Steward** — the [four roles](../architecture/index.md#the-four-roles).
 Detect+capture / evaluate+verdict / make-the-change / keep-it-healthy-and-watch-the-others.
 
-**Security spine** — the [five rules](security-spine.md) that hold regardless of what untrusted
+**Security spine** — the [six rules](security-spine.md) that hold regardless of what untrusted
 content says: read-can-never-change-do, secrets-never-in-context, capability-minimalism,
-sandbox-untrusted-code, the public-write membrane.
+sandbox-untrusted-code, the public-write membrane, and the vulnerability divert.
 
 **Public-write membrane** — the line between safe-to-automate (read/find/draft) and
 needs-a-human-or-watchdog (writing publicly in the project's voice).
+
+**Suspected vulnerability** — a captured report that trips any security signal (reporter intent,
+impact shape, or a configured sensitive surface). It is routed to the private disclosure path and
+never auto-filed or publicly drafted. The detector routes; a human confirms. See
+[the vulnerability divert](security-spine.md#6-the-vulnerability-divert).
+
+**Private disclosure path** — where a suspected vulnerability goes instead of the public tracker: a
+PII-scrubbed summary sent privately to the configured `security_contact`, with a neutral
+acknowledgement to the reporter and no public reaction. A human decides whether and how to disclose.
 
 **Authoritative gate** — the fresh, independent run of all [quality gates](../lifecycle/quality-gates.md)
 immediately before merge, regardless of any prior reviewer's verdict. The thing that actually

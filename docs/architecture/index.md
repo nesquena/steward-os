@@ -127,6 +127,13 @@ spine is the set of rules that hold regardless of what any of that content says.
    is Band C (human) or Band A **with an independent watchdog** — never an unverified autonomous
    write. This is the single line that separates "safe to run unattended" from "a reputational
    incident waiting to happen."
+6. **A suspected vulnerability is never public-filed.** A capture that looks like a security
+   vulnerability — a report of unauthorized access, data exposure, or code execution — is never
+   auto-filed to the public tracker and never drafted as a public issue. It diverts to a private
+   disclosure path where a human decides disclosure. Detection is deliberately high-recall: a false
+   positive costs a human a private glance; a false negative is an irreversible public leak, so when
+   unsure, treat it as a vulnerability. This is the public-write membrane (rule 5) applied to its
+   worst case — the one public write you can never take back.
 
 See the [security spine reference](../reference/security-spine.md) for the concrete patterns
 (secret-isolating helpers, the sandbox, injection guards) with examples.
