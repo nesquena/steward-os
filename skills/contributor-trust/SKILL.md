@@ -68,6 +68,11 @@ Each event: `pr` (repo#number) · `author` (handle) · `outcome` (below) · `at`
   triage, **never an excuse to skip the authoritative gate** — every change passes the gates
   regardless of who wrote it. A trust score that waves a change through has become the thing this
   system exists to prevent.
+- **The trust map is internal triage state — don't render it publicly.** It carries negative signal
+  and is an input to *your* review intensity, not a public leaderboard. Publishing per-contributor
+  reliability scores would chill exactly the experimentation
+  [contributor recognition](../../docs/lifecycle/contributor-recognition.md) exists to reward. Keep
+  it beside the scoreboard as internal state, out of any rendered or public surface.
 - **Today the score is upward-biased — say so, don't compute past it.** The only declared ledger
   writer is [`release-pipeline`](../release-pipeline/SKILL.md), which runs **only on the ship path**
   (it merges an *all-clear* PR). Nothing currently writes `went-stale`, `not-fixed`, `regression`, or
