@@ -72,21 +72,25 @@ When you send a PR back, the *how* matters for whether the contributor comes bac
 > Research, from high-volume agent-codebase review). On a fast repo, most external changes are stale
 > against the trunk — that's the normal case, not a defect, and asking every contributor to rebase
 > creates weeks of latency and abandoned work. The flow that scales: sweep for duplicates *first*
-> (popular bugs draw 2–4 fixes; search open and closed with synonym variants; credit the *earliest*
-> submitter), cherry-pick their commits onto the current trunk so authorship survives, widen to
-> sibling sites as your own commit, **rebase-merge rather than squash whenever contributor commits
-> are in the branch** (squash destroys authorship — squash only when every commit is yours), then run
-> a **mandatory post-merge sweep** for duplicates that arrived while you built. The riskiest shape is
+> (popular bugs draw 2–4 fixes; search open and closed with synonym variants; credit the author of
+> the commits you actually ship and acknowledge earlier submitters separately), cherry-pick their
+> commits onto the current trunk so authorship survives, widen to sibling sites as your own commit,
+> **preserve contributor authorship through the merge and verify it survived** (a rebase/merge that
+> keeps the commits is simplest; if squash is forced, carry `Co-authored-by` trailers), then run a
+> **mandatory post-merge sweep** for duplicates that arrived while you built. The riskiest shape is
 > the investigation that quietly became a fix — you never entered "review mode," so the pre-flight
 > dedupe never fired. Full version:
 > [reviewing at volume](../reference/reviewing-at-volume.md#salvage-over-request-changes).
 
-> **Field note — fabricated contributor identities** (contributed by Teknium). A first-time
-> contributor may open a burst of changes with commits authored as invented, official-looking
-> identities. Policy: close all, salvage nothing — bundled commits can mix appropriated work with
-> unverified changes. But disambiguate first: a *known* contributor's declared, agent-assisted
-> alternate identity (long real history plus a self-declared mapping) is legitimate. The tell is
-> history plus self-declaration, not an odd-looking email alone.
+> **Field note — fabricated contributor identities** (contributed by Teknium). A contributor may open
+> a burst of changes with commits authored as invented, official-looking identities (impersonating a
+> maintainer or CI bot). Close on *evidence* — confirmed impersonation, misattributed authorship, or
+> unverifiable provenance — not on appearance: close all and salvage nothing only when it's genuinely
+> one of those, because bundled commits can mix appropriated work with unverified changes. An unusual
+> name or email is not itself proof (a newcomer, a pseudonym, a privacy identity, or a *known*
+> contributor's declared agent-assisted alt looks the same); when only the appearance is odd, ask for
+> an authorship attestation and judge the commits on their merits rather than locking out a legitimate
+> first-time contributor.
 
 ---
 

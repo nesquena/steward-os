@@ -194,18 +194,25 @@ _Contributed by Teknium — see [reviewing at volume](reviewing-at-volume.md#two
 
 ## 11. The stale branch that reverts recent work on merge
 
-**Shape:** You squash-merge a branch that was cut from an older trunk. The branch's copy of an
-*unrelated* file — one it never meant to touch — is older than the trunk's, and the squash silently
-overwrites the newer version, reverting recent fixes.
+**Shape:** You merge a branch cut from an older trunk, and it silently reverts recent work — but
+*only* when a stale copy of an unrelated file is part of the branch's own changes. A normal merge
+(including a squash) is a three-way merge against the merge-base, so a file the branch never touched
+keeps the trunk's newer version. The revert happens when the old copy rides *inside the diff*: an
+agent that committed its whole working tree, a regenerated or vendored artifact, a wholesale file
+rewrite, a conflict resolution that took the branch's side — or a salvage done with non-merge
+mechanics (`git diff main..branch | git apply`, `git checkout branch -- .`) that replays stale
+content wholesale.
 
 **Why checks miss it:** The change under review looks correct and its tests pass. The reverted file
-isn't in the intended diff, so nobody reviews it; the regression rides in on the merge mechanics, not
-the change.
+rides in on the diff as an incidental hunk nobody scrutinizes, or on the merge mechanics of a
+non-standard salvage.
 
-**Catch it:** Re-fetch the trunk immediately before merge (a green change can be superseded during
-its own CI run by a parallel fix). Confirm the branch isn't behind on files it didn't intend to
-change, and after merging, diff the merge itself — an unexpected deletion is the tell. On a fast repo,
-`git log HEAD..origin/main -- <changed files>` before merge is ten seconds well spent.
+**Catch it:** Scan the branch's changed-file *list* for anything outside the change's stated intent —
+a file the fix had no reason to touch is the red flag (being merely *behind* on untouched files is
+normal and safe). Read the effective diff, not the commit list: a hunk that deletes recent trunk work
+is the tell. Re-fetch the trunk immediately before merge (a green change can be superseded during its
+own CI run by a parallel fix) and preview the merge result; `git log HEAD..origin/main -- <changed
+files>` shows what landed since you branched so you can inspect any overlap.
 
 _Contributed by Teknium — see [reviewing at volume](reviewing-at-volume.md#the-stale-branch-revert)._
 

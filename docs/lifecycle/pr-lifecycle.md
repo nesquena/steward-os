@@ -99,11 +99,13 @@ The output of deep review is *warm-up*, not the ship decision. The ship decision
 > (contributed by Teknium, co-founder of Nous Research, from high-volume agent-codebase review). A
 > change can be clean, tested, and coherent while resting on a *wrong mental model of the system* or
 > treating an *intentional design as a gap*. Before accepting the premise, read the history of the
-> code that would change (`git log -p -S "<symbol>"` recovers the commit that introduced an absence —
-> it may be load-bearing) and require the author to point at the exact line where the bug manifests.
-> A confirmed reproduction on the current trunk beats a plausible rationale. Note the automation
-> boundary: `already-fixed`, `cannot-reproduce`, and `incoherent` are safe autonomous closes;
-> wrong-premise and design-taste closes stay with a human. Full version:
+> code that would change (`git log -p -- <path>` and `git blame` recover the commit and the reasoning
+> for an absence — it may be load-bearing) and require falsifiable evidence: a reproduction on the
+> current trunk plus a traced code path from symptom to cause, not a plausible rationale. On the
+> automation boundary, mirror the strict rule this repo already sets — automation may *classify* and
+> *recommend* a close (already-fixed, cannot-reproduce, incoherent) but the autonomous *close* stays
+> with the [mechanically-provable shipped-fix gate](issue-lifecycle.md#close-with-credit-careful--this-is-irreversible)
+> or a human; wrong-premise and design-taste closes always stay with a human. Full version:
 > [reviewing at volume](../reference/reviewing-at-volume.md#wrong-premise-beats-bad-code).
 
 ## [4] The authoritative gate

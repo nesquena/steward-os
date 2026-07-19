@@ -36,26 +36,33 @@ and it is sharper than the author-side version.
 - **Intentional design, not a gap.** A limitation that looks like an oversight is often deliberate.
   A "missing" link between two isolated components may be missing *because the isolation is the
   design* — with a separate, sanctioned path already covering the legitimate use case. Before
-  "fixing" an absence, read the history of the code that would change (`git log -p -S "<symbol>"`
-  finds the commit that introduced it) and recover the original intent. The absence may be
+  "fixing" an absence, read the history of the code that would change (`git log -p -- <path>` and
+  `git blame` recover the commit and the reasoning; `git log -S "<string>"` when you're hunting the
+  exact addition or removal of a literal) and recover the original intent. The absence may be
   load-bearing.
 - **The premise doesn't hold against how the system actually works.** A change can be internally
   coherent and still target a bug that doesn't exist as described — a guard that re-tries something
   already proven pointless, a new branch that provably never executes because an earlier guard
   already consumed the state it depends on.
-- **The bar to enforce.** If the author cannot point to the exact line where the bug manifests *and*
-  show that the fix changes that line's behavior, the premise is unverified. A confirmed
-  reproduction on the current trunk beats a plausible-sounding rationale every time.
+- **The bar to enforce.** Require falsifiable evidence: a reproduction on the current trunk (or
+  another concrete demonstration) *and* a traced code path from symptom to cause. "The fix changes
+  this exact line's behavior" is the ideal when the bug has a single manifestation site; emergent or
+  cross-component bugs won't, so the general bar is *demonstrated, not asserted.* A confirmed
+  reproduction beats a plausible-sounding rationale every time.
 
 This deserves to be its own principle: **verify the claim *and* the intent against the codebase
 before writing the fix.** Agents are especially prone to the failure — they produce fluent,
 internally-consistent rationales for fixes to bugs that aren't real.
 
 A corollary for anyone running *automated* triage: wrong-premise and "we don't want this" closes are
-**taste calls that stay with a human.** Automation can safely close the mechanical categories —
-already-fixed-on-trunk, cannot-reproduce, incoherent — but it must never close on design taste. The
-sweeper's job is to avoid wrongly closing legitimate work, not to make the won't-implement call.
-(This is the review-side of [closing on taste autonomously](anti-patterns.md#scope--contributor-anti-patterns).)
+**taste calls that stay with a human.** Automation can *classify* a change (already-fixed-on-trunk,
+cannot-reproduce, incoherent), request more information, and *recommend* a close — but the autonomous
+*close* itself belongs only to the mechanically-provable gate this repo already defines: a fix proven
+shipped and fully resolved ([issue lifecycle](../lifecycle/issue-lifecycle.md#close-with-credit-careful--this-is-irreversible)),
+or the tightly-bounded reversible cases under [closing on taste autonomously](anti-patterns.md#scope--contributor-anti-patterns).
+Cannot-reproduce and incoherent both routinely turn out to be environment gaps or communication
+problems, so they warrant a needinfo or a recommendation, not an unattended close. The sweeper's job
+is to avoid wrongly closing legitimate work.
 
 ---
 
@@ -101,13 +108,18 @@ The flow that scales:
 1. **Sweep for duplicates first.** A popular bug attracts two to four independent fixes. Search open
    *and* closed changes with several keyword variants — including synonyms, because "toggle" /
    "gate" / "disable" / "respect &lt;setting&gt;" all describe the same config-flag feature — plus the
-   issue number. Pick the cleanest fix and **credit the earliest submitter.** A phrasing-only sweep
-   that misses the actual first submitter forces an awkward credit-correction later.
+   issue number. Pick the cleanest fix to build on, **credit the author of the commits you actually
+   ship**, and acknowledge the earliest independent submitter (and anyone whose work you fold in)
+   separately in the close. A phrasing-only sweep that misses an earlier duplicate forces an awkward
+   credit-correction later — find them all before you decide whose commits ship.
 2. **Cherry-pick the contributor's commits onto the current trunk** — authorship survives in git
    history.
 3. **Widen to sibling sites as a separate commit** (yours).
-4. **Rebase-merge, never squash, when contributor commits are in the branch.** Squash destroys
-   authorship. Squash only when every commit is yours.
+4. **Preserve contributor authorship through the merge — verify it survived.** A rebase/merge that
+   keeps the individual commits is the simplest way; a squash collapses commit-level authorship, so
+   if your platform or merge queue requires squash, carry the credit explicitly with `Co-authored-by`
+   trailers. The invariant is *the contributor's attribution is intact on the trunk after merge* —
+   confirm it, don't assume the merge method preserved it.
 5. **Close the original change with credit and a link.**
 6. **The post-merge sweep is mandatory.** Re-search for open changes or issues the merge now
    resolves — a duplicate may have arrived while you were building. The highest-risk shape is the
@@ -121,15 +133,26 @@ in the commits.
 
 ### The stale-branch revert
 
-A named trap that belongs with salvage work: **squash-merging a stale branch silently reverts recent
-fixes.** The stale branch's copy of an unrelated file overwrites the newer trunk when squashed. The
-guards:
+A named trap that belongs with salvage work: **merging a stale branch can silently revert recent
+fixes — but only when the stale copy is actually part of the branch's changes.** A normal merge
+(including a squash) is a three-way merge against the merge-base, so a file the branch never touched
+keeps the *trunk's* newer version — no revert. The revert happens when an old copy of an unrelated
+file rides *inside the branch's diff*: an agent that committed its whole working tree, a regenerated
+or vendored artifact, a wholesale file rewrite, or a conflict resolution that took the branch's side.
+It also happens when you salvage with non-merge mechanics — a two-dot `git diff main..branch | git
+apply`, or `git checkout branch -- .` — which replay the stale content wholesale. The cherry-pick +
+rebase flow above still carries the trap if a cherry-picked commit contains a stale whole-file
+rewrite. The guards:
 
-- Before pushing a salvage, confirm the branch isn't behind on files it didn't mean to touch.
-- After merging, diff the merge itself — an unexpected deletion is a red flag.
-- **Re-fetch the trunk immediately before merge.** A green change can be superseded during its own CI
-  run by a parallel fix; ten seconds of `git log HEAD..origin/main -- <changed files>` beats
-  discovering it through a later conflict.
+- **Scan the branch's changed-file list for anything outside the change's stated intent.** A file the
+  fix had no reason to touch, appearing in the diff, is the red flag — being merely *behind* on files
+  it didn't touch is normal and safe.
+- **Read the effective diff, not just the commit list.** A hunk that deletes recent trunk work is the
+  tell. `git log HEAD..origin/main -- <changed files>` shows what landed on the trunk since you
+  branched; if any of it overlaps your diff, inspect that overlap before merging.
+- **Re-fetch the trunk immediately before merge and preview the merge result.** A green change can be
+  superseded during its own CI run by a parallel fix; ten seconds of checking beats discovering it
+  after the fact.
 
 See [bug-shape #11](bug-shapes.md#11-the-stale-branch-that-reverts-recent-work-on-merge).
 
@@ -143,18 +166,25 @@ review friction at volume:
 
 - **No change-detector tests.** A test is a change-detector if it fails whenever data that is
   *expected to change* gets updated — a catalog count, a version literal, an enumeration size, a
-  hardcoded list. `assert len(providers) == 8` adds zero behavioral coverage and guarantees routine
-  updates break CI. The litmus: if the test reads like a snapshot of current data, delete it; if it
-  reads like a contract about how two pieces of data must relate, keep it. Rewrite
-  `assert "item-x" in catalog` into `for item in catalog: assert item in the_related_index`.
-- **Never read source code in a test.** A test that regexes a source file is testing the *shape of
+  hardcoded list — *and that data is not itself the contract.* `assert len(providers) == 8` adds zero
+  behavioral coverage and guarantees routine updates break CI. The litmus: if the test pins
+  incidental current data, delete it; if it encodes a contract about how two pieces of data must
+  relate, keep it. Rewrite `assert "item-x" in catalog` into
+  `for item in catalog: assert item in the_related_index`. (The exception that proves the rule: when a
+  specific value, snapshot, or member genuinely *is* the guarantee — a required entry, a golden output
+  a consumer depends on — pinning it is a real contract, not a change-detector.)
+- **Don't test the shape of the source.** A test that regexes a source file is testing the *shape of
   the code*, not its behavior. It passes when the implementation is subtly broken and fails on
   correct refactors — wrong in both directions — and it blocks structural cleanup forever. If the
   logic can't be called directly because it's buried inline, that's the signal to extract it into a
   testable function, not to regex around it. Agent-authored changes produce this constantly because
-  it's the cheapest way to make a test go green.
+  it's the cheapest way to make a test go green. (The narrow exception: when a *structural or
+  layout* property genuinely is the contract — a generated-file marker, a security policy that no
+  source path may import a forbidden module — a test that asserts it directly is legitimate, provided
+  it fails on a real violation.)
 
-Both are cataloged with the [vacuous test](anti-patterns.md#review--quality-anti-patterns). And the
+Both now live as [anti-patterns](anti-patterns.md#review--quality-anti-patterns), alongside the
+[vacuous test](bug-shapes.md#6-the-vacuous-test). And the
 enforcement teeth for [verify the real thing](coding-principles.md#4-define-done-up-front-then-verify-the-real-thing):
 **a fix's test must fail against the *unfixed* code, for the right reason** — ask for that proof in
 the change description. Green mocks are not evidence. Environment-variable loading, config
@@ -168,8 +198,8 @@ end-to-end run against a real (temp-dir-isolated) environment before merge.
 
 This category doesn't exist in general-purpose contribution guides yet, and it matters for any
 project whose consumers include LLMs. You get a steady stream of well-built changes whose fix
-direction is *compensating for a model's mistakes*. Close them — even when the bug is real and the
-tests pass:
+direction is *compensating for a model's mistakes*. The default is to close them — even when the bug
+is real and the tests pass — because they push an open-ended repair burden into the code:
 
 - **Alias or synonym coalescing for wrong parameter names.** A model sends `cron` instead of
   `schedule`? The schema already names the parameter. Alias coverage is open-ended — the synonym set
@@ -184,8 +214,11 @@ tests pass:
 
 The general principle: **distinguish wire-transport artifacts (fix them) from model non-compliance
 (surface it).** A framework for agent-era open source should name this boundary explicitly, because
-these are the hardest closes to make — real bug, clean diff, passing tests, wrong direction. This is
-also an [anti-pattern](anti-patterns.md#scope--contributor-anti-patterns).
+these are the hardest closes to make — real bug, clean diff, passing tests, wrong direction. The
+line to hold: reject *open-ended, heuristic* repair that masks the failure; a *bounded, documented*
+compatibility shim can be a legitimate, deliberate feature when the project can't control an upstream
+consumer — the test is whether the behavior is finite and declared, not whether it touches model
+output at all. This is also an [anti-pattern](anti-patterns.md#review--quality-anti-patterns).
 
 ---
 
@@ -195,8 +228,10 @@ The [minimalism ladder](coding-principles.md#the-minimalism-ladder) is about *li
 is a second axis: **where a capability lands determines its permanent cost.** In an agent codebase,
 every core tool schema ships on every request for every user, forever — so a 100-line core tool can
 be more expensive than a 1,000-line plugin. This has its own home next to the minimalism ladder — the
-[footprint ladder](coding-principles.md#the-footprint-ladder) — and the review habit is to ask
-**"which layer is this landing in?"** *before* "is the code good?"
+[footprint ladder](coding-principles.md#the-footprint-ladder) — which weighs each landing site across
+several cost axes (always-on footprint, maintenance ownership, security, latency, deployment) rather
+than as a strict cheapest-to-priciest order. The review habit is to ask **"which layer is this landing
+in, and what does that layer cost forever?"** *before* "is the code good?"
 
 Two ladder-adjacent closes recur, and both are coupling decisions rather than quality bars — say so
 in the close:
@@ -258,12 +293,15 @@ Two extensions from the agent era:
   47 tests pass" must be re-derived by the reviewer: fetch the URL, run the suite, read back the
   artifact. This is doubly true for agent-authored changes, which state unverified claims with
   perfect confidence.
-- **Fabricated identities.** A first-time contributor may open a burst of changes with commits
-  authored as invented, official-looking identities. Policy: close all, salvage nothing — bundled
-  commits can mix appropriated work with unverified changes. But disambiguate first. A *known*
-  contributor's declared, agent-assisted alternate identity (a long real history plus a self-declared
-  mapping) is legitimate. The tell is history plus self-declaration, not the odd-looking email
-  address alone.
+- **Fabricated identities.** A contributor may open a burst of changes with commits authored as
+  invented, official-looking identities (impersonating a maintainer or a CI bot). Close on
+  *evidence*, not appearance: confirmed impersonation, misattributed authorship, or provenance you
+  can't verify. When it's genuinely one of those, close all and salvage nothing — bundled commits can
+  mix appropriated work with unverified changes. But an unusual name or email is not itself proof: a
+  legitimate newcomer, a pseudonym, or a privacy identity looks the same from the outside, and a
+  *known* contributor's declared, agent-assisted alternate identity is fine. When only the appearance
+  is odd, ask for an authorship attestation and review the commits on their merits rather than
+  rejecting on identity inference — an inference that would also lock out first-time contributors.
 
 ---
 
@@ -300,9 +338,13 @@ moment a change *doesn't* land.
 - **A mitigation that destroys the feature it secures is the wrong mitigation.** Read the original
   commit's intent before restricting behavior, then find the fix that preserves the feature. Security
   changes are the most frequent offenders.
-- **Dependency hygiene as policy, not preference.** Every dependency gets an upper bound; git URLs
-  pin to commit hashes; CI actions pin to hashes. Established after real supply-chain incidents. A
-  bare lower-bound-only constraint (`>=X.Y.Z` with no ceiling) is an auto-reject at review.
+- **Dependency hygiene as policy, not preference.** Pin what you deploy and pin what executes: an
+  application or deployable carries a lockfile (or an upper bound where it owns its runtime), git-URL
+  dependencies pin to a commit hash, and CI actions pin to a hash. These close real supply-chain
+  holes. The one place to *not* apply a blanket ceiling is a **library's** published constraints — a
+  reflexive upper bound there pushes unresolvable version conflicts onto every downstream consumer, so
+  a library caps only on a *known* incompatibility and lets consumers' lockfiles carry the pin. So a
+  bare lower-bound-only constraint is an auto-reject in an application, but expected in a library.
 
 ---
 

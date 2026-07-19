@@ -59,16 +59,28 @@ cause it. (See [quality gates](../lifecycle/quality-gates.md#flakes-never-tolera
 paths with the same bug. When you find a defect, grep for its class.
 
 **The change-detector test.** A test that fails whenever data *expected to change* is updated — a
-catalog count, a version literal, an enumeration size, a hardcoded list. `assert len(providers) == 8`
-adds zero behavioral coverage and breaks CI on every routine update. The litmus: a snapshot of
-current data → delete it; a contract about how two pieces of data must relate → keep it. _(Field note
+catalog count, a version literal, an enumeration size, a hardcoded list — *and that data isn't itself
+the contract.* `assert len(providers) == 8` adds zero behavioral coverage and breaks CI on every
+routine update. The litmus: incidental current data → delete it; a contract about how two pieces of
+data must relate → keep it. (When a specific value or member genuinely *is* the guarantee, pinning it
+is a real contract, not a change-detector.) _(Field note
 from Teknium; see [reviewing at volume](reviewing-at-volume.md#two-test-anti-patterns-that-generate-the-most-noise).)_
 
 **Reading source code in a test.** A test that regexes a source file tests the *shape of the code*,
 not its behavior — it passes when the implementation is subtly broken, fails on correct refactors, and
 blocks structural cleanup forever. If the logic can't be called directly, extract it into a testable
 function instead of regexing around it. Agent-authored changes produce this constantly, because it's
-the cheapest way to make a test go green. _(Field note from Teknium.)_
+the cheapest way to make a test go green. (Narrow exception: when a structural/layout property itself
+is the contract — a generated-file marker, a no-forbidden-import policy — a direct assertion is fine,
+provided it fails on a real violation.) _(Field note from Teknium.)_
+
+**Absorbing model failures into the codebase.** In a project whose consumers include LLMs, a
+well-built change may be *compensating for a model's mistakes* — an alias table for wrong parameter
+names, a repair pass for malformed model output. Both are open-ended games against every way a model
+can misbehave, and they mask the failure instead of surfacing it. Fix wire-transport artifacts;
+surface model non-compliance. A *bounded, documented* compatibility shim can be legitimate — the test
+is whether the behavior is finite and declared. _(Field note from Teknium; see
+[reviewing at volume](reviewing-at-volume.md#dont-absorb-model-failures-into-the-codebase).)_
 
 ## Scope & contributor anti-patterns
 

@@ -194,21 +194,27 @@ that only loads when someone opts in. The same shape appears anywhere a narrow l
 critical path — a middleware every request traverses, a base class every model inherits, a default
 that ships to everyone.
 
-So before landing a capability, pick the **highest rung that works** (each rung is cheaper than the
-one below):
+So before landing a capability, weigh where it should live. As a rough progression from cheapest to
+most expensive to carry — though the right choice weighs each site across several axes (always-on
+footprint, maintenance ownership, security, latency, deployment cost), not a strict order:
 
 1. **Extend existing code** — zero new surface.
 2. **A command plus a doc/skill that teaches the agent to use it** — zero always-on footprint.
 3. **A capability-gated addition** that only appears when a prerequisite is configured.
 4. **A plugin/extension in the user's own space** — opt-in, isolated.
-5. **An external service or connector** referenced from a catalog.
-6. **A new core primitive on the hot path** — the last resort.
+5. **An external service or connector** referenced from a catalog — no in-tree surface, but real
+   operational and security cost of its own.
+6. **A new core primitive on the hot path** — the heaviest, because every request pays for it.
 
-The generalization beyond agents: **be expansive at the edges, conservative at the waist.** The
-product's outer surface (platforms, providers, integrations) can and should grow aggressively; the
-narrow core that every request flows through is where each addition taxes everyone. A review should
-ask **"which layer is this landing in?"** *before* "is this code good?" — a locally-excellent change
-in the wrong layer is still the wrong change.
+Pick the lightest site that actually fits; the ordering is a prompt to justify a heavier one, not a
+guarantee that each rung strictly dominates the next (extending existing code still adds surface; an
+external service trades in-tree cost for operational cost; a few projects deliberately keep an
+integration in-core). The generalization beyond agents: **be expansive at the edges, conservative at
+the waist.** The product's outer surface (platforms, providers, integrations) can and should grow
+aggressively; the narrow core that every request flows through is where each addition taxes everyone.
+A review should ask **"which layer is this landing in, and what does that layer cost forever?"**
+*before* "is this code good?" — a locally-excellent change in the wrong layer is still the wrong
+change.
 
 Two footprint-ladder closes recur, and both are coupling decisions, not quality bars — say so in the
 close so the contributor isn't left thinking their code was bad:
