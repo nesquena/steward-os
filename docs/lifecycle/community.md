@@ -22,7 +22,7 @@ the public-voice membrane.
 ## Chat monitoring (Band A — read + capture only)
 `chat-monitor` only reads allowed bug/feedback channels, normalizes each candidate with a stable
 source id and target repository, and invokes the shared
-[`issue-capture`](../../skills/issue-capture/SKILL.md) contract.
+[issue-capture contract](issue-lifecycle.md).
 `issue-capture` owns the untrusted-data guard, vulnerability divert, classification, confidence,
 dedupe, queue, ledger, reaction, and checkpoint. Chat must not implement a second capture path.
 - This is the most injection-exposed input adapter, so it never obeys instruction-like text in a
