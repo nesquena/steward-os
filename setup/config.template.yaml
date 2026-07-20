@@ -57,7 +57,8 @@ security:                       # the vulnerability divert — how suspected vul
   security_contact: ""          # private destination: a person/DM, a private channel, an email, or
                                 # "github-advisory" to use the repo's private security advisories.
                                 # BLANK = fail closed: suppress the file, route to alarms_to, never public.
-                                # If autonomous capture is enabled, set this OR alarms_to (below).
+                                # If autonomous capture is enabled, alarms_to is required; set this as
+                                # the preferred first destination when one is available.
                                 # A confirmed-private index is the emergency third fallback, not the
                                 # normal configured destination.
   security_sensitive_surfaces: []   # optional: surfaces a report naming is treated as suspected until
@@ -126,4 +127,4 @@ scheduled_jobs:                 # start with a few; add as you climb the autonom
     digest_to: ""               # optional: push routine digests here (enhancement, not the only path).
                                 # Must not be a public channel if the index it digests can hold a
                                 # diverted vuln (level-3 fallback) — a digest would republish it.
-    alarms_to: ""               # where watchdog alarms go (a human)
+    alarms_to: ""               # independent human route; REQUIRED when issue_capture is enabled

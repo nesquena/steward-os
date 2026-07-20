@@ -49,8 +49,9 @@ The system can't screen PRs/issues for fit without knowing what "fits."
 10. **How should shared issue capture run?** Configure it for chat and any support inboxes, web forms,
     or direct-report feeds. List non-chat adapters; choose private queue/ledger/checkpoint paths and a
     writable pull index; set capture and public-filing caps; name any non-chat marker; and choose an
-    error route. Chat monitoring also requires this core. Any marker requires the action watchdog.
-    Capture stays disabled until `security_contact` or `alarms_to` is configured.
+    independent `alarms_to` route. Chat monitoring also requires this core. Any marker requires the
+    action watchdog. Capture stays disabled until `alarms_to` is configured; `security_contact` is
+    the preferred first vulnerability destination when available.
 11. **Mentions sweep?** Should the agent sweep the open web for mentions of the project? Any namesake
     to disambiguate against?
 

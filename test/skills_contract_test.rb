@@ -173,6 +173,7 @@ class IssueCaptureContractTest < Minitest::Test
     refute_includes policy.fetch('planned'), 'issue-capture'
     assert File.file?(File.join(ROOT, 'skills', 'issue-capture', 'SKILL.md'))
     assert_includes capture, 'plus a writable pull index'
+    assert_match(/Require `alarms_to` as an\s+independent error route/, capture)
     assert_includes capture, 'require an enabled `action-watchdog`'
   end
 
@@ -183,11 +184,13 @@ class IssueCaptureContractTest < Minitest::Test
     community = File.read(File.join(ROOT, 'docs', 'lifecycle', 'community.md'))
 
     assert_operator capture.index('**Vulnerability divert'), :<, capture.index('**Classify and tier')
+    assert_operator capture.index('private delivery succeeds'), :<, capture.index('terminal `diverted` event')
     assert_includes capture, 'adapter + stable source item id + target repository'
     assert_includes capture, 'terminal `noise` event'
     assert_includes capture, 'terminal `duplicate` event'
     assert_includes capture, '`community.chat.capture_reaction`'
-    assert_operator capture.index('`indexed` events'), :<, capture.index('terminal `captured` event')
+    assert_includes capture, 'atomically upsert a privacy-safe index summary keyed by the capture key'
+    assert_operator capture.index('Append `indexed`'), :<, capture.index('terminal `captured` event')
     assert_includes watchdog, '[`issue-capture`](../issue-capture/SKILL.md)'
     assert_includes watchdog, '**Autonomous issue files**'
     assert_includes community, '`chat-monitor` only reads'
