@@ -12,6 +12,7 @@ they read your project's [`config.yaml`](../setup/config.template.yaml) for the 
 | [`pr-deep-review`](pr-deep-review/SKILL.md) | Reviewer/Builder | [PR lifecycle](../docs/lifecycle/pr-lifecycle.md) [3]–[4] + [quality gates](../docs/lifecycle/quality-gates.md) | B |
 | [`release-pipeline`](release-pipeline/SKILL.md) | Builder/Steward | [PR lifecycle](../docs/lifecycle/pr-lifecycle.md) [5]–[6] + [contributor recognition](../docs/lifecycle/contributor-recognition.md) | B |
 | [`release-announce`](release-announce/SKILL.md) | Steward | [community lifecycle](../docs/lifecycle/community.md) announcements + [watchdog](../docs/playbooks/watchdog-pattern.md) | A |
+| [`issue-capture`](issue-capture/SKILL.md) | Watcher | [issue lifecycle](../docs/lifecycle/issue-lifecycle.md) capture stage | A |
 | [`issue-triage`](issue-triage/SKILL.md) | Steward | [issue lifecycle](../docs/lifecycle/issue-lifecycle.md) | A/B |
 | [`label-sync`](label-sync/SKILL.md) | Steward | [issue lifecycle](../docs/lifecycle/issue-lifecycle.md) label step + [watchdog](../docs/playbooks/watchdog-pattern.md) | A |
 | [`issue-autoclose`](issue-autoclose/SKILL.md) | Steward | [issue lifecycle](../docs/lifecycle/issue-lifecycle.md) close-with-credit + [watchdog](../docs/playbooks/watchdog-pattern.md) | A |

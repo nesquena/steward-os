@@ -10,7 +10,6 @@
 planned:
   - chat-monitor
   - mentions-sweep
-  - issue-capture
   - fleet-heartbeat
 
 # Scheduled-job names that legitimately differ from the skill they run. Until the
