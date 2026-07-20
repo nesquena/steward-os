@@ -22,9 +22,9 @@ by the watchdog.
    `security_contact` is the preferred first vulnerability destination.
    `chat-monitor` must not run unless this shared capture core is enabled. If either the chat reaction
    or non-chat marker is configured for an enabled source without an enabled `action-watchdog` that
-   reads this ledger, alarm and suppress the marker for that run; private capture may continue. A
-   missing state path, pull index, or alarm route fails before scanning. Neither case marks an item
-   captured.
+   reads this ledger, alarm and fail before scanning. To continue private capture without a public
+   marker, explicitly set that source's marker configuration to blank before the run. A missing state
+   path, pull index, or alarm route also fails before scanning. No invalid setup marks an item captured.
 2. **Normalize, key, and lock each run.** Every adapter supplies its name, a stable source item id,
    the target repository, the untrusted body, and its source-specific marker. Build the capture key
    from **adapter + stable source item id + target repository**. Take one exclusive lock for the

@@ -175,6 +175,9 @@ class IssueCaptureContractTest < Minitest::Test
     assert_includes capture, 'plus a writable pull index'
     assert_match(/Require `alarms_to` as an\s+independent error route/, capture)
     assert_match(/configured for an enabled source without an enabled `action-watchdog`/, capture)
+    assert_includes capture, 'alarm and fail before scanning'
+    assert_includes capture, "marker configuration to blank before the run"
+    refute_includes capture, 'private capture may continue'
   end
 
   def test_capture_has_one_owner_and_a_complete_transition_contract
@@ -196,6 +199,7 @@ class IssueCaptureContractTest < Minitest::Test
     assert_includes watchdog, '**Autonomous issue files**'
     assert_includes community, '`chat-monitor` only reads'
     assert_includes community, '`issue-capture` owns the untrusted-data guard'
+    assert_includes community, 'Chat monitoring stays off until the shared capture core'
     refute_includes triage, '**Capture-dedupe.**', 'pre-tracker capture has one procedural owner'
   end
 end
