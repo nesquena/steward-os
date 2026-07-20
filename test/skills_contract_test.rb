@@ -174,7 +174,7 @@ class IssueCaptureContractTest < Minitest::Test
     assert File.file?(File.join(ROOT, 'skills', 'issue-capture', 'SKILL.md'))
     assert_includes capture, 'plus a writable pull index'
     assert_match(/Require `alarms_to` as an\s+independent error route/, capture)
-    assert_includes capture, 'require an enabled `action-watchdog`'
+    assert_match(/configured for an enabled source without an enabled `action-watchdog`/, capture)
   end
 
   def test_capture_has_one_owner_and_a_complete_transition_contract
@@ -189,7 +189,8 @@ class IssueCaptureContractTest < Minitest::Test
     assert_includes capture, 'terminal `noise` event'
     assert_includes capture, 'terminal `duplicate` event'
     assert_includes capture, '`community.chat.capture_reaction`'
-    assert_includes capture, 'atomically upsert a privacy-safe index summary keyed by the capture key'
+    assert_includes capture, 'atomically upsert a privacy-safe index summary keyed only by the opaque queue id'
+    assert_includes capture, 'Keep the capture key and private source reference out of every'
     assert_operator capture.index('Append `indexed`'), :<, capture.index('terminal `captured` event')
     assert_includes watchdog, '[`issue-capture`](../issue-capture/SKILL.md)'
     assert_includes watchdog, '**Autonomous issue files**'

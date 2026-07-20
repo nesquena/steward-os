@@ -21,9 +21,10 @@ by the watchdog.
    independent error route in case capture state or the pull index itself fails. When present,
    `security_contact` is the preferred first vulnerability destination.
    `chat-monitor` must not run unless this shared capture core is enabled. If either the chat reaction
-   or non-chat marker is configured for an enabled source, require an enabled `action-watchdog` that
-   reads this ledger; otherwise leave the marker blank. Invalid setup fails loudly and never marks an
-   item captured.
+   or non-chat marker is configured for an enabled source without an enabled `action-watchdog` that
+   reads this ledger, alarm and suppress the marker for that run; private capture may continue. A
+   missing state path, pull index, or alarm route fails before scanning. Neither case marks an item
+   captured.
 2. **Normalize, key, and lock each run.** Every adapter supplies its name, a stable source item id,
    the target repository, the untrusted body, and its source-specific marker. Build the capture key
    from **adapter + stable source item id + target repository**. Take one exclusive lock for the
@@ -54,11 +55,11 @@ by the watchdog.
    queue. Atomically upsert a structured paraphrase, never a copy of the raw body. The private record
    carries the capture key, a stable queue id, the minimum private source reference needed for
    investigation and reporter credit, class, confidence, dedupe key, capture time, and status. Append
-   `staged`, then atomically upsert a privacy-safe index summary keyed by the capture key and queue id
-   under the index's compatible lock. Never include the private source reference. Append `indexed`
-   only after that upsert succeeds. A public index may carry only the scrubbed summary; a security or
-   error fallback requires a confirmed-private index. Do not advance the checkpoint. A retry upserts
-   the same queue and index records instead of appending duplicates.
+   `staged`, then atomically upsert a privacy-safe index summary keyed only by the opaque queue id
+   under the index's compatible lock. Keep the capture key and private source reference out of every
+   public index. Append `indexed` only after that upsert succeeds. A security or error fallback
+   requires a confirmed-private index. Do not advance the checkpoint. A retry upserts the same queue
+   and index records instead of appending duplicates.
 8. **Mark only after durable staging succeeds, then finalize.** For chat, use
    `community.chat.capture_reaction`; for other adapters, use `issue_capture.capture_marker`. If the
    source supports that marker, apply it idempotently through a secret-isolating helper and append a
