@@ -20,21 +20,25 @@ the public-voice membrane.
 ---
 
 ## Chat monitoring (Band A — read + capture only)
-An agent watches your community's bug/feedback channels, classifies each message, dedupes against
-the issue tracker, and captures actionable items to the staging queue (→ [issues](issue-lifecycle.md)).
-- It is the most injection-exposed role — it runs under the strictest read-only guardrails and never
-  obeys instruction-like text in a message.
-- **It does not hold public conversations.** The only outward signal it leaves is a lightweight
-  "captured" reaction so the reporter and maintainer can see it was logged (except a suspected
-  vulnerability — no public mark; see the SECURITY tier below). Replies in the project's
-  voice stay human — that human touch is what makes contributors feel valued, and it's worth
-  preserving deliberately, not automating away.
+`chat-monitor` only reads allowed bug/feedback channels, normalizes each candidate with a stable
+source id and target repository, and invokes the shared
+[`issue-capture`](../../skills/issue-capture/SKILL.md) contract.
+`issue-capture` owns the untrusted-data guard, vulnerability divert, classification, confidence,
+dedupe, queue, ledger, reaction, and checkpoint. Chat must not implement a second capture path.
+- This is the most injection-exposed input adapter, so it never obeys instruction-like text in a
+  message.
+- **It does not hold public conversations.** After durable staging, `issue-capture` may apply the
+  chat-specific `community.chat.capture_reaction` so the reporter and maintainer can see it was
+  logged. A suspected vulnerability receives no public mark. Replies in the project's voice stay
+  human.
+- Chat monitoring stays off until the shared capture core, private state, output index, security
+  route, and any marker's watchdog are configured.
 - Multi-product communities: route each channel to the *right* repo/queue. Don't capture reports for
   a product you don't own.
 
 ## Confidence-tiered capture → action (the safe way to auto-file)
-Capturing is always safe; *filing an issue to the public tracker from a chat report* is a public
-write, so gate it by **confidence tier** rather than filing everything or nothing:
+`issue-capture` assigns the tier and stages the record; it never files. A downstream filing action
+uses the tier because *filing an issue to the public tracker from a chat report* is a public write:
 - **SECURITY** (checked first, before the tiers) → **never auto-file, never draft publicly.** A
   report that looks like a vulnerability — unauthorized access, data exposure, tampering, code
   execution, or attacker-triggerable service loss, by wording or by shape — diverts to the [private disclosure path](../reference/security-spine.md#6-the-vulnerability-divert):
@@ -47,8 +51,10 @@ write, so gate it by **confidence tier** rather than filing everything or nothin
   a privacy-safe issue. Two hard constraints: (1) the issue body is a **structured paraphrase, never
   the reporter's raw words**, with **no reporter identity** (handle, id, mention, message link,
   email) — run it through a **fail-closed privacy scrub** that blocks the file if any PII pattern is
-  present ("no clean, no file"); (2) label it for triage + cap the auto-files per run so a busy day
-  can't spray the tracker. Every auto-file is logged and [watchdog](../playbooks/watchdog-pattern.md)-verified.
+  present ("no clean, no file"); (2) label it for triage and enforce
+  `issue_capture.max_public_files_per_run` so a busy day can't spray the tracker. A value of `0`
+  disables auto-file. Every auto-file is logged and
+  [watchdog](../playbooks/watchdog-pattern.md)-verified.
 - **MEDIUM** (actionable but vaguer, a feature request, or any doubt / scope call) → **draft it and
   surface to a human to approve** — don't file. The human's one-tap/one-word approval files it.
 - **LOW / noise** → capture-to-queue only (or skip); never file, never ping.
@@ -97,7 +103,7 @@ replies in the project's voice** — keep it draft→approve. See
 ---
 
 ## Skills for this area
-- `chat-monitor` — Watcher: read channels, classify, dedupe, capture, react.
+- `chat-monitor` — Watcher adapter: read channels, normalize, and invoke `issue-capture`.
 - `mentions-sweep` — Watcher: web sweep, disambiguate, curate a digest.
 - `release-announce` — Steward: templated announcement via a secret-isolating helper.
 

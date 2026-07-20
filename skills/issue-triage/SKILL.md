@@ -12,7 +12,7 @@ Mostly Band A for the mechanical parts; Band B/C for replies that make commitmen
 ## Steps
 
 1. **Read `config.yaml`** — repos, the maintainer handle(s) (for the dropped-ball check), the
-   vulnerability destinations, and the issue label/milestone settings.
+   vulnerability destinations, and the issue-label settings.
 2. **Vulnerability check (unconditional first pass, every issue — replied or not).** Before any
    reply, label, or other public action on an issue, run the
    [vulnerability divert](../../docs/reference/security-spine.md#6-the-vulnerability-divert). On a

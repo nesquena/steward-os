@@ -44,12 +44,13 @@ The system can't screen PRs/issues for fit without knowing what "fits."
 ## Section 3 — Chat & community *(optional)*
 8. **Do you have a chat community?** (Discord/Slack/etc.) If yes: which platform, which channels
    carry bug reports vs. general chat, and the server/guild id.
-9. **Should the agent monitor chat?** (Recommended: read + capture + a "captured" reaction; **no**
-   autonomous text replies — keep the public voice human.) Confirm the reaction marker to use.
-10. **Non-tracker issue capture?** Do support inboxes, web forms, or direct-report feeds carry issue-
-    shaped inbound? If yes, list the source adapters, choose private queue/ledger/checkpoint paths,
-    set a per-run cap, and name any source-supported lightweight capture marker. Capture stays
-    disabled until its state paths and `security_contact` or `alarms_to` are configured.
+9. **Should the agent monitor chat?** (Recommended: read + normalize into the shared capture core,
+   then leave a watched "captured" reaction; **no** autonomous text replies.) Confirm the chat marker.
+10. **How should shared issue capture run?** Configure it for chat and any support inboxes, web forms,
+    or direct-report feeds. List non-chat adapters; choose private queue/ledger/checkpoint paths and a
+    writable pull index; set capture and public-filing caps; name any non-chat marker; and choose an
+    error route. Chat monitoring also requires this core. Any marker requires the action watchdog.
+    Capture stays disabled until `security_contact` or `alarms_to` is configured.
 11. **Mentions sweep?** Should the agent sweep the open web for mentions of the project? Any namesake
     to disambiguate against?
 

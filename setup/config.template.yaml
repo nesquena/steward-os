@@ -34,20 +34,21 @@ community:                      # optional — leave platform blank to disable c
     platform: ""                # discord | slack | ... | "" to disable
     server_id: ""
     bug_channels: []            # channel ids/names that carry bug reports
-    monitor: true               # read + capture + react; NEVER autonomous text replies
-    capture_reaction: "white_check_mark"
+    monitor: true               # read + normalize; shared issue_capture owns capture + reaction
+    capture_reaction: "white_check_mark"   # chat-source marker; NEVER free-text public voice
   mentions_sweep:
     enabled: false
     disambiguate_against: ""    # namesake to exclude, if any
 
-issue_capture:                  # optional — pre-tracker capture from inboxes/forms/direct reports
-  enabled: false
-  sources: []                   # adapter names/locators; chat remains under community.chat
+issue_capture:                  # shared pre-tracker capture core for chat and non-chat adapters
+  enabled: false               # required before community.chat.monitor may run
+  sources: []                   # non-chat adapter names/locators; chat stays under community.chat
   queue_path: ""                # PRIVATE staged records; may retain a minimal source reference
-  ledger_path: ""               # PRIVATE append-only outcomes + capture-marker audit
+  ledger_path: ""               # PRIVATE append-only transition + capture-marker audit
   checkpoint_path: ""           # PRIVATE per-source last-successful checkpoint
   max_per_run: 10               # deterministic bound; remainder continues next run
-  capture_marker: ""            # optional mechanical reaction/ack id; NEVER free-text public voice
+  max_public_files_per_run: 0   # 0 disables downstream auto-file; human approval remains available
+  capture_marker: ""            # non-chat mechanical marker; requires enabled action-watchdog
 
 security:                       # the vulnerability divert — how suspected vulns leave the public path
   # A capture that looks like a vulnerability (unauthorized access, data exposure, tampering, code

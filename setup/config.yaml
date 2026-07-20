@@ -49,6 +49,7 @@ issue_capture:                    # disabled: Steward has no non-tracker inbound
   ledger_path: ""
   checkpoint_path: ""
   max_per_run: 10
+  max_public_files_per_run: 0
   capture_marker: ""
 
 security:                       # this repo is docs-only; disclosure still routes privately, never public

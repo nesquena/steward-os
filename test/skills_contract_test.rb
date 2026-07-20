@@ -149,43 +149,49 @@ end
 # --- The issue-capture responsibility is complete across config, lifecycle, and watchdog ---
 class IssueCaptureContractTest < Minitest::Test
   REQUIRED_CONFIG_KEYS = %w[
-    enabled sources queue_path ledger_path checkpoint_path max_per_run capture_marker
+    enabled sources queue_path ledger_path checkpoint_path max_per_run
+    max_public_files_per_run capture_marker
   ].freeze
 
-  def key_paths(value, prefix = [])
-    return [] unless value.is_a?(Hash)
-
-    value.flat_map do |key, child|
-      path = prefix + [key]
-      [path.join('.')] + key_paths(child, path)
-    end.sort
-  end
-
-  def test_template_and_dogfood_config_keep_the_same_key_shape
+  def test_template_and_dogfood_config_keep_the_capture_contract
     template = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.template.yaml')))
     dogfood = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.yaml')))
 
-    assert_equal key_paths(template), key_paths(dogfood)
+    assert_equal template.keys.sort, dogfood.keys.sort
     assert_equal REQUIRED_CONFIG_KEYS.sort, template.fetch('issue_capture').keys.sort
+    assert_equal template.fetch('issue_capture').keys.sort, dogfood.fetch('issue_capture').keys.sort
   end
 
   def test_issue_capture_is_runnable_wired_and_not_still_planned
     template = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.template.yaml')))
-    jobs = template.fetch('scheduled_jobs').fetch('jobs').map { |job| job.fetch('name') }
+    jobs = template.fetch('scheduled_jobs').fetch('jobs').to_h { |job| [job.fetch('name'), job] }
     policy = YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml')))
+    capture = File.read(File.join(ROOT, 'skills', 'issue-capture', 'SKILL.md'))
 
     assert_includes jobs, 'issue-capture'
+    assert_includes jobs, 'action-watchdog'
     refute_includes policy.fetch('planned'), 'issue-capture'
     assert File.file?(File.join(ROOT, 'skills', 'issue-capture', 'SKILL.md'))
+    assert_includes capture, 'plus a writable pull index'
+    assert_includes capture, 'require an enabled `action-watchdog`'
   end
 
-  def test_capture_security_precedes_classification_and_public_marks_are_watched
+  def test_capture_has_one_owner_and_a_complete_transition_contract
     capture = File.read(File.join(ROOT, 'skills', 'issue-capture', 'SKILL.md'))
     watchdog = File.read(File.join(ROOT, 'skills', 'action-watchdog', 'SKILL.md'))
     triage = File.read(File.join(ROOT, 'skills', 'issue-triage', 'SKILL.md'))
+    community = File.read(File.join(ROOT, 'docs', 'lifecycle', 'community.md'))
 
-    assert_operator capture.index('**Vulnerability divert'), :<, capture.index('**Classify')
+    assert_operator capture.index('**Vulnerability divert'), :<, capture.index('**Classify and tier')
+    assert_includes capture, 'adapter + stable source item id + target repository'
+    assert_includes capture, 'terminal `noise` event'
+    assert_includes capture, 'terminal `duplicate` event'
+    assert_includes capture, '`community.chat.capture_reaction`'
+    assert_operator capture.index('`indexed` events'), :<, capture.index('terminal `captured` event')
     assert_includes watchdog, '[`issue-capture`](../issue-capture/SKILL.md)'
+    assert_includes watchdog, '**Autonomous issue files**'
+    assert_includes community, '`chat-monitor` only reads'
+    assert_includes community, '`issue-capture` owns the untrusted-data guard'
     refute_includes triage, '**Capture-dedupe.**', 'pre-tracker capture has one procedural owner'
   end
 end

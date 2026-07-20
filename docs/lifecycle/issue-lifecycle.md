@@ -33,8 +33,10 @@ reporters feeling heard.
 ---
 
 ## Capture (Band A)
-The Watcher reads inbound channels, classifies each item (bug / feature / question / noise), and
-captures genuinely-new actionable items to a staging queue. Two rules make capture trustworthy:
+The Watcher reads inbound channels, classifies each item (bug / feature / question / noise), assigns
+a HIGH / MEDIUM / LOW confidence tier, and captures genuinely new actionable items to a staging
+queue. Capture itself never files a tracker issue; the tier controls the downstream filing gate.
+Two rules make capture trustworthy:
 - **Dedupe across every surface before capturing** — the tracker (open *and* closed), the staging
   queue, and the capture ledger. The same report arriving twice should match an existing reference,
   not create a duplicate.
