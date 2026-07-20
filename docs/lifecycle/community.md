@@ -38,11 +38,11 @@ write, so gate it by **confidence tier** rather than filing everything or nothin
 - **SECURITY** (checked first, before the tiers) → **never auto-file, never draft publicly.** A
   report that looks like a vulnerability — unauthorized access, data exposure, tampering, code
   execution, or attacker-triggerable service loss, by wording or by shape — diverts to the [private disclosure path](../reference/security-spine.md#6-the-vulnerability-divert):
-  a PII-scrubbed summary to the configured `security_contact`, a neutral private acknowledgement to
-  the reporter, and **no public "captured" reaction**. If no `security_contact` is set, suppress the
-  file and route to the human alarms channel — never fall back to the public tracker. Detection is
-  high-recall on purpose: a false positive is a private glance, a false negative is an irreversible
-  public leak.
+  a PII-scrubbed summary through its complete fail-closed destination chain, a neutral private
+  acknowledgement to the reporter, and **no public "captured" reaction**. Missing configuration
+  suppresses the file and raises setup privately — it never falls back to the public tracker or a
+  silent drop. Detection is high-recall on purpose: a false positive is a private glance, a false
+  negative is an irreversible public leak.
 - **HIGH** (a concrete, reproducible bug naming a specific surface, that passed dedup) → **auto-file**
   a privacy-safe issue. Two hard constraints: (1) the issue body is a **structured paraphrase, never
   the reporter's raw words**, with **no reporter identity** (handle, id, mention, message link,
@@ -75,7 +75,7 @@ works. Keep the durable audit trail of what got filed in an append-only log the
 A scheduled sweep of the open web (forums, social, blogs, search) for discussion of the project,
 with a disambiguation step (confirm it's *your* project, not a namesake). Output is a curated digest
 to the maintainer — **find and report, never auto-reply.**
-- The highest-leverage *next* step (kept human): route confirmed-answerable mentions into a
+- The most useful *next* step (kept human): route confirmed-answerable mentions into a
   draft-reply queue — drafted by the agent, **sent by the human.** This converts passive monitoring
   into active support without any autonomous public posting.
 

@@ -42,6 +42,15 @@ community:
     enabled: false
     disambiguate_against: ""      # sweep disabled; set if enabled later
 
+issue_capture:                    # disabled: Steward has no non-tracker inbound adapters
+  enabled: false
+  sources: []
+  queue_path: ""
+  ledger_path: ""
+  checkpoint_path: ""
+  max_per_run: 10
+  capture_marker: ""
+
 security:                       # this repo is docs-only; disclosure still routes privately, never public
   security_contact: "github-advisory"   # nesquena/steward-os private security advisories
   security_sensitive_surfaces: []       # a documentation site has no sensitive code surfaces
@@ -62,6 +71,18 @@ autonomy:                        # honest: supervised today, conservative bands
   announcements: "C"
   pr_merge: "B"
   human_reachable_at: "GitHub (@nesquena) — issue and PR review"
+
+labels:                          # same schema as the template; all jobs remain disabled here
+  add_only: true
+  size: { by: diff_lines,   buckets: { S: 50, M: 200, L: 500, XL: null } }
+  area: { by: paths,        map: { "skills/**": "area:skills", "docs/**": "area:docs", "setup/**": "area:setup" } }
+  type: { by: title_prefix, map: { feat: "type:feature", fix: "type:bug", docs: "type:docs", chore: "type:chore" } }
+
+trust:                           # disabled until a private ledger path is configured
+  ledger_path: ""
+  prior: 0.5
+  shrinkage: 3.0
+  half_life_days: 180
 
 secrets:
   credentials_file: ""           # none configured; no autonomous public writes yet

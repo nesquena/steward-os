@@ -40,6 +40,15 @@ community:                      # optional — leave platform blank to disable c
     enabled: false
     disambiguate_against: ""    # namesake to exclude, if any
 
+issue_capture:                  # optional — pre-tracker capture from inboxes/forms/direct reports
+  enabled: false
+  sources: []                   # adapter names/locators; chat remains under community.chat
+  queue_path: ""                # PRIVATE staged records; may retain a minimal source reference
+  ledger_path: ""               # PRIVATE append-only outcomes + capture-marker audit
+  checkpoint_path: ""           # PRIVATE per-source last-successful checkpoint
+  max_per_run: 10               # deterministic bound; remainder continues next run
+  capture_marker: ""            # optional mechanical reaction/ack id; NEVER free-text public voice
+
 security:                       # the vulnerability divert — how suspected vulns leave the public path
   # A capture that looks like a vulnerability (unauthorized access, data exposure, tampering, code
   # execution, or attacker-triggerable service loss) is NEVER auto-filed or publicly drafted. It
@@ -47,8 +56,9 @@ security:                       # the vulnerability divert — how suspected vul
   security_contact: ""          # private destination: a person/DM, a private channel, an email, or
                                 # "github-advisory" to use the repo's private security advisories.
                                 # BLANK = fail closed: suppress the file, route to alarms_to, never public.
-                                # If autonomous capture is enabled, set this OR alarms_to (below) — the
-                                # divert must have a private terminal destination, never a silent no-op.
+                                # If autonomous capture is enabled, set this OR alarms_to (below).
+                                # A confirmed-private index is the emergency third fallback, not the
+                                # normal configured destination.
   security_sensitive_surfaces: []   # optional: surfaces a report naming is treated as suspected until
                                     # cleared (e.g. ["auth", "payments", "crypto", "session"]).
 
@@ -98,6 +108,7 @@ scheduled_jobs:                 # start with a few; add as you climb the autonom
   jobs:
     - { name: "scoreboard-refresh", every: "2h",  enabled: true,  agent: false }
     - { name: "chat-monitor",       every: "1h",  enabled: false, agent: true  }
+    - { name: "issue-capture",      every: "1h",  enabled: false, agent: true  }
     - { name: "mentions-sweep",     every: "24h", enabled: false, agent: true  }
     - { name: "announcements",      every: "8h",  enabled: false, agent: true  }
     - { name: "label-sync",         every: "4h",  enabled: false, agent: false }

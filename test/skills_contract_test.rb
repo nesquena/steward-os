@@ -61,7 +61,7 @@ end
 
 # --- Extractors against the real repo ---
 class ExtractTest < Minitest::Test
-  def test_present_skills_finds_the_nine
+  def test_present_skills_are_discovered
     present = SkillsContract::Extract.present_skills(File.join(ROOT, 'skills'))
     assert_includes present, 'release-announce'
     assert_includes present, 'action-watchdog'
@@ -143,5 +143,49 @@ class RepoContractTest < Minitest::Test
     # the remaining known-missing skills are accounted for as planned (info)
     infos = v.select { |x| x.severity == :info }.map(&:skill)
     assert_includes infos, 'chat-monitor'
+  end
+end
+
+# --- The issue-capture responsibility is complete across config, lifecycle, and watchdog ---
+class IssueCaptureContractTest < Minitest::Test
+  REQUIRED_CONFIG_KEYS = %w[
+    enabled sources queue_path ledger_path checkpoint_path max_per_run capture_marker
+  ].freeze
+
+  def key_paths(value, prefix = [])
+    return [] unless value.is_a?(Hash)
+
+    value.flat_map do |key, child|
+      path = prefix + [key]
+      [path.join('.')] + key_paths(child, path)
+    end.sort
+  end
+
+  def test_template_and_dogfood_config_keep_the_same_key_shape
+    template = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.template.yaml')))
+    dogfood = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.yaml')))
+
+    assert_equal key_paths(template), key_paths(dogfood)
+    assert_equal REQUIRED_CONFIG_KEYS.sort, template.fetch('issue_capture').keys.sort
+  end
+
+  def test_issue_capture_is_runnable_wired_and_not_still_planned
+    template = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.template.yaml')))
+    jobs = template.fetch('scheduled_jobs').fetch('jobs').map { |job| job.fetch('name') }
+    policy = YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml')))
+
+    assert_includes jobs, 'issue-capture'
+    refute_includes policy.fetch('planned'), 'issue-capture'
+    assert File.file?(File.join(ROOT, 'skills', 'issue-capture', 'SKILL.md'))
+  end
+
+  def test_capture_security_precedes_classification_and_public_marks_are_watched
+    capture = File.read(File.join(ROOT, 'skills', 'issue-capture', 'SKILL.md'))
+    watchdog = File.read(File.join(ROOT, 'skills', 'action-watchdog', 'SKILL.md'))
+    triage = File.read(File.join(ROOT, 'skills', 'issue-triage', 'SKILL.md'))
+
+    assert_operator capture.index('**Vulnerability divert'), :<, capture.index('**Classify')
+    assert_includes watchdog, '[`issue-capture`](../issue-capture/SKILL.md)'
+    refute_includes triage, '**Capture-dedupe.**', 'pre-tracker capture has one procedural owner'
   end
 end

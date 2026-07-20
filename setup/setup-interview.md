@@ -46,45 +46,51 @@ The system can't screen PRs/issues for fit without knowing what "fits."
    carry bug reports vs. general chat, and the server/guild id.
 9. **Should the agent monitor chat?** (Recommended: read + capture + a "captured" reaction; **no**
    autonomous text replies — keep the public voice human.) Confirm the reaction marker to use.
-10. **Mentions sweep?** Should the agent sweep the open web for mentions of the project? Any namesake
+10. **Non-tracker issue capture?** Do support inboxes, web forms, or direct-report feeds carry issue-
+    shaped inbound? If yes, list the source adapters, choose private queue/ledger/checkpoint paths,
+    set a per-run cap, and name any source-supported lightweight capture marker. Capture stays
+    disabled until its state paths and `security_contact` or `alarms_to` are configured.
+11. **Mentions sweep?** Should the agent sweep the open web for mentions of the project? Any namesake
     to disambiguate against?
 
 ## Section 4 — CI, tests & review tooling *(required for the gates)*
-11. **How do you run the test suite?** The exact command, and roughly how long it takes (so jobs
+12. **How do you run the test suite?** The exact command, and roughly how long it takes (so jobs
     budget correctly and never sample it).
-12. **What CI runs on PRs?** (So the system can read CI status into the scoreboard.)
-13. **What review tooling exists?** Automated code-review bot? A second/adversarial reviewer? A
+13. **What CI runs on PRs?** (So the system can read CI status into the scoreboard.)
+14. **What review tooling exists?** Automated code-review bot? A second/adversarial reviewer? A
     visual-preview tool? → these become the [quality gates](../docs/lifecycle/quality-gates.md) layers.
-14. **Visible-surface viewports?** If the project has a UI, which viewports must screenshots cover
+15. **Visible-surface viewports?** If the project has a UI, which viewports must screenshots cover
     (desktop/mobile sizes)?
 
 ## Section 5 — Autonomy posture *(required)*
-15. **What's your starting autonomy band per area?** For each of {labeling, issue-triage replies,
+16. **What's your starting autonomy band per area?** For each of {labeling, issue-triage replies,
     issue auto-close, announcements, PR merge}: start at C, B, or A? (Default conservative: most
     start at B/C; only mechanical+reversible+watched actions start at A.) →
     [autonomy ladder](../docs/playbooks/autonomy-ladder.md).
-16. **Where is the human reachable** for Band-B decision points and Band-C approvals? (Which
+17. **Where is the human reachable** for Band-B decision points and Band-C approvals? (Which
     channel/DM.)
 
 ## Section 6 — Secrets & safety *(required if any autonomous public write)*
-17. **Where do credentials live?** Confirm they're in a permission-locked file that only
+18. **Where do credentials live?** Confirm they're in a permission-locked file that only
     secret-isolating helper scripts read — **never** pasted into config or an agent prompt.
-18. **Will the system ever execute contributor code?** (e.g. run PR tests.) If yes, confirm a
+19. **Will the system ever execute contributor code?** (e.g. run PR tests.) If yes, confirm a
     sandbox is available; if not, that capability stays disabled. →
     [security spine](../docs/reference/security-spine.md).
-19. **Where should a suspected vulnerability go?** When a captured report looks like a security
+20. **Where should a suspected vulnerability go?** When a captured report looks like a security
     vulnerability, it is never filed to the public tracker — it diverts to a private path. Name the
     destination (a person or DM, a private channel, an email, or `github-advisory` to use the repo's
-    private security advisories). Leave blank to fail closed — suppressed and routed to your alarms
-    channel, never public. Optionally list any sensitive surfaces (e.g. `auth`, `payments`) so a
-    report naming one is treated as suspected. → `security.security_contact`,
+    private security advisories). Leave blank to fail closed: route to alarms; if that is also blank,
+    hold in a confirmed-private index and raise setup — never public, never silently dropped.
+    Optionally list any sensitive surfaces (e.g. `auth`, `payments`) so a report naming one is
+    treated as suspected. → `security.security_contact`,
     `security.security_sensitive_surfaces`; [the vulnerability divert](../docs/reference/security-spine.md#6-the-vulnerability-divert).
 
 ## Section 7 — Scheduled jobs *(optional, grows over time)*
-20. **Which jobs do you want running, and how often?** (scoreboard refresh, chat monitor, mentions
-    sweep, announcements, label-sync, issue-autoclose, the watchdog, a fleet heartbeat.) Start with
-    a few; add as you climb the autonomy ladder. → [scheduled jobs](../docs/playbooks/scheduled-jobs.md).
-21. **How does steward output reach you?** Default is a pull-based index you check (discovery);
+21. **Which jobs do you want running, and how often?** (scoreboard refresh, chat monitor, issue
+    capture, mentions sweep, announcements, label-sync, issue-autoclose, the watchdog, a fleet
+    heartbeat.) Start with a few; add as you climb the autonomy ladder. →
+    [scheduled jobs](../docs/playbooks/scheduled-jobs.md).
+22. **How does steward output reach you?** Default is a pull-based index you check (discovery);
     pushing a digest to a chat channel is an optional add-on. Also: where should watchdog alarms go?
     → [the output loop](../docs/playbooks/output-loop.md).
 

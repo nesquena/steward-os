@@ -32,8 +32,9 @@ never auto-filed or publicly drafted. The detector routes; a human confirms. See
 [the vulnerability divert](security-spine.md#6-the-vulnerability-divert).
 
 **Private disclosure path** — where a suspected vulnerability goes instead of the public tracker: a
-PII-scrubbed summary sent privately to the configured `security_contact`, with a neutral
-acknowledgement to the reporter and no public reaction. A human decides whether and how to disclose.
+PII-scrubbed summary sent through the fail-closed `security_contact` → alarms → confirmed-private
+index chain, with a neutral acknowledgement to the reporter and no public reaction. A human decides
+whether and how to disclose.
 
 **Authoritative gate** — the fresh, independent run of all [quality gates](../lifecycle/quality-gates.md)
 immediately before merge, regardless of any prior reviewer's verdict. The thing that actually

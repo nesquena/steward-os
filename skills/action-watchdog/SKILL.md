@@ -1,6 +1,6 @@
 ---
 name: action-watchdog
-description: Independently fact-check the autonomous actions the system took (issue closes, labels, etc.) against live ground truth, and alarm on any mismatch. Run on a schedule. This is what makes Band-A public actions safe.
+description: Independently fact-check the autonomous actions the system took (issue closes, labels, capture marks, etc.) against live ground truth, and alarm on any mismatch. Run on a schedule. This is what makes Band-A public actions safe.
 ---
 
 # action-watchdog
@@ -28,6 +28,11 @@ description: Independently fact-check the autonomous actions the system took (is
      fixed channel **exactly once** (no duplicate for the same release)? Does the posted text match
      the changelog entry it claims to render? → a duplicate, or an announcement of an absent/unshipped
      release, or text that adds claims beyond the changelog = 🔴; a drifted last-announced marker = 🟡.
+   - **Autonomous capture marks** ([`issue-capture`](../issue-capture/SKILL.md)): for each ledger'd
+     mark, does exactly one durable staged record exist, and does the source carry exactly the
+     configured marker? Did every vulnerability-diverted item receive **no** public mark? → a mark
+     without a staged record, a missing/duplicate mark, or any public mark on a diverted item = 🔴;
+     stale queue/checkpoint bookkeeping with the public action still correct = 🟡.
    - **(Add a check here for every new autonomous action — same change that adds the action.)**
 3. **Classify severities.** 🔴 = correctness failure (an action was *wrong* — act now). 🟡 = drift
    (stale, reconcile soon).
