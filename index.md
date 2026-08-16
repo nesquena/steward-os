@@ -51,12 +51,12 @@ the recipes, and the questions it needs to ask you to wire itself up.
 - **[Playbooks](docs/playbooks/)** — cross-cutting recipes: the autonomy ladder, the watchdog
   pattern, scheduled jobs, the triage scoreboard.
 - **[Reference](docs/reference/)** — glossary, adoption levels, anti-patterns, coding principles,
-  the bug-shape catalog, the security spine, and an FAQ.
-- **[Setup](setup/setup-interview)** — the interview that wires the system to your project.
+  authoring changes, reviewing at volume, the bug-shape catalog, the security spine, and an FAQ.
+- **[Setup](setup/setup-interview.md)** — the interview that wires the system to your project.
 
 ## Adopt it gradually
 
 You don't install this all at once. Read the model (Level 0), use the playbooks in supervised
 sessions (Level 1), add the read-only scoreboard and digests (Level 2), promote mechanical actions
 to watchdogged autonomy (Level 3), then run the full pipeline (Level 4). See
-[adoption levels](docs/reference/adoption-levels).
+[adoption levels](docs/reference/adoption-levels.md).

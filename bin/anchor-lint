@@ -1,0 +1,101 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Anchor-link lint. Fails (exit 1) when a relative markdown link points at a
+# file that does not exist, omits the .md extension that GitHub requires, or
+# carries a #fragment no heading in the target produces. It also fails on the
+# constructs the site and GitHub render differently, which would otherwise take
+# a link or an anchor out of the gate's reach.
+#
+# Complements ci.yml's html-proofer run, which only sees the built _site/ and so
+# cannot check README.md, CONTRIBUTING.md, docs/README.md, SECURITY.md, skills/
+# or setup/*.yaml — every one of them excluded in _config.yml.
+# See lib/anchor_contract.rb.
+#
+# Needs the site's own markdown parser: run under `bundle exec`.
+
+require_relative '../lib/anchor_contract'
+
+ROOT = File.expand_path('..', __dir__)
+
+config_path = File.join(ROOT, '_config.yml')
+conflicts = AnchorContract::Extract.id_config_conflicts(config_path)
+unless conflicts.empty?
+  warn 'FAILED — _config.yml renders heading ids this lint cannot predict:'
+  conflicts.each { |c| warn "  x #{c}" }
+  warn 'Heading ids are read from kramdown-parser-gfm, whose slugger mirrors github-slugger.'
+  warn 'Under these settings the site emits different ids and every anchor check below is'
+  warn 'invalid. Restore the setting, or teach extraction to mirror it.'
+  exit 1
+end
+
+# Files the scanner would skip while both renderers still publish them, taking
+# their links out of the gate. Rejected here rather than quietly ignored.
+strays = AnchorContract::Extract.stray_markdown_files(ROOT)
+unless strays.empty?
+  warn "FAILED — #{strays.size} tracked markdown file(s) outside the .md convention:"
+  strays.each { |rel| warn "  x #{rel}" }
+  warn 'This lint enumerates *.md only. Rename these, or teach markdown_files their extension.'
+  exit 1
+end
+
+docs = AnchorContract::Extract.markdown_files(ROOT)
+files, dirs = AnchorContract::Extract.repo_entries(ROOT)
+# The files _config.yml keeps out of the built site. GitHub renders them with
+# cmark-gfm and the site renders them with nothing, so they are checked against
+# the cmark oracle alone; a kramdown reading would judge them by a parser that
+# never publishes them (an undecoded `dir&sol;target.md`, a differently-slugged
+# heading id). Every other doc renders on both the site and GitHub, so its links
+# and ids have to hold under both.
+excluded = AnchorContract::Extract.site_excluded_markdown(ROOT, config_path)
+
+headings = {}
+links = []
+rejections = []
+docs.each do |rel|
+  text = File.read(File.join(ROOT, rel))
+
+  if excluded.include?(rel)
+    # GitHub is the only renderer. Its link set and its heading ids, full stop.
+    headings[rel] = AnchorContract::Extract.heading_ids_cmark(text)
+    links.concat(AnchorContract::Extract.dedup_links(
+                   AnchorContract::Extract.links_cmark(text, source: rel)
+                 ))
+  else
+    # Rendered on both. unportable rejects the constructs the two disagree about
+    # at the anchor level (including a heading the two slug differently); links
+    # are the deduped union of both renderers so a link either one produces is
+    # checked, and heading ids come from the site's parser (whose slugger mirrors
+    # github-slugger for the docs GitHub also renders directly).
+    rejections.concat(AnchorContract::Extract.unportable(text, source: rel))
+    headings[rel] = AnchorContract::Extract.heading_ids(text)
+    links.concat(AnchorContract::Extract.merged_links(text, source: rel))
+  end
+end
+
+# Reported before the link check rather than alongside it: these are the cases
+# where extraction and the page part ways, so every link and id read out of the
+# same document is suspect until they are gone.
+unless rejections.empty?
+  warn "FAILED — #{rejections.size} construct(s) the site and GitHub render differently:"
+  rejections.each { |r| warn r.to_line }
+  exit 1
+end
+
+violations = AnchorContract.check(links: links, headings: headings, files: files, dirs: dirs)
+
+puts "Anchor lint — #{docs.size} documents, #{links.size} relative links, " \
+     "#{links.count(&:fragment)} anchors"
+
+if violations.empty?
+  puts "\nOK — every link resolves."
+  exit 0
+end
+
+violations.group_by(&:rule).sort_by { |rule, _| rule.to_s }.each do |rule, group|
+  puts "\n#{rule} (#{group.size}):"
+  group.each { |v| puts v.to_line }
+end
+
+puts "\nFAILED — #{violations.size} broken cross-reference(s)."
+exit 1

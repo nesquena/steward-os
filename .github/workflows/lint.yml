@@ -17,14 +17,17 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.3"
+          bundler-cache: true
       - name: Unit tests
         run: |
           shopt -s nullglob
           files=(test/*_test.rb)
           if [ ${#files[@]} -eq 0 ]; then echo "no test files found"; exit 1; fi
-          for f in "${files[@]}"; do echo "== $f"; ruby "$f" || exit 1; done
+          for f in "${files[@]}"; do echo "== $f"; bundle exec ruby "$f" || exit 1; done
         shell: bash
       - name: Skills-contract lint
-        run: ./bin/skills-contract-lint
+        run: bundle exec ./bin/skills-contract-lint
       - name: Config-contract lint
-        run: ./bin/config-lint
+        run: bundle exec ./bin/config-lint
+      - name: Anchor-link lint
+        run: bundle exec ./bin/anchor-lint

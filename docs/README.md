@@ -44,6 +44,8 @@ Patterns that span multiple areas.
   (OS + app watchdog), the pre-restart guard, the reconcile pattern, and the flake ledger.
 - **[The output loop](playbooks/output-loop.md)** — getting steward output to the human and keeping
   local state honest: discovery over delivery, audit trail vs. actionable, post-action reconcile.
+- **[The state handoff](playbooks/state-handoff.md)** — the agent-to-agent sibling of the output
+  loop: how state left by one role or run is found, trusted, and acted on by the next.
 
 ## Setup — wire it to your project
 - **[The setup interview](../setup/setup-interview.md)** — the documented question list the agent
@@ -57,6 +59,10 @@ Patterns that span multiple areas.
 - [FAQ](reference/faq.md) — short answers to the common adoption questions.
 - [Adoption levels](reference/adoption-levels.md) — minimal to full; start small, climb.
 - [Coding principles](reference/coding-principles.md) — the craft-level discipline for writing code.
+- [Authoring a change that lands](reference/authoring-changes.md) — the contributor-side habits
+  that get a change merged in one review round instead of several.
+- [Reviewing at volume](reference/reviewing-at-volume.md) — maintainer-side field notes on what
+  makes a change land, and the failure modes seen most often at high volume.
 - [Bug-shape catalog](reference/bug-shapes.md) — recurring bug classes and how to catch each.
 - [Anti-patterns](reference/anti-patterns.md) — the mistakes this system is designed to avoid.
 - [Security spine](reference/security-spine.md) — guardrail patterns in detail.
