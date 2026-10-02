@@ -94,7 +94,10 @@ Sort the cleared PRs by where they should go:
 ## [3] Deep review (Reviewer + Builder)
 
 Read the **whole diff**, not just the hunks. Reproduce the bug or exercise the change. Read the
-files at the PR's head *and* on the trunk to see what changed. For every flaw, decide:
+files at the PR's head *and* on the trunk to see what changed. Reading is always safe; exercising
+the change runs the PR's code, so decide first whether it may run under the
+[sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution). For every
+flaw, decide:
 - **Bounce** — leave an exact, reproducible fix-spec and let the author iterate. Reconcile against
   the live thread first so you don't duplicate feedback.
 - **Fix it yourself** (Builder) — for mechanical blockers (a rebase, a few failing tests, a small
@@ -129,6 +132,10 @@ The gate is layered and independent (full detail in [quality gates](quality-gate
 3. **The full test suite** — run to completion, never sampled. It catches regressions the targeted
    checks and the reviewers both miss.
 4. **Visual verification** — for any visible surface.
+
+Items 3 and 4 run the PR's code. For an untrusted PR they run inside the
+[sandbox](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution) or not at all, and
+a gate with a skipped run is not all-clear.
 
 A green CI is necessary but not sufficient — the authoritative gate has repeatedly caught real
 regressions that green CI and prior review missed. If the gate finds something, the Builder fixes it

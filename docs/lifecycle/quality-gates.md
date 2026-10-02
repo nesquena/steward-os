@@ -81,10 +81,14 @@ or ordering bug wearing a costume.
 
 ## Untrusted-code execution
 
-If a gate must *run* a contributor's code (their new tests, say), that code is untrusted and
-potentially adversarial. **Never run it unsandboxed.** Run inside a locked-down sandbox with no
-network and no credential access that fails closed if it can't be built. Static reading of the diff
-is always safe; only *execution* is gated. See the [security spine](../reference/security-spine.md).
+Gates 1, 4, and 5 all *run* the PR's code: the suite, the driven interaction, the re-run before
+merge. When the PR is untrusted, treat that code as adversarial. **Never run it unsandboxed.** Run
+inside a locked-down sandbox with no network and no credential access that fails closed if it can't
+be built. If contributor-code execution is switched off or the sandbox can't be built, the run does
+not happen and the gate is not all-clear; a skipped suite is never a passed one. Static reading of
+the diff is always safe; only *execution* is gated. The
+[security spine](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution) says which
+PRs count as untrusted and what to do when the run can't happen.
 
 ---
 

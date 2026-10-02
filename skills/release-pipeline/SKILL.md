@@ -11,13 +11,20 @@ is cleared to ship. Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) st
 merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-pattern.md).
 
 > Precondition: **do not enter this skill on a self-report.** The gate must have been run fresh by
-> [`pr-deep-review`](../pr-deep-review/SKILL.md) and come back all-clear. A cached "looks clean" is
-> not a ship signal.
+> [`pr-deep-review`](../pr-deep-review/SKILL.md) and come back all-clear, or all-clear *by human run*
+> recorded for the current head commit under the
+> [sandbox rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution). Read
+> that from the PR's [state handoff](../../docs/playbooks/state-handoff.md) record and check the
+> commit matches the head. A cached "looks clean" is not a ship signal.
 
 ## Steps
 
 1. **Rebase onto the current trunk.** If staleness is the only blocker, the Builder rebases it
    directly. Re-confirm the gate is still green on the rebased code if the trunk moved under it.
+   That re-run executes the PR's code, so apply the
+   [sandbox rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)
+   again on the rebased head. If the run can't happen, stop: do not merge, and return the PR to
+   `pr-deep-review`. A human-run all-clear is bound to one commit, so a rebase voids it too.
 2. **Verify the credit before merging** (see the attribution gate below) — the contributor you're
    about to thank must actually be the author of the work you're shipping.
 3. **Merge preserving attribution.** The original author's authorship must survive: fix on their
