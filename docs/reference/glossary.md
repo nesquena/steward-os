@@ -16,11 +16,6 @@ running a software project with an AI agent as co-maintainer.
 autonomous (unattended). B = session-autonomous (agent works, human consulted at decision points).
 C = human-gated (agent prepares, human takes the irreversible action).
 
-**Decision row** — what an item that waits on a human carries before a public or irreversible
-write: one recommendation, evidence that resolves, the exact write, the undo, and the item state it
-was made against. Defined in [the output loop](../playbooks/output-loop.md#the-decision-row) as a
-bar for skills to meet; the shipped skills predate it.
-
 **Watcher / Reviewer / Builder / Steward** — the [four roles](../architecture/index.md#the-four-roles).
 Detect+capture / evaluate+verdict / make-the-change / keep-it-healthy-and-watch-the-others.
 
@@ -30,6 +25,11 @@ sandbox-untrusted-code, the public-write membrane, and the vulnerability divert.
 
 **Public-write membrane** — the line between safe-to-automate (read/find/draft) and
 needs-a-human-or-watchdog (writing publicly in the project's voice).
+
+**Decision row** — what an item that waits on a human carries before a public or irreversible
+write: one recommendation, evidence that resolves, the exact write, the undo, and the item state it
+was made against. Defined in [the output loop](../playbooks/output-loop.md#the-decision-row) as a
+bar for skills to meet.
 
 **Suspected vulnerability** — a captured report that trips any security signal (reporter intent,
 impact shape, or a configured sensitive surface). It is routed to the private disclosure path and
