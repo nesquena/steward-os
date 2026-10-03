@@ -238,6 +238,10 @@ class LinksTest < Minitest::Test
     assert_equal %w[docs/lifecycle/diagram.svg], paths("![flow](diagram.svg)\n")
   end
 
+  def test_decodes_a_named_character_reference_in_a_raw_html_target
+    assert_equal %w[docs/lifecycle/dir/x.md], paths(%(<a href="dir&sol;x.md">x</a>\n))
+  end
+
   def test_extracts_a_raw_html_link
     assert_equal %w[docs/lifecycle/quality-gates.md], paths(%(<a href="quality-gates.md">gates</a>\n))
   end
@@ -358,6 +362,22 @@ class LinksCmarkTest < Minitest::Test
     assert_equal %w[docs/lifecycle/a&sol;b.md], paths("[x](a&amp;sol;b.md)\n")
   end
 
+  def test_cmark_link_and_image_decode_ampersands_only_once
+    assert_equal ['docs/lifecycle/a&amp;b.md'], paths("[x](a&amp;amp;b.md)\n")
+    assert_equal ['docs/lifecycle/a&amp;b.png'], paths("![x](a&amp;amp;b.png)\n")
+    link = AnchorContract::Extract.links_cmark("[x](a.md#frag&amp;amp;tail)\n", source: 'README.md').first
+    assert_equal 'frag&amp;tail', link.fragment
+  end
+
+  def test_a_decoded_decoy_file_does_not_bless_a_missing_cmark_target
+    links = AnchorContract::Extract.links_cmark("[x](a&amp;amp;b.md)\n", source: 'README.md')
+    errors = AnchorContract.check(links: links, headings: {},
+                                  files: Set.new(['README.md', 'a&b.md']), dirs: Set.new)
+    assert_equal [:missing], errors.map(&:rule)
+    assert_empty AnchorContract.check(links: links, headings: {},
+                                     files: Set.new(['README.md', 'a&amp;b.md']), dirs: Set.new)
+  end
+
   # The old regex grammar lost the wrapping link of an image-wrapped link; the
   # cmark oracle captures both, same as the kramdown one.
   def test_captures_both_targets_of_an_image_wrapped_link
@@ -418,6 +438,69 @@ class LinksCmarkTest < Minitest::Test
   def test_skips_an_external_raw_html_link
     assert_empty paths(%(<a href="https://example.com">e</a>\n))
   end
+
+  # --- Raw tags are read with an HTML5 tokenizer, the way the browser reads
+  # them. Each case below is one an attribute regex got wrong. ---
+
+  def test_reads_href_and_not_a_data_href_before_it
+    assert_equal %w[docs/lifecycle/right.md],
+                 paths(%(<a data-href="wrong.md" href="right.md">x</a>\n))
+  end
+
+  def test_reads_src_and_not_a_data_src_before_it
+    assert_equal %w[docs/lifecycle/right.png],
+                 paths(%(<img data-src="wrong.png" alt="a" src="right.png">\n))
+  end
+
+  def test_reads_an_href_that_follows_a_quoted_angle_bracket
+    assert_equal %w[docs/lifecycle/right.md], paths(%(<a title="a>b" href="right.md">x</a>\n))
+  end
+
+  def test_reads_an_href_that_holds_an_angle_bracket
+    assert_equal ['docs/lifecycle/a>b.md'], paths(%(<a href="a>b.md">x</a>\n))
+  end
+
+  def test_reads_an_uppercase_tag_with_a_single_quoted_value
+    assert_equal %w[docs/lifecycle/up.md], paths("<A HREF='up.md'>x</A>\n")
+  end
+
+  def test_skips_a_raw_html_link_inside_a_block_comment
+    assert_empty paths(%(<!-- <a href="ghost.md">x</a> -->\n))
+  end
+
+  def test_skips_a_raw_html_link_inside_an_inline_comment
+    assert_empty paths(%(text <!-- <a href="ghost.md">x</a> --> text\n))
+  end
+
+  def test_skips_a_raw_html_link_inside_a_multi_line_comment
+    assert_empty paths(%(<!--\n\n<a href="ghost.md">x</a>\n\n-->\n))
+  end
+
+  def test_decodes_a_named_character_reference_in_a_raw_html_target
+    assert_equal %w[docs/lifecycle/a/b.md], paths(%(<a href="a&sol;b.md">x</a>\n))
+  end
+
+  # The reference is resolved once, by the HTML parser. A second pass would read
+  # the literal file `a&amp;b.md` as `a&b.md`.
+  def test_does_not_over_decode_a_double_encoded_raw_html_target
+    assert_equal ['docs/lifecycle/a&amp;b.md'], paths(%(<a href="a&amp;amp;b.md">x</a>\n))
+  end
+
+  # GitHub's tagfilter escapes these wrappers to text and its sanitizer drops a
+  # <select>, so the tag inside stays a live link — where an HTML parser left
+  # alone would swallow it as the wrapper's raw text.
+  def test_reads_a_link_inside_a_wrapper_github_neutralizes
+    %w[textarea xmp iframe noframes select script style title].each do |tag|
+      assert_equal %w[docs/lifecycle/missing.md],
+                   paths(%(<#{tag}>\n<a href="missing.md">x</a>\n</#{tag}>\n)), tag
+    end
+  end
+
+  def test_reads_every_tag_of_a_multi_line_block_on_its_own_line
+    md = %(intro\n\n<div>\n<a href="one.md">1</a>\n<img\n  src="two.png">\n</div>\n)
+    found = AnchorContract::Extract.links_cmark(md, source: 'index.md').map { |l| [l.path, l.line] }
+    assert_equal [['one.md', 4], ['two.png', 5]], found
+  end
 end
 
 # --- GitHub's heading-id set, for the files it renders directly ---
@@ -466,6 +549,33 @@ class HeadingIdsCmarkTest < Minitest::Test
 
   def test_collects_markdown_and_explicit_raw_heading_ids_together
     assert_equal %w[md-one raw-two], ids(%(## MD One\n\n<h3 id="raw-two">Two</h3>\n))
+  end
+
+  def test_keeps_an_unquoted_raw_html_heading_id
+    assert_equal %w[custom], ids("<h2 class=big id=custom>X</h2>\n")
+  end
+
+  # The ids are read from the rendered page, so a heading tag that is only
+  # written about — in code, or commented out — is not an anchor. Scanning the
+  # source instead blessed a fragment that 404s on GitHub.
+  def test_ignores_a_raw_heading_tag_inside_a_fence
+    assert_equal %w[real], ids(%(# Real\n\n```html\n<h2 id="phantom">x</h2>\n```\n))
+  end
+
+  def test_ignores_a_raw_heading_tag_inside_a_tilde_fence
+    assert_equal %w[real], ids(%(# Real\n\n~~~\n<h2 id="phantom">x</h2>\n~~~\n))
+  end
+
+  def test_ignores_a_raw_heading_tag_inside_indented_code
+    assert_equal %w[real], ids(%(# Real\n\n    <h2 id="phantom">x</h2>\n))
+  end
+
+  def test_ignores_a_raw_heading_tag_inside_a_code_span
+    assert_equal %w[real], ids(%(# Real\n\nwrite `<h2 id="phantom">` here\n))
+  end
+
+  def test_ignores_a_raw_heading_tag_inside_a_comment
+    assert_equal %w[real], ids(%(# Real\n\n<!-- <h2 id="phantom">x</h2> -->\n))
   end
 end
 
@@ -699,6 +809,45 @@ class UnportableTest < Minitest::Test
     assert_empty rejections("```html\n<a href=x.md>x</a>\n```\n")
   end
 
+  # A quoted attribute ahead of the unquoted one makes kramdown split the tag
+  # across several text nodes, so no single node holds it. The tag is found by
+  # asking each renderer what it parsed instead.
+  def test_an_unquoted_href_after_a_quoted_attribute_is_rejected
+    assert_match(/raw <a>/, messages(%(para <a title="p > q" href=real.md>t</a>\n)).first)
+    assert_match(/raw <a>/, messages(%(para <a data-href="decoy.md" href=real.md>t</a>\n)).first)
+  end
+
+  # A tag kramdown parsed elsewhere with the same target must not vouch for one
+  # it declined: cmark reads the indented tag as code, so the counts line up.
+  def test_an_unquoted_tag_is_rejected_beside_a_parsed_tag_with_the_same_target
+    md = %(<div>\n\n    <a href="x.md">q</a>\n\n</div>\n\ntext <a href=x.md>y</a>\n)
+    assert_match(/raw <a>/, messages(md).first)
+  end
+
+  def test_a_split_declined_tag_cannot_borrow_another_occurrences_target
+    md = %(<div>\n\n    <a href="x.md">q</a>\n\n</div>\n\ntext <a title="p > q" href=x.md>y</a>\n)
+    found = rejections(md)
+    assert_equal [7], found.map(&:line)
+    assert_match(/raw <a>/, found.first.message)
+  end
+
+  def test_an_unquoted_tag_without_a_target_is_rejected
+    assert_match(/raw <a>/, messages("para <a name=foo.bar>y</a>\n").first)
+  end
+
+  def test_an_unquoted_tag_is_rejected_once_on_its_own_line
+    found = rejections("# Fine\n\n<div>\n<a href=missing.md>x</a>\n</div>\n")
+    assert_equal [4], found.map(&:line)
+  end
+
+  def test_a_quoted_html_link_with_a_character_reference_is_not_rejected
+    assert_empty rejections(%(<a href="a&amp;b.md?x&sol;y">x</a>\n))
+  end
+
+  def test_a_commented_out_link_tag_is_not_rejected
+    assert_empty rejections("<!-- <a href=x.md>x</a> -->\n")
+  end
+
   # Jekyll's front-matter regex does not match past a BOM, so the front matter
   # is rendered as body text and its `#` lines become real headings — on the
   # site only. Rejected rather than modelled per renderer.
@@ -730,6 +879,20 @@ class UnportableTest < Minitest::Test
 
   def test_a_heading_both_renderers_slug_alike_is_not_rejected
     assert_empty rejections("## Normal Heading\n\n## Another One\n")
+  end
+
+  def test_an_unusable_empty_generated_heading_id_is_not_a_divergence
+    assert_empty rejections("## !!!\n\n## Normal Heading\n")
+  end
+
+  # Both renderers pass a raw <hN id> through with its id intact, so it is not a
+  # disagreement — and a heading tag shown in a code example is not a heading.
+  def test_an_explicit_raw_html_heading_id_is_not_rejected
+    assert_empty rejections(%(# Real\n\n<h2 id="custom">Custom</h2>\n))
+  end
+
+  def test_a_raw_heading_tag_inside_a_fence_is_not_rejected
+    assert_empty rejections(%(# Real\n\n```html\n<h2 id="phantom">x</h2>\n```\n))
   end
 end
 
@@ -851,30 +1014,90 @@ class DiscoveryTest < Minitest::Test
     end
   end
 
-  # Jekyll matches an exclude entry as a glob too, and `*` does not cross a `/`.
-  def test_site_excluded_markdown_honours_a_glob_entry
-    with_repo do |dir|
-      write(dir, 'docs/top.md')
-      write(dir, 'docs/sub/deep.md')
-      File.write(File.join(dir, '_config.yml'), "exclude:\n  - 'docs/*.md'\n")
-      add_all(dir)
-      excluded = AnchorContract::Extract.site_excluded_markdown(dir, File.join(dir, '_config.yml'))
-      assert_includes excluded, 'docs/top.md'
-      refute_includes excluded, 'docs/sub/deep.md'
+  # The routing is Jekyll's own matcher, so each case below is checked twice:
+  # against the expected set, and against what a real Jekyll read of the same
+  # fixture leaves out. The second is what keeps the first from drifting.
+  def excluded_in(dir, config, paths)
+    paths.each { |rel| write(dir, rel, "---\n---\n# x\n") }
+    File.write(File.join(dir, '_config.yml'), config)
+    add_all(dir)
+    excluded = AnchorContract::Extract.site_excluded_markdown(dir, File.join(dir, '_config.yml'))
+    assert_equal paths.sort - jekyll_reads(dir), excluded.to_a.sort, 'routing differs from a real Jekyll read'
+    excluded
+  end
+
+  def jekyll_reads(dir)
+    Dir.mktmpdir do |dest|
+      site = Jekyll::Site.new(Jekyll.configuration('source' => dir, 'destination' => dest, 'quiet' => true))
+      site.read
+      (site.pages.map(&:relative_path) + site.static_files.map(&:relative_path))
+        .map { |rel| rel.delete_prefix('/') }
     end
   end
 
-  # An include entry wins over a matching exclude, exactly as Jekyll resolves it.
+  # Jekyll matches an exclude entry as a glob with no FNM_PATHNAME, so `*`
+  # crosses a `/`.
+  def test_site_excluded_markdown_honours_a_glob_entry
+    with_repo do |dir|
+      excluded = excluded_in(dir, "exclude:\n  - 'docs/*.md'\n", %w[docs/top.md docs/sub/deep.md index.md])
+      assert_equal %w[docs/sub/deep.md docs/top.md], excluded.to_a.sort
+    end
+  end
+
+  # An exclude entry is also a bare string prefix, with no `/` boundary.
+  def test_site_excluded_markdown_matches_an_entry_as_a_bare_prefix
+    with_repo do |dir|
+      excluded = excluded_in(dir, "exclude:\n  - bin\n  - README.md\n",
+                             %w[bin/x.md binary/x.md README.md README.md.old.md index.md])
+      assert_equal %w[README.md README.md.old.md bin/x.md binary/x.md], excluded.to_a.sort
+    end
+  end
+
+  # Jekyll matches an include entry against the entry's own name at each level
+  # of its walk, so a bare filename rescues a file from a matching exclude...
   def test_site_excluded_markdown_respects_an_include_override
     with_repo do |dir|
-      write(dir, 'README.md')
-      write(dir, 'docs/keep.md')
-      File.write(File.join(dir, '_config.yml'),
-                 "exclude:\n  - README.md\n  - 'docs/*.md'\ninclude:\n  - docs/keep.md\n")
-      add_all(dir)
-      excluded = AnchorContract::Extract.site_excluded_markdown(dir, File.join(dir, '_config.yml'))
-      assert_includes excluded, 'README.md'
-      refute_includes excluded, 'docs/keep.md'
+      excluded = excluded_in(dir, "exclude:\n  - README.md\n  - 'docs/*.md'\ninclude:\n  - keep.md\n",
+                             %w[README.md docs/keep.md docs/drop.md])
+      assert_equal %w[README.md docs/drop.md], excluded.to_a.sort
+    end
+  end
+
+  # An excluded directory is never walked, so a name-only include entry cannot
+  # reach a file inside it...
+  def test_site_excluded_markdown_does_not_look_inside_an_excluded_directory
+    with_repo do |dir|
+      excluded = excluded_in(dir, "exclude:\n  - docs\ninclude:\n  - keep.md\n", %w[docs/keep.md index.md])
+      assert_equal %w[docs/keep.md], excluded.to_a
+    end
+  end
+
+  # ...but Jekyll reads a file an include entry names by its full path outright.
+  def test_site_excluded_markdown_reads_a_file_included_by_its_path
+    with_repo do |dir|
+      excluded = excluded_in(dir, "exclude:\n  - docs\ninclude:\n  - docs/keep.md\n",
+                             %w[docs/keep.md docs/drop.md])
+      assert_equal %w[docs/drop.md], excluded.to_a
+    end
+  end
+
+  # Jekyll itself refuses this config, so the lint names the problem rather than
+  # guessing at a routing.
+  def test_site_excluded_markdown_rejects_a_config_jekyll_rejects
+    with_repo do |dir|
+      File.write(File.join(dir, '_config.yml'), "exclude: skills/\n")
+      error = assert_raises(RuntimeError) do
+        AnchorContract::Extract.site_excluded_markdown(dir, File.join(dir, '_config.yml'))
+      end
+      assert_match(/could not parse .*'exclude' should be set as an array/, error.message)
+    end
+  end
+
+  # Jekyll adds its own default excludes to whatever the config lists.
+  def test_site_excluded_markdown_applies_jekylls_default_excludes
+    with_repo do |dir|
+      excluded = excluded_in(dir, "title: x\n", %w[node_modules/pkg/readme.md index.md])
+      assert_equal %w[node_modules/pkg/readme.md], excluded.to_a
     end
   end
 
