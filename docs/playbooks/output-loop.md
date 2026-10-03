@@ -112,7 +112,9 @@ queue quietly drifts from "everything that needs a human" to "the subset a run h
 
 The index line says an item is waiting. The **decision row** is what the human reads before
 deciding: the content the index line points to. A human who approves from a summary has approved
-something they haven't seen, so the membrane is only as good as the decision row.
+something they haven't seen, so the
+[public-write membrane](../reference/security-spine.md#5-the-public-write-membrane) is only as
+good as the decision row.
 
 Any item that waits on a human before a public or irreversible write carries one. That's every
 Band C approval, and the final call of a Band B task (the merge, the release).
@@ -131,20 +133,20 @@ predate this section.
    can open: a commit, a file and line, an item number, a quoted line. Where a pointer can be
    checked without a model (the path exists, the commit is on trunk, the item is open), it's
    checked before the decision row is shown. If the evidence doesn't resolve, there is no decision
-   row. The item itself stays in the index, as [rule 3](#3-keep-the-state-honest) requires of every
-   open item; it just carries no recommendation yet.
+   row. The item itself stays in the index, as [rule 3 of the loop](#3-keep-the-state-honest)
+   requires of every open item; it just carries no recommendation yet.
 3. **The exact write.** The full text that will be sent, verbatim. A summary of the text isn't the
    text. For an action with no text of its own (a close, a label, a merge), the exact write is the
    action and its target, plus any text that goes with it.
 4. **The undo.** How the write is reversed, or a plain statement that it can't be. An irreversible
    approval is weighed differently, and the human needs to know which kind this one is.
 5. **The state it was made against.** A stamp of the decision's inputs at proposal time: enough to
-   tell later whether they changed. Include whatever would change the recommendation (title, body,
-   labels, comments, linked changes, and any other item the evidence cites), not only the body.
-   Leave out what wouldn't change it (a mechanical size label, the agent's own capture mark), and
-   say which inputs the stamp covers, so the comparison before the write is reproducible and routine
-   churn can't void an approval. When unsure, include it: a voided row costs one re-propose, a
-   missed change costs a wrong write.
+   tell later whether they changed. Include whatever would change the recommendation (open or closed
+   state, title, body, labels, comments, linked changes, and any other item the evidence cites), not
+   only the body. Leave out what wouldn't change it (a mechanical size label, the agent's own
+   capture mark), and say which inputs the stamp covers, so the comparison before the write is
+   reproducible and routine churn can't void an approval. When unsure, include it: a voided row
+   costs one re-propose, a missed change costs a wrong write.
 
 One workable form:
 
@@ -154,7 +156,7 @@ Evidence    #310 is open and reports the same crash on the same path (src/sync.p
 Will send   close #482, with the comment:
             "Closing as a duplicate of #310, which tracks the same crash in the sync path."
 Undo        reopen #482, delete the comment
-Made at     #482 3f9c1a, #310 9b2e07    covers: title, body, labels, comments, linked changes
+Made at     #482 3f9c1a, #310 9b2e07    covers: state, title, body, labels, comments, links
 ```
 
 Three rules hold it together.
@@ -188,7 +190,7 @@ stamp, so the next run doesn't propose the same write against the same state.
 
 `autonomy.human_reachable_at` names *where* the human is asked. The decision row is *what* they're
 asked with. A push to that channel may carry the whole decision row or only a pointer; either way
-the index still holds the item, per [rule 1](#1-discovery-over-delivery).
+the index still holds the item, per [rule 1 of the loop](#1-discovery-over-delivery).
 
 ## What this can look like
 
