@@ -362,6 +362,22 @@ class LinksCmarkTest < Minitest::Test
     assert_equal %w[docs/lifecycle/a&sol;b.md], paths("[x](a&amp;sol;b.md)\n")
   end
 
+  def test_cmark_link_and_image_decode_ampersands_only_once
+    assert_equal ['docs/lifecycle/a&amp;b.md'], paths("[x](a&amp;amp;b.md)\n")
+    assert_equal ['docs/lifecycle/a&amp;b.png'], paths("![x](a&amp;amp;b.png)\n")
+    link = AnchorContract::Extract.links_cmark("[x](a.md#frag&amp;amp;tail)\n", source: 'README.md').first
+    assert_equal 'frag&amp;tail', link.fragment
+  end
+
+  def test_a_decoded_decoy_file_does_not_bless_a_missing_cmark_target
+    links = AnchorContract::Extract.links_cmark("[x](a&amp;amp;b.md)\n", source: 'README.md')
+    errors = AnchorContract.check(links: links, headings: {},
+                                  files: Set.new(['README.md', 'a&b.md']), dirs: Set.new)
+    assert_equal [:missing], errors.map(&:rule)
+    assert_empty AnchorContract.check(links: links, headings: {},
+                                     files: Set.new(['README.md', 'a&amp;b.md']), dirs: Set.new)
+  end
+
   # The old regex grammar lost the wrapping link of an image-wrapped link; the
   # cmark oracle captures both, same as the kramdown one.
   def test_captures_both_targets_of_an_image_wrapped_link
@@ -808,6 +824,13 @@ class UnportableTest < Minitest::Test
     assert_match(/raw <a>/, messages(md).first)
   end
 
+  def test_a_split_declined_tag_cannot_borrow_another_occurrences_target
+    md = %(<div>\n\n    <a href="x.md">q</a>\n\n</div>\n\ntext <a title="p > q" href=x.md>y</a>\n)
+    found = rejections(md)
+    assert_equal [7], found.map(&:line)
+    assert_match(/raw <a>/, found.first.message)
+  end
+
   def test_an_unquoted_tag_without_a_target_is_rejected
     assert_match(/raw <a>/, messages("para <a name=foo.bar>y</a>\n").first)
   end
@@ -856,6 +879,10 @@ class UnportableTest < Minitest::Test
 
   def test_a_heading_both_renderers_slug_alike_is_not_rejected
     assert_empty rejections("## Normal Heading\n\n## Another One\n")
+  end
+
+  def test_an_unusable_empty_generated_heading_id_is_not_a_divergence
+    assert_empty rejections("## !!!\n\n## Normal Heading\n")
   end
 
   # Both renderers pass a raw <hN id> through with its id intact, so it is not a
