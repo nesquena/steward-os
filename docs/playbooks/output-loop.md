@@ -143,7 +143,8 @@ predate this section.
    labels, comments, linked changes, and any other item the evidence cites), not only the body.
    Leave out what wouldn't change it (a mechanical size label, the agent's own capture mark), and
    say which inputs the stamp covers, so the comparison before the write is reproducible and routine
-   churn can't void an approval.
+   churn can't void an approval. When unsure, include it: a voided row costs one re-propose, a
+   missed change costs a wrong write.
 
 One workable form:
 
@@ -153,7 +154,7 @@ Evidence    #310 is open and reports the same crash on the same path (src/sync.p
 Will send   close #482, with the comment:
             "Closing as a duplicate of #310, which tracks the same crash in the sync path."
 Undo        reopen #482, delete the comment
-Made at     item state 3f9c1a
+Made at     #482 3f9c1a, #310 9b2e07    covers: title, body, labels, comments, linked changes
 ```
 
 Three rules hold it together.
@@ -168,7 +169,7 @@ and it's what goes out. Anything the decision row didn't show isn't sent. The ru
 sent: a surface may normalize text on its side (line endings, whitespace, rendering), and that isn't
 a breach.
 
-**A decision row expires when the item changes.** Immediately before the write, re-read the inputs
+**A decision row expires when its inputs change.** Immediately before the write, re-read the inputs
 the stamp covers (the item, and any other item the evidence cites) and compare them with the stamp
 from property 5. That's a comparison of stamps, not a fresh assessment. If they differ, the decision
 row is void: send nothing, discard the approval, and prepare a new decision row against the new
