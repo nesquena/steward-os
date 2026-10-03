@@ -16,6 +16,11 @@ running a software project with an AI agent as co-maintainer.
 autonomous (unattended). B = session-autonomous (agent works, human consulted at decision points).
 C = human-gated (agent prepares, human takes the irreversible action).
 
+**Decision row** — what an item that waits on a human carries before a public or irreversible
+write: one recommendation, evidence that resolves, the exact write, the undo, and the item state it
+was made against. Defined in [the output loop](../playbooks/output-loop.md#the-decision-row) as a
+bar for skills to meet; the shipped skills predate it.
+
 **Watcher / Reviewer / Builder / Steward** — the [four roles](../architecture/index.md#the-four-roles).
 Detect+capture / evaluate+verdict / make-the-change / keep-it-healthy-and-watch-the-others.
 

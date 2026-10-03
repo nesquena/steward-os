@@ -95,6 +95,9 @@ irreversible action.
 - The bar: the action is irreversible and reputational, or it's a values/taste call only the
   maintainer should make.
 
+What the human should be shown before taking that action is
+[the decision row](../playbooks/output-loop.md#the-decision-row).
+
 ### Moving an action between bands
 The natural maturation path is **C → B → A**: a capability starts human-gated, earns trust, and
 graduates to autonomous *once it's either provably mechanical or wrapped in an independent
