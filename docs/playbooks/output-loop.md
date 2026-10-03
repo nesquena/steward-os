@@ -108,6 +108,90 @@ never actioned, invisible. So reconcile the index against the **complete** live 
 drop what reached a terminal state, and add any still-open item missing from the index. Otherwise the
 queue quietly drifts from "everything that needs a human" to "the subset a run happened to mention."
 
+## The decision row
+
+The index line says an item is waiting. The **decision row** is what the human reads before
+deciding: the content the index line points to. A human who approves from a summary has approved
+something they haven't seen, so the
+[public-write membrane](../reference/security-spine.md#5-the-public-write-membrane) is only as
+good as the decision row.
+
+Any item that waits on a human before a public or irreversible write carries one. That's every
+Band C approval, and the final call of a Band B task (the merge, the release).
+A Band B question with no write behind it (a design call, a dedupe pick) needs only the first two
+properties.
+
+Like [the state handoff](state-handoff.md#the-contract-mechanism-neutral), this is a contract
+stated as properties, not a mechanism. A decision row can live in a markdown file, a chat message,
+a terminal prompt, or a dashboard. It's also a bar, not a description of today: the properties and
+the three rules below say what a skill should do, and the skills that prepare human-gated work
+predate this section.
+
+1. **One recommendation, stated first.** The action the agent proposes, and the capability it
+   belongs to. A list of options with no pick isn't a recommendation.
+2. **Evidence that resolves.** Each claim the recommendation rests on points at something the human
+   can open: a commit, a file and line, an item number, a quoted line. Where a pointer can be
+   checked without a model (the path exists, the commit is on trunk, the item is open), it's
+   checked before the decision row is shown. If the evidence doesn't resolve, there is no decision
+   row. The item itself stays in the index, as [rule 3 of the loop](#3-keep-the-state-honest)
+   requires of every open item; it just carries no recommendation yet.
+3. **The exact write.** The full text that will be sent, verbatim. A summary of the text isn't the
+   text. For an action with no text of its own (a close, a label, a merge), the exact write is the
+   action and its target, plus any text that goes with it.
+4. **The undo.** How the write is reversed, or a plain statement that it can't be. An irreversible
+   approval is weighed differently, and the human needs to know which kind this one is.
+5. **The state it was made against.** A stamp of the decision's inputs at proposal time: enough to
+   tell later whether they changed. Include whatever would change the recommendation (open or closed
+   state, title, body, labels, comments, linked changes, and any other item the evidence cites), not
+   only the body. Leave out what wouldn't change it (a mechanical size label, the agent's own
+   capture mark), and say which inputs the stamp covers, so the comparison before the write is
+   reproducible and routine churn can't void an approval. When unsure, include it: a voided row
+   costs one re-propose, a missed change costs a wrong write.
+
+One workable form:
+
+```
+Recommend   close #517 as a duplicate of #310                     capability: issue close, Band C
+Evidence    #310 is open and reports the same crash on the same path (src/sync.py:88)
+Will send   close #517, with the comment:
+            "Closing as a duplicate of #310, which tracks the same crash in the sync path."
+Undo        reopen #517, delete the comment
+Made at     #517 3f9c1a, #310 9b2e07    covers: state, title, body, labels, comments, linked changes
+```
+
+Three rules hold it together.
+
+**What is sent is what the human approved.** The band says who may send: at Band C the human takes
+the action, and where a reply starts the step that acts
+([approval over chat](../lifecycle/community.md#human-in-the-loop-approval-over-chat)), that step
+sends for them. Whoever sends, the stored write goes out as shown and nothing composes text after
+the approval: no redraft, no tidy-up, no fresh summary. A sender with no model in it is the stronger
+form, because it can't recompose. If the human edits the text, the edited text is the approved one,
+and it's what goes out. Anything the decision row didn't show isn't sent. The rule is about what is
+sent: a surface may normalize text on its side (line endings, whitespace, rendering), and that isn't
+a breach.
+
+**A decision row expires when its inputs change.** Immediately before the write, re-read the inputs
+the stamp covers (the item, and any other item the evidence cites) and compare them with the stamp
+from property 5. That's a comparison of stamps, not a fresh assessment. If they differ, the decision
+row is void: send nothing, discard the approval, and prepare a new decision row against the new
+state. An approval never carries over to a decision row the human hasn't seen. This is
+[never authoritative, re-derive from live truth](state-handoff.md#the-contract-mechanism-neutral)
+applied at the last possible moment.
+
+**Accept and reject are both explicit.** Each costs the human one action, and neither is the
+default. Silence isn't a decision, and a decision row that ages out wasn't approved. A refresh must
+never replace a decision row the human is in the middle of deciding: a decision applies to the row
+they saw, or to nothing. [Rule 3 of the loop](#3-keep-the-state-honest) says to re-derive what
+happened from the live system rather than wait to be told, and that still holds for whether an
+action was taken. A rejection is the one thing the live system can't show, because it changes
+nothing there, so it's the one thing the human has to say. Record it against the item and its
+stamp, so the next run doesn't propose the same write against the same state.
+
+`autonomy.human_reachable_at` names *where* the human is asked. The decision row is *what* they're
+asked with. A push to that channel may carry the whole decision row or only a pointer; either way
+the index still holds the item, per [rule 1 of the loop](#1-discovery-over-delivery).
+
 ## What this can look like
 
 One layout that satisfies the loop. **Adapt the names and locations to your project** — the rules
