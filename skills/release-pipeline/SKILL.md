@@ -11,20 +11,30 @@ is cleared to ship. Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) st
 merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-pattern.md).
 
 > Precondition: **do not enter this skill on a self-report.** The gate must have been run fresh by
-> [`pr-deep-review`](../pr-deep-review/SKILL.md) and come back all-clear, or all-clear *by human run*
-> recorded for the current head commit under the
-> [sandbox rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution). Read
-> that from the PR's [state handoff](../../docs/playbooks/state-handoff.md) record and check the
-> commit matches the head. A cached "looks clean" is not a ship signal.
+> [`pr-deep-review`](../pr-deep-review/SKILL.md) and come back aggregate all-clear: **both independent
+> reading legs clear AND all required execution legs successful**, with no unresolved required
+> findings on the same current head/trunk. A human run supplies only omitted execution legs under the
+> [sandbox rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution), never
+> an alternative to review. The PR's [state handoff](../../docs/playbooks/state-handoff.md) is a
+> pointer: read the operator/reviewer-owned original trusted report/run receipt outside the
+> contributor-writable tree/thread, authenticate its origin, verify complete commands/scopes/results
+> and required visual evidence against the operator-accepted gate configuration (never PR-proposed
+> settings), current head/trunk and review evidence, and fresh gate completion
+> **immediately before merge**. A matching SHA or named maintainer is insufficient; an old receipt
+> on an unmoved head is still old. Missing/unverifiable evidence → stop and request confirmation/new
+> authorized runs through `pr-deep-review`. A cached "looks clean" is not a ship signal.
 
 ## Steps
 
-1. **Rebase onto the current trunk.** If staleness is the only blocker, the Builder rebases it
-   directly. Re-confirm the gate is still green on the rebased code if the trunk moved under it.
-   That re-run executes the PR's code, so apply the
+1. **Prepare safely, then rebase onto the current trunk.** Before the Git operation, apply the
    [sandbox rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)
-   again on the rebased head. If the run can't happen, stop: do not merge, and return the PR to
-   `pr-deep-review`. A human-run all-clear is bound to one commit, so a rebase voids it too.
+   to the current head and use explicitly inert trusted Git configuration (hooks, executable
+   filters and other tree-controlled helpers disabled), or its permitted isolated execution
+   boundary. If neither is guaranteed, stop before rebase; **no run** does not permit a bare
+   tree hook. If staleness is the only blocker, the Builder can perform this safe preparation.
+   Any new head/rebase or changed trunk voids prior gate evidence, including human receipts:
+   reassess the rebased head and re-run the entire fresh gate through `pr-deep-review`, not merely
+   the suite. If required runs/reviews cannot be supplied, stop; do not merge.
 2. **Verify the credit before merging** (see the attribution gate below) — the contributor you're
    about to thank must actually be the author of the work you're shipping.
 3. **Merge preserving attribution.** The original author's authorship must survive: fix on their
