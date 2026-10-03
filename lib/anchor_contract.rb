@@ -7,6 +7,8 @@ require 'pathname'
 require 'kramdown'
 require 'kramdown-parser-gfm'
 require 'commonmarker'
+require 'nokogiri'
+require 'jekyll'
 
 # Enforces the cross-document link contract: every relative markdown link
 # resolves to a real file, and every #fragment resolves to a real heading.
@@ -134,15 +136,22 @@ module AnchorContract
     HTML_LINK_ATTR = { 'a' => 'href', 'img' => 'src' }.freeze
     PERCENT_ESCAPE = /%([0-9A-Fa-f]{2})/.freeze
     BOM = "\uFEFF"
-    # A link tag sitting in a text node is one the markdown parser declined to
-    # read — an unquoted attribute value is the usual cause. GitHub's parser
-    # accepts them, so the target would go unchecked.
-    RAW_HTML_LINK = /<(?:a|img)\b[^>]*>/i.freeze
-    # The same tags, captured whole for target extraction from raw-HTML nodes.
+    LINK_TAGS = 'a[href], img[src]'
+    HEADING_TAGS = 'h1, h2, h3, h4, h5, h6'
+    # The cmark node types that hold raw HTML verbatim.
+    RAW_HTML_NODES = %i[html_inline html_block].freeze
+    # The three fields of a Jekyll::Site that Jekyll::EntryFilter reads.
+    JekyllSite = Struct.new(:source, :exclude, :include)
+    # A link tag sitting whole in a text node is one kramdown declined to read.
     RAW_HTML_TAG = /<(?:a|img)\b[^>]*>/i.freeze
-    RAW_HTML_MESSAGE = 'raw <a>/<img> tag the markdown parser could not read — an unquoted ' \
-                       'attribute value renders as literal text on the site and as a live link ' \
-                       'on GitHub, leaving its target unchecked'
+    # Wrappers whose content an HTML parser reads as text or drops, but which do
+    # not survive on GitHub: the first nine are the GFM tagfilter's own list,
+    # escaped to text by cmark-gfm, and the sanitizer strips <select>. Whatever
+    # sits inside them is live markup on the page.
+    NEUTRALIZED_TAG = %r{<(?=/?(?:title|textarea|style|xmp|iframe|noembed|noframes|script|plaintext|select)\b)}i.freeze
+    RAW_HTML_MESSAGE = 'raw <a>/<img> tag the site and GitHub read differently — usually an unquoted ' \
+                       'attribute value, which renders as literal text on the site and as a live ' \
+                       'link on GitHub, leaving its target unchecked'
     BOM_MESSAGE = 'byte-order mark before the front matter — Jekyll then leaves the front matter ' \
                   'unstripped and renders it as body text; delete the BOM'
 
@@ -195,18 +204,23 @@ module AnchorContract
     # attribute; a raw <hN id="..."> is passed through verbatim by cmark, so its
     # explicit id is picked up too.
     def heading_ids_cmark(text)
-      body = strip_front_matter(text)
-      html = Commonmarker.to_html(body, options: COMMONMARK_OPTIONS)
-      (html.scan(%r{<h[1-6][^>]*\sid="([^"]*)"}).flatten + raw_heading_ids(body)).uniq
+      rendered_heading_ids(text, raw_html: true).uniq
     end
 
-    # Explicit ids on raw <hN id="..."> tags, which cmark leaves untouched. A raw
-    # heading *without* an id is deliberately not slugged here: GitHub's sanitizer
-    # would assign one, but reproducing its full Unicode slugger and duplicate
-    # counter is the drift the parser-backed design exists to avoid, and a bare
-    # raw <hN> in markdown is an anti-pattern with no instance in the corpus.
-    def raw_heading_ids(text)
-      text.scan(%r{<h[1-6]\b[^>]*\bid\s*=\s*["']?([^"'\s>]+)}i).flatten
+    # The id of every heading element on the page cmark renders, read with an
+    # HTML5 parser rather than scanned out of the source — a heading tag inside a
+    # fence, a code span or a comment is not an element there, so it offers no
+    # anchor. With raw_html off cmark omits raw HTML altogether, leaving only the
+    # ids it generated for markdown headings.
+    #
+    # A raw heading *without* an id is deliberately not slugged here: GitHub's
+    # sanitizer would assign one, but reproducing its full Unicode slugger and
+    # duplicate counter is the drift the parser-backed design exists to avoid, and
+    # a bare raw <hN> in markdown is an anti-pattern with no instance in the corpus.
+    def rendered_heading_ids(text, raw_html:)
+      options = COMMONMARK_OPTIONS.merge(render: { unsafe: raw_html })
+      html = Commonmarker.to_html(strip_front_matter(text), options: options)
+      Nokogiri::HTML5.fragment(html).css(HEADING_TAGS).filter_map { |el| el['id'] }.reject(&:empty?)
     end
 
     # Constructs the two renderers disagree about. Each one hides a link or an
@@ -220,13 +234,70 @@ module AnchorContract
       out = []
       out << Rejection.new(source: source, line: 1, message: BOM_MESSAGE) if text.start_with?(BOM)
       line = 1
+      declined = []
       walk(document(text, auto_ids: false).root) do |el|
         line = el.options[:location] || line
         message = unportable_message(el)
         out << Rejection.new(source: source, line: line, message: message) if message
+        next unless el.type == :text && el.value.match?(RAW_HTML_TAG)
+
+        declined << Rejection.new(source: source, line: line, message: RAW_HTML_MESSAGE)
       end
+      out.concat(raw_link_rejections(text, declined, source: source))
       out.concat(divergent_heading_ids(text, source: source))
       out
+    end
+
+    # The renderer comparison names the tag's own line, so it is preferred. The
+    # tags kramdown visibly left in a text node are the fallback for what the
+    # comparison cannot see: a declined tag with no target, or one whose target
+    # a tag kramdown did parse happens to share.
+    def raw_link_rejections(text, declined, source:)
+      unparsed = unparsed_raw_links(text, source: source)
+      unparsed.empty? ? declined : unparsed
+    end
+
+    # A raw <a>/<img> tag GitHub renders as a link and the site does not — an
+    # unquoted attribute value is the usual cause: kramdown declines the tag and
+    # prints it as text. Found by asking each renderer what it parsed, since the
+    # declined tag may be split across any number of kramdown text nodes: every
+    # target cmark reads out of raw HTML has to be one kramdown read out of an
+    # HTML element at the same source occurrence too. A parsed tag on another
+    # line cannot vouch for a declined tag that happens to share its target.
+    def unparsed_raw_links(text, source:)
+      site = site_raw_targets(text).tally
+      out = []
+      walk_cmark(cmark_document(text)) do |node|
+        next unless RAW_HTML_NODES.include?(node.type)
+
+        raw_html_targets(node).each do |href, line|
+          occurrence = [href, line]
+          next site[occurrence] -= 1 if site.fetch(occurrence, 0).positive?
+
+          out << Rejection.new(source: source, line: line, message: RAW_HTML_MESSAGE)
+        end
+      end
+      out
+    end
+
+    # [href/src, source line] for every raw <a>/<img> kramdown parsed as an HTML element.
+    # kramdown keeps the attribute value as written, so it is run through the
+    # same HTML5 parser the cmark side uses to resolve its character references.
+    def site_raw_targets(text)
+      out = []
+      walk(document(text).root) do |el|
+        attr = HTML_LINK_ATTR[el.value] if el.type == :html_element
+        value = el.attr[attr] if attr
+        next unless value
+
+        out << [decode_attribute(value), el.options[:location] || 1]
+      end
+      out
+    end
+
+    # An attribute value as the browser reads it, character references resolved.
+    def decode_attribute(value)
+      Nokogiri::HTML5.fragment(%(<a href="#{value.gsub('"', '&quot;')}">)).at_css('a')['href']
     end
 
     # A heading the site and GitHub slug differently is an anchor that resolves
@@ -236,9 +307,15 @@ module AnchorContract
     # that is wrong on one page. Reported for the included docs only; the excluded
     # ones are read through the cmark ids alone and have no second renderer to
     # disagree with.
+    #
+    # Only the ids the renderers *generate* are compared. A raw <hN id="..."> is
+    # passed through by both with its id as written, so there is nothing to
+    # disagree about, and kramdown's header walk never sees it.
     def divergent_heading_ids(text, source:)
-      site = heading_ids(text)
-      github = heading_ids_cmark(text)
+      # Normalize after generation, preserving the slugger's duplicate counter.
+      # Empty ids offer no usable anchor and cmark omits them too.
+      site = heading_ids(text).reject(&:empty?)
+      github = rendered_heading_ids(text, raw_html: false)
       return [] if site == github
 
       [Rejection.new(source: source, line: 1,
@@ -266,13 +343,11 @@ module AnchorContract
     end
 
     def unportable_message(element)
-      if element.type == :header && element.attr['id']
-        id = element.attr['id']
-        "explicit heading id ##{id} — kramdown honours it, GitHub prints the attribute as literal " \
-          "text, so ##{id} 404s there; drop it and link the generated slug"
-      elsif element.type == :text && element.value.match?(RAW_HTML_LINK)
-        RAW_HTML_MESSAGE
-      end
+      return unless element.type == :header && element.attr['id']
+
+      id = element.attr['id']
+      "explicit heading id ##{id} — kramdown honours it, GitHub prints the attribute as literal " \
+        "text, so ##{id} 404s there; drop it and link the generated slug"
     end
 
     # Relative markdown links, with the target resolved to a repo-relative path.
@@ -286,9 +361,13 @@ module AnchorContract
       out = []
       walk(document(text).root) do |el|
         href = link_target(el)
+        # kramdown resolves the references in a markdown link itself, but keeps a
+        # raw tag's attribute as written.
+        raw = el.type == :html_element
+        href = decode_attribute(href) if raw && href
         next if href.nil? || href.empty? || href.match?(EXTERNAL)
 
-        out << build_link(href, source, dir, el.options[:location] || 1)
+        out << build_link(href, source, dir, el.options[:location] || 1, decoded: raw)
       end
       out
     end
@@ -297,7 +376,8 @@ module AnchorContract
     # character references, and nested/image-wrapped links exactly as GitHub's
     # renderer does, so its link set is what a reader on the GitHub file view can
     # actually click. Its urls arrive already entity-decoded (`a&sol;b.md` ->
-    # `a/b.md`), so build_link's own CGI.unescapeHTML is a no-op second pass.
+    # `a/b.md`), so skip build_link's entity pass: a second pass would turn the
+    # literal `a&amp;b.md` from a double-encoded destination into `a&b.md`.
     # Raw <a>/<img> tags are markdown-inert to comrak's link nodes but live links
     # on the GitHub page, so their targets are pulled from the raw HTML too.
     def links_cmark(text, source:)
@@ -306,7 +386,7 @@ module AnchorContract
       walk_cmark(cmark_document(text)) do |node|
         if %i[link image].include?(node.type)
           href = node.url.to_s
-        elsif %i[html_inline html_block].include?(node.type)
+        elsif RAW_HTML_NODES.include?(node.type)
           out.concat(raw_html_links(node, source, dir))
           next
         else
@@ -315,7 +395,7 @@ module AnchorContract
         next if href.empty? || href.match?(EXTERNAL)
 
         line = (node.source_position || {})[:start_line] || 1
-        out << build_link(href, source, dir, line)
+        out << build_link(href, source, dir, line, decoded: true)
       end
       out
     end
@@ -325,26 +405,24 @@ module AnchorContract
     # links, so the same targets kramdown reads through :html_element are checked
     # here for the files routed to the cmark oracle alone.
     def raw_html_links(node, source, dir)
-      html = node.to_commonmark
-      line = (node.source_position || {})[:start_line] || 1
-      html.scan(RAW_HTML_TAG).filter_map do |tag_source|
-        href = raw_html_target(tag_source)
-        next if href.nil? || href.empty? || href.match?(EXTERNAL)
+      raw_html_targets(node).filter_map do |href, line|
+        next if href.empty? || href.match?(EXTERNAL)
 
-        build_link(href, source, dir, line)
+        build_link(href, source, dir, line, decoded: true)
       end
     end
 
-    # The href/src of a single raw tag, or nil when it carries neither. Quoted
-    # and unquoted attribute values are both read — GitHub follows either.
-    def raw_html_target(tag_source)
-      name = tag_source[/<\s*([a-z]+)/i, 1]&.downcase
-      attr = HTML_LINK_ATTR[name]
-      return nil unless attr
-
-      tag_source[/#{attr}\s*=\s*"([^"]*)"/i, 1] ||
-        tag_source[/#{attr}\s*=\s*'([^']*)'/i, 1] ||
-        tag_source[/#{attr}\s*=\s*([^\s>]+)/i, 1]
+    # [target, line] for each <a href>/<img src> in a raw-HTML node, read with an
+    # HTML5 tokenizer the way the browser reads the page: a commented-out tag is
+    # not a link, `data-href` is not `href`, a `>` inside a quoted value does not
+    # end the tag, and character references arrive decoded. Quoted and unquoted
+    # values are both read — GitHub follows either.
+    def raw_html_targets(node)
+      start = (node.source_position || {})[:start_line] || 1
+      html = node.to_commonmark.gsub(NEUTRALIZED_TAG, '&lt;')
+      Nokogiri::HTML5.fragment(html).css(LINK_TAGS).map do |el|
+        [el[HTML_LINK_ATTR[el.name]], start + el.line - 1]
+      end
     end
 
     def cmark_document(text)
@@ -369,12 +447,13 @@ module AnchorContract
       end
     end
 
-    def build_link(href, source, dir, line)
+    def build_link(href, source, dir, line, decoded: false)
       # Character references are resolved by the renderer, not the browser, so
       # they are undone before the URL is read: `foo&amp;bar.md` is the file
-      # `foo&bar.md`. Percent escapes are the browser's and are decoded per
-      # component below, after `#` has done its splitting.
-      target, fragment = CGI.unescapeHTML(href).split('#', 2)
+      # `foo&bar.md` — unless the HTML parser has resolved them already. Percent
+      # escapes are the browser's and are decoded per component below, after `#`
+      # has done its splitting.
+      target, fragment = (decoded ? href : CGI.unescapeHTML(href)).split('#', 2)
       # A query string is stripped by every renderer before the path is resolved,
       # and percent escapes are decoded, so `foo%20bar.md?v=1` is the tracked
       # file `foo bar.md`.
@@ -428,33 +507,41 @@ module AnchorContract
     # cmark-gfm oracle rather than kramdown — a link or heading id read with the
     # site's parser would be judged by a renderer that never publishes the file.
     #
-    # Jekyll's own matcher (Jekyll::EntryFilter) treats each exclude entry as a
-    # literal path, a directory prefix, or a glob, and an `include` entry wins
-    # over a matching exclude. Both rules are reproduced here so the routing lands
-    # a file on the same side Jekyll would, whatever shape the config takes.
+    # The matching is Jekyll's own (Jekyll::EntryFilter over Jekyll's own merged
+    # config, default excludes included) rather than a copy of it: its glob has no
+    # FNM_PATHNAME, an entry is also a bare string prefix, and `include` is matched
+    # against an entry's own name — none of which a lookalike matcher kept up with.
     def site_excluded_markdown(root, config_path)
-      cfg = YAML.safe_load(File.read(config_path)) || {}
-      excludes = Array(cfg['exclude'])
-      includes = Array(cfg['include'])
-      Set.new(markdown_files(root).select do |rel|
-        excluded?(rel, excludes) && !excluded?(rel, includes)
-      end)
-    rescue Psych::Exception => e
+      raw = YAML.safe_load(File.read(config_path)) || {}
+      # Jekyll refuses to build from a config it cannot validate — a scalar
+      # `exclude`, say — so there is no routing to mirror.
+      Jekyll::Configuration[raw].validate
+      cfg = Jekyll::Configuration.from(raw)
+      site = JekyllSite.new(File.expand_path(root), cfg['exclude'], cfg['include'])
+      Set.new(markdown_files(root).reject { |rel| jekyll_reads?(site, rel) })
+    rescue Psych::Exception, Jekyll::Errors::InvalidConfigurationError => e
       raise "could not parse #{config_path}: #{e.message}"
     end
 
-    # True when the path matches a config entry the way Jekyll matches it: a
-    # literal path, a directory prefix (`skills/` or `skills`), or a glob
-    # (`docs/*.md`). FNM_PATHNAME keeps `*` from crossing `/`, matching Jekyll.
-    def excluded?(rel, entries)
-      entries.any? do |entry|
-        pattern = entry.to_s.chomp('/')
-        next false if pattern.empty?
+    # Jekyll walks the source a directory at a time and filters each directory's
+    # entries by name, so a path is read only when every level of it survives:
+    # an excluded directory is never entered, whatever `include` says about a
+    # file inside it. Only the config-driven half of the filter is asked. Its
+    # other rules (dot- and underscore-prefixed names, backups, symlinks) are not
+    # routing a config can express, and skipping them keeps such a file checked
+    # against both renderers rather than one.
+    #
+    # The walk is not the only way in: Jekyll's reader also reads every file an
+    # `include` entry names outright, wherever it sits.
+    def jekyll_reads?(site, rel)
+      path = File.join(site.source, rel)
+      return true if site.include.any? { |entry| File.expand_path(entry.to_s, site.source) == path }
 
-        rel == pattern ||
-          rel.start_with?("#{pattern}/") ||
-          File.fnmatch?(pattern, rel, File::FNM_PATHNAME | File::FNM_DOTMATCH) ||
-          File.fnmatch?("#{pattern}/**", rel, File::FNM_PATHNAME | File::FNM_DOTMATCH)
+      dir = ''
+      rel.split('/').all? do |name|
+        filter = Jekyll::EntryFilter.new(site, dir)
+        dir = File.join(dir, name)
+        !filter.excluded?(name) || filter.included?(name)
       end
     end
 

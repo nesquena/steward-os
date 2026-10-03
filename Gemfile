@@ -19,6 +19,12 @@ gem "kramdown-parser-gfm", "~> 1.1"
 # checked. Ships as a precompiled platform gem, so CI needs no C/Rust toolchain.
 gem "commonmarker", "~> 2.0"
 
+# The HTML5 tokenizer bin/anchor-lint reads raw <a>/<img>/<hN> tags with, so a
+# comment, a quoted `>` or a character reference is read the way a browser reads
+# it. html-proofer already pulls it in; declared because the lint requires it
+# directly. Ships as a precompiled platform gem.
+gem "nokogiri", "~> 1.15"
+
 # Windows / JRuby timezone data (harmless elsewhere)
 gem "tzinfo-data", platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
