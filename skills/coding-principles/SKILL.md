@@ -58,6 +58,9 @@ Full reasoning: [coding principles reference](../../docs/reference/coding-princi
 - **Blaming the view for lost state** — reload from the source of truth first; if it doesn't recover,
   the bug is in the data/persist layer, not the renderer.
 - **The vacuous test** — a test that can't fail protects nothing. Confirm red-before-green.
+- **Running someone else's branch** — fixing on a contributor's branch means "run the tests" runs
+  their code. The [sandbox rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)
+  decides whether it may run; your own commits on top don't make the branch trusted.
 
 ## Verification
 - The named "done" scenario was exercised in running code, not just asserted.

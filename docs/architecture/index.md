@@ -121,7 +121,8 @@ spine is the set of rules that hold regardless of what any of that content says.
    capture; it cannot push code or post freely. A narrow allowlist beats a broad grant.
 4. **Untrusted code is never executed unsandboxed.** If the system must run a contributor's code
    (e.g. their tests), it runs inside a locked-down sandbox with no network and no credential
-   access — and fails closed if the sandbox can't be built. Static reading of untrusted code is
+   access — and fails closed if the sandbox can't be built. With no sandbox configured, that code
+   doesn't run and the gate that needed it is not all-clear. Static reading of untrusted code is
    always safe; *execution* is always gated.
 5. **The public-write membrane.** Any action that writes to a public surface in the project's voice
    is Band C (human) or Band A **with an independent watchdog** — never an unverified autonomous

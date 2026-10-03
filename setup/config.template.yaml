@@ -104,7 +104,7 @@ secrets:
   # never the value. Helpers read it and never return it to the agent's context.
   credentials_file: ""          # e.g. a locked-down dotenv path
   execute_contributor_code: false   # if true, a sandbox MUST be configured
-  sandbox_available: false
+  sandbox_available: false          # both false: untrusted PR code never runs; a human runs the suite
 
 scheduled_jobs:                 # start with a few; add as you climb the autonomy ladder
   jobs:

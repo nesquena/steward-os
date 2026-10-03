@@ -76,8 +76,9 @@ The system can't screen PRs/issues for fit without knowing what "fits."
 18. **Where do credentials live?** Confirm they're in a permission-locked file that only
     secret-isolating helper scripts read — **never** pasted into config or an agent prompt.
 19. **Will the system ever execute contributor code?** (e.g. run PR tests.) If yes, confirm a
-    sandbox is available; if not, that capability stays disabled. →
-    [security spine](../docs/reference/security-spine.md).
+    sandbox is available; if not, that capability stays disabled, and the system can review a
+    contributor's PR but can't clear it to merge on its own (a human runs the suite). →
+    [security spine](../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution).
 20. **Where should a suspected vulnerability go?** When a captured report looks like a security
     vulnerability, it is never filed to the public tracker — it diverts to a private path. Name the
     destination (a person or DM, a private channel, an email, or `github-advisory` to use the repo's
