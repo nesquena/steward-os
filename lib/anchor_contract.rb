@@ -262,7 +262,8 @@ module AnchorContract
     # prints it as text. Found by asking each renderer what it parsed, since the
     # declined tag may be split across any number of kramdown text nodes: every
     # target cmark reads out of raw HTML has to be one kramdown read out of an
-    # HTML element too.
+    # HTML element at the same source occurrence too. A parsed tag on another
+    # line cannot vouch for a declined tag that happens to share its target.
     def unparsed_raw_links(text, source:)
       site = site_raw_targets(text).tally
       out = []
@@ -270,7 +271,8 @@ module AnchorContract
         next unless RAW_HTML_NODES.include?(node.type)
 
         raw_html_targets(node).each do |href, line|
-          next site[href] -= 1 if site.fetch(href, 0).positive?
+          occurrence = [href, line]
+          next site[occurrence] -= 1 if site.fetch(occurrence, 0).positive?
 
           out << Rejection.new(source: source, line: line, message: RAW_HTML_MESSAGE)
         end
@@ -278,7 +280,7 @@ module AnchorContract
       out
     end
 
-    # The href/src of every raw <a>/<img> kramdown parsed as an HTML element.
+    # [href/src, source line] for every raw <a>/<img> kramdown parsed as an HTML element.
     # kramdown keeps the attribute value as written, so it is run through the
     # same HTML5 parser the cmark side uses to resolve its character references.
     def site_raw_targets(text)
@@ -288,7 +290,7 @@ module AnchorContract
         value = el.attr[attr] if attr
         next unless value
 
-        out << decode_attribute(value)
+        out << [decode_attribute(value), el.options[:location] || 1]
       end
       out
     end
@@ -310,7 +312,9 @@ module AnchorContract
     # passed through by both with its id as written, so there is nothing to
     # disagree about, and kramdown's header walk never sees it.
     def divergent_heading_ids(text, source:)
-      site = heading_ids(text)
+      # Normalize after generation, preserving the slugger's duplicate counter.
+      # Empty ids offer no usable anchor and cmark omits them too.
+      site = heading_ids(text).reject(&:empty?)
       github = rendered_heading_ids(text, raw_html: false)
       return [] if site == github
 
@@ -372,7 +376,8 @@ module AnchorContract
     # character references, and nested/image-wrapped links exactly as GitHub's
     # renderer does, so its link set is what a reader on the GitHub file view can
     # actually click. Its urls arrive already entity-decoded (`a&sol;b.md` ->
-    # `a/b.md`), so build_link's own CGI.unescapeHTML is a no-op second pass.
+    # `a/b.md`), so skip build_link's entity pass: a second pass would turn the
+    # literal `a&amp;b.md` from a double-encoded destination into `a&b.md`.
     # Raw <a>/<img> tags are markdown-inert to comrak's link nodes but live links
     # on the GitHub page, so their targets are pulled from the raw HTML too.
     def links_cmark(text, source:)
@@ -390,7 +395,7 @@ module AnchorContract
         next if href.empty? || href.match?(EXTERNAL)
 
         line = (node.source_position || {})[:start_line] || 1
-        out << build_link(href, source, dir, line)
+        out << build_link(href, source, dir, line, decoded: true)
       end
       out
     end
