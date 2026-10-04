@@ -192,6 +192,99 @@ stamp, so the next run doesn't propose the same write against the same state.
 asked with. A push to that channel may carry the whole decision row or only a pointer; either way
 the index still holds the item, per [rule 1 of the loop](#1-discovery-over-delivery).
 
+## The decision record
+
+[Rule 3 of the loop](#3-keep-the-state-honest) learns that an action was taken by re-reading the
+live system. A rejection changes nothing there, so a rejected item with no record is either proposed
+again on every run or dropped without a trace. The **decision record** is what's written when a
+human decides a [decision row](#the-decision-row), and it's kept in an append-only **decision log**.
+For decisions taken on a decision row, that log gives [the autonomy ladder](autonomy-ladder.md)'s
+"log every decision" a place to land.
+
+No shipped skill writes a decision record yet. This section defines one so the skills that prepare
+human-gated work can pick the step up as each is revised.
+
+Whatever it's stored in, a decision record answers six questions:
+
+1. **Which item, at what state.** Complete identity (which repo, which item), plus the stamp the
+   decision row carried, for every input the stamp covers.
+2. **Which capability.** The action class whose band was in play.
+3. **What was proposed.** The recommendation, in a line.
+4. **What the human did.** One of three outcomes, below.
+5. **Why**, if the human says. Optional, and in their words.
+6. **When** they decided.
+
+Each outcome is something the human explicitly did to the decision row, and nothing more:
+
+- `accepted`: approved the write as shown.
+- `edited`: changed the text of the write, kept the action, and approved it.
+- `rejected`: declined it. A human who wants a different action rejects, and can say so in the
+  reason.
+
+Three are enough. Anything else the human says to a decision row ("not now", "I need more first")
+isn't a decision: the decision row stays open and nothing is recorded.
+
+Write the decision record as soon as the decision stands. A rejection stands when the human gives
+it: it's recorded against the stamp the decision row carried, with no comparison, because it only
+holds that write back while that stamp is current. An approval stands once the stamp comparison
+passes, so the order is comparison, decision record, write. If the comparison voids the decision
+row, the approval is discarded, there's no decision record, and the human decides again on the new
+decision row. Where the human sends by hand, marking the decision row is the approval, and it comes
+before the write like any other.
+
+Once an approval stands, the decision record doesn't wait on the write. It says what the human
+decided. Whether the write then went out is a fact about the live system, and rule 3 of the loop
+already re-derives it from there. A write that fails or half-finishes after an `accepted` leaves the
+decision record standing and shows up in the reconcile, not as a fourth outcome. The same goes for a
+human who approves and later reverses the action: the decision stands as recorded, and the reversal
+is a later act. Finishing a half-finished write is a new write, on a new decision row.
+
+A decision row takes one decision. Once it's decided, it's closed to a second.
+
+Anything that isn't one of the three leaves no decision record:
+
+| What happened | Decision record | Where the rest shows |
+|---|---|---|
+| The human approved, with or without a text change, and the stamp comparison passed | `accepted` or `edited` | the write, on the live system |
+| The human declined | `rejected` | |
+| The inputs changed before the write, whether or not the human had approved | none | nothing is sent; the decision row expires and a new one is prepared |
+| The human made the write by hand and didn't mark the decision row first | none | the write is on the live system, and rule 3 of the loop marks the item done |
+| Nobody has decided yet, or the human said "not now" | none | the item stays open in the index |
+
+The test is one question: does a decision stand? A rejection the human gave, or an approval whose
+stamp comparison passed, is exactly one outcome. Anything else leaves no decision record. That
+includes an approval marked on a decision row that has already expired, and a mark made after a
+write the human sent by hand: either applies to nothing.
+
+One workable form:
+
+```
+- 2026-06-25T14:02Z · issue close · example/project#517 @3f9c1a, #310 @9b2e07 · proposed: close as duplicate of #310 · rejected · #310 covers a different path
+```
+
+**Read the decision log before proposing.** That's how the rule in
+[the decision row](#the-decision-row) is kept: a write the human rejected isn't proposed again
+while the stamp is unchanged. When an input changes and the item is assessed again, the earlier
+reason is input to that assessment. It's input to the judgment only: a skill must never copy a
+reason into drafted public text. Anything a decision record quotes from an item is still data, as
+the item was.
+
+**The decision log is a ledger.** It's append-only and never pruned, like the other persistent state
+below. A record written in error is corrected by a new decision record that names the one it
+corrects, and a reader takes the correction. A correction fixes the decision log and nothing else:
+it doesn't change what was sent, and nothing is sent on it. With a mistaken `rejected` corrected,
+the next run can propose that write again, on a new decision row.
+
+**Keep it private, and keep it trusted.** A rejection reason on a contributor's change is a negative
+signal about that change, and a list of them reads as a judgment of the contributor. Treat the
+decision log as internal state, the way capture state is marked private in the config: don't render
+it on a public surface, and don't commit it to a public repository even where other handoff state
+is committed. Keep it where only the human and the steward can write, outside anything a
+contributor can write to, because the next proposal reads it. Write a reason about the proposal
+("#310 covers a different path"), not about the person. Nothing checks any of this yet, the rule
+against copying a reason into public text included: these are rules a skill and its operator keep,
+not ones a lint proves.
+
 ## What this can look like
 
 One layout that satisfies the loop. **Adapt the names and locations to your project** — the rules
@@ -214,7 +307,7 @@ A workable index line:
 The human reviews `index.md`, opens the linked draft, acts, and the next steward run flips the box to
 `[x]` and moves the file to `archive/`. **Retention:** give the disposable classes (run logs,
 archived drafts) a window so they don't grow without bound; never prune the persistent state
-(scoreboard, ledgers, trust data) — that's the system's memory. Pick the windows that fit your
+(scoreboard, ledgers, the decision log, trust data) — that's the system's memory. Pick the windows that fit your
 cadence — as a rough starting point, deployments have found ~7–14 days works for hourly jobs and
 30+ days for daily ones — then tune. The framework doesn't dictate the numbers.
 
