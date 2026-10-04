@@ -25,9 +25,10 @@ that takes priority over everything below it:
 Pair it with a **confidence gate**: if the agent can't ground a response in actual code/facts, it
 says nothing rather than posting a guess.
 
-The guard is prompt text, so it can miss. Two bounds hold when it does: the
+The guard is prompt text, so it can miss. Two bounds are there for when it does: the
 [read scope](#3-capability-minimalism) and
-[what a reader's output may carry](#5-the-public-write-membrane).
+[what a role's output may carry](#5-the-public-write-membrane). Both are bars, not yet practice;
+section 5 says where things stand.
 
 ## 2. Secret-isolating helper scripts
 Secrets never enter the agent's context. The pattern:
@@ -51,12 +52,13 @@ check the tracker read-only, write to a local queue file, and call the reaction 
 else. It cannot push code or post free text because it never has those tools. A narrow allowlist is
 a stronger guarantee than a broad grant plus good intentions.
 
-**The allowlist covers reads too.** A role that reads untrusted content should be able to open
-only the sources its job names, and that list is written down like any other allowlist. Enforce
-it outside the model: give the role tools that can't open anything else, or run it where nothing
-else is there to open. A prompt line that says "don't read other files" is the injection guard
-again, and this bound exists for the case where the guard misses. A fetch is a read: a URL or a
-path that came out of untrusted content is not a source the job named.
+**The allowlist covers reads too: the read scope.** A role that reads untrusted content should be
+able to open only the sources its job names, and that list is written down like any other
+allowlist. Enforce it outside the model: give the role tools that can't open anything else, or run
+it in an environment that holds only those sources. A prompt line that says "don't read other
+files" is just another prompt rule, and it fails the same way the injection guard does. A fetch is
+a read: a URL or a path found in untrusted content doesn't widen the list. Open it only if the
+list already covers it.
 
 ## 4. The sandbox (untrusted-code execution)
 Code you did not write is adversarial until proven otherwise. The rule covers **every command whose
@@ -169,23 +171,24 @@ Never an *unverified* autonomous public write. This is why autonomous labeling a
 this system are deterministic (no-LLM), reversible, *and* watchdogged — and why autonomous public
 *replies* are deliberately not built (drafting is fine; sending stays human).
 
-**What a reader's output may carry.** A role that reads untrusted content writes text, and some
+**What a role's output may carry.** A role that reads untrusted content writes text, and some
 of that text ends up in a public write: a bounce comment, an auto-filed issue, the wording of a
 close. Being allowed to read something doesn't make it publishable. A Watcher reads the
-reporter's name and exact words and may publish neither. So the write has a smaller set of its
-own: at most what is already public on the project's surfaces, and less wherever another rule
-says so (a reporter's words, a suspected vulnerability).
+reporter's name and exact words and may publish neither. So what the write may quote is a smaller
+set: only what is already public on the project's surfaces, and less wherever another rule says so
+(a reporter's words, a suspected vulnerability). The role's own words are bounded by the read
+scope, not by this set.
 
 Before the write, a check with no model in it confirms that every quoted span in the role's
-output points into that set and that the pointer resolves, the same test as
-[evidence that resolves](../playbooks/output-loop.md#the-decision-row). A quote that doesn't
-resolve blocks the write. The check can't see a paraphrase: a summary of a file the role should
-never have opened passes it, and nothing downstream reliably catches one. A human at Band C
+output points into that set and that the pointer resolves, as
+[evidence that resolves](../playbooks/output-loop.md#the-decision-row) requires. A quote that
+doesn't resolve blocks the write. The check can't see a paraphrase: a summary of a file the role
+should never have opened passes it, and nothing downstream reliably catches one. A human at Band C
 reads the text and may notice. A watchdog verifies the action, not where its words came from.
 That's why the read scope comes first.
 
-This is a bar, not a description of today. The skills that post a role's words predate it, and
-none runs this check yet.
+Both bounds are a bar, not a description of today. The skills that read untrusted content and
+post a role's words predate them: none has a written read scope, and none runs this check yet.
 
 ## 6. The vulnerability divert
 The confidence-tiered capture path ([community](../lifecycle/community.md#confidence-tiered-capture--action-the-safe-way-to-auto-file),
