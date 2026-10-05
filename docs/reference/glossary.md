@@ -31,6 +31,11 @@ write: one recommendation, evidence that resolves, the exact write, the undo, an
 made against. Defined in [the output loop](../playbooks/output-loop.md#the-decision-row) as a bar
 for skills to meet.
 
+**Decision record** — what's written when a human decides a decision row that has a write behind
+it: the item and its state, the capability, what was proposed, the outcome (`accepted`, `edited`,
+`rejected`), an optional reason, and the time. Kept in an append-only decision log. Defined in
+[the output loop](../playbooks/output-loop.md#the-decision-record).
+
 **Suspected vulnerability** — a captured report that trips any security signal (reporter intent,
 impact shape, or a configured sensitive surface). It is routed to the private disclosure path and
 never auto-filed or publicly drafted. The detector routes; a human confirms. See
