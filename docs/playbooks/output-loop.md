@@ -197,9 +197,10 @@ the index still holds the item, per [rule 1 of the loop](#1-discovery-over-deliv
 [Rule 3 of the loop](#3-keep-the-state-honest) learns that an action was taken by re-reading the
 live system. A rejection changes nothing there, so a rejected item with no record is either proposed
 again on every run or dropped without a trace. The **decision record** is what's written when a
-human decides a [decision row](#the-decision-row), and it's kept in an append-only **decision log**.
-For decisions taken on a decision row, that log gives [the autonomy ladder](autonomy-ladder.md)'s
-"log every decision" a place to land.
+human decides a [decision row](#the-decision-row) that has a write behind it, and it's kept in an
+append-only **decision log**. For decisions taken on a decision row, that log gives
+[the autonomy ladder](autonomy-ladder.md)'s "log every decision" a place to land. A Band B question
+with no write behind it (a design call, a dedupe pick) leaves no decision record.
 
 No shipped skill writes a decision record yet. This section defines one so the skills that prepare
 human-gated work can pick the step up as each is revised.
@@ -226,11 +227,13 @@ isn't a decision: the decision row stays open and nothing is recorded.
 
 Write the decision record as soon as the decision stands. A rejection stands when the human gives
 it: it's recorded against the stamp the decision row carried, with no comparison, because it only
-holds that write back while that stamp is current. An approval stands once the stamp comparison
-passes, so the order is comparison, decision record, write. If the comparison voids the decision
-row, the approval is discarded, there's no decision record, and the human decides again on the new
-decision row. Where the human sends by hand, marking the decision row is the approval, and it comes
-before the write like any other.
+holds that write back while that stamp is current. An approval the steward sends stands once the
+stamp comparison passes, so the order is comparison, decision record, write. If the comparison voids
+the decision row, the approval is discarded, there's no decision record, and the human decides again
+on the new decision row. Where the human sends by hand, the human is the comparison: they act on the
+live item in front of them. Marking the decision row before sending is the approval. A mark carries
+its time, and the steward records it on its next run, against the stamp the decision row carried,
+the way it records a rejection. The live system shows whether the write went out, and when.
 
 Once an approval stands, the decision record doesn't wait on the write. It says what the human
 decided. Whether the write then went out is a fact about the live system, and rule 3 of the loop
@@ -245,21 +248,22 @@ Anything that isn't one of the three leaves no decision record:
 
 | What happened | Decision record | Where the rest shows |
 |---|---|---|
-| The human approved, with or without a text change, and the stamp comparison passed | `accepted` or `edited` | the write, on the live system |
+| The human approved, with or without a text change, and the stamp comparison passed, or the human marked the decision row and then sent by hand | `accepted` or `edited` | the write, on the live system |
 | The human declined | `rejected` | |
-| The inputs changed before the write, whether or not the human had approved | none | nothing is sent; the decision row expires and a new one is prepared |
+| The inputs changed before a write the steward sends, whether or not the human had approved | none | nothing is sent; the decision row expires and a new one is prepared |
 | The human made the write by hand and didn't mark the decision row first | none | the write is on the live system, and rule 3 of the loop marks the item done |
 | Nobody has decided yet, or the human said "not now" | none | the item stays open in the index |
 
-The test is one question: does a decision stand? A rejection the human gave, or an approval whose
-stamp comparison passed, is exactly one outcome. Anything else leaves no decision record. That
-includes an approval marked on a decision row that has already expired, and a mark made after a
-write the human sent by hand: either applies to nothing.
+The test is one question: does a decision stand? A rejection the human gave, an approval whose
+stamp comparison passed, or a mark the human made before sending by hand is exactly one outcome.
+Anything else leaves no decision record. That includes an approval marked on a decision row the
+steward would send after that row has expired, and a mark dated after the write the human sent by
+hand: either applies to nothing.
 
 One workable form:
 
 ```
-- 2026-06-25T14:02Z · issue close · example/project#517 @3f9c1a, #310 @9b2e07 · proposed: close as duplicate of #310 · rejected · #310 covers a different path
+- 2026-06-25T14:02Z · issue close · example/project#517 @3f9c1a, #310 @9b2e07 · covers: state, title, body, labels, comments, linked changes · proposed: close as duplicate of #310 · rejected · #310 covers a different path
 ```
 
 **Read the decision log before proposing.** That's how the rule in
@@ -270,10 +274,12 @@ reason into drafted public text. Anything a decision record quotes from an item 
 the item was.
 
 **The decision log is a ledger.** It's append-only and never pruned, like the other persistent state
-below. A record written in error is corrected by a new decision record that names the one it
-corrects, and a reader takes the correction. A correction fixes the decision log and nothing else:
-it doesn't change what was sent, and nothing is sent on it. With a mistaken `rejected` corrected,
-the next run can propose that write again, on a new decision row.
+below. A record written in error is corrected by appending a correction that names the record it
+corrects. A correction carries its time and either the decision that actually stood or none, when no
+decision stood (a "not now" logged as `rejected`). It isn't a fourth outcome or a second decision on
+the row, and a reader takes it over the record it names. A correction fixes the decision log and
+nothing else: it doesn't change what was sent, and nothing is sent on it. With a mistaken `rejected`
+corrected, the next run can propose that write again, on a new decision row.
 
 **Keep it private, and keep it trusted.** A rejection reason on a contributor's change is a negative
 signal about that change, and a list of them reads as a judgment of the contributor. Treat the
