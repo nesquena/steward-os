@@ -228,20 +228,22 @@ isn't a decision: the decision row stays open and nothing is recorded.
 Write the decision record as soon as the decision stands. A rejection stands when the human gives
 it: it's recorded against the stamp the decision row carried, with no comparison, because it only
 holds that write back while that stamp is current. An approval stands once the stamp comparison
-passes, so the order is comparison, decision record, write. If the comparison voids the decision
-row, the approval is discarded, there's no decision record, and the human decides again on the new
-decision row.
+passes, so when the steward sends, the order is comparison, decision record, write. If the
+comparison voids the decision row, the approval is discarded, there's no decision record, and the
+human decides again on the new decision row.
 
 Where the human sends by hand, they make that comparison themselves, as rule 2 of the decision row
 asks: before sending, they check the live inputs against the stamp the decision row carried, and if
 any changed, the decision row has expired and they wait for a new one. Marking the decision row
 before sending is the approval. The mark carries its time and its outcome: `accepted`, or `edited`
 with the text that went out. A chat reply carries both on its own; a checkbox needs them written
-beside it. The steward records the mark on its next run against the stamp the decision row carried,
-the way it records a rejection, because the write has changed the live inputs since. A mark with no
-time or no outcome can't be placed before the write, and is recorded as nothing.
+beside it, in its own box, not the index's status box, which rule 3 of the loop flips from the live
+system. The steward records the mark on its next run against the stamp the decision row carried, the
+way it records a rejection, because the write has changed the live inputs since. A mark with no time
+can't be placed before the write, and a mark with no outcome names none of the three; either is
+recorded as nothing.
 
-Once an approval stands, the decision record doesn't wait on the write. It says what the human
+Once an approval stands, the decision record doesn't depend on the write. It says what the human
 decided. Whether the write then went out is a fact about the live system, and rule 3 of the loop
 already re-derives it from there. A write that fails or half-finishes after an `accepted` leaves the
 decision record standing and shows up in the reconcile, not as a fourth outcome. The same goes for a
