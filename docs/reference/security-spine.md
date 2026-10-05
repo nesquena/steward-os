@@ -171,24 +171,27 @@ Never an *unverified* autonomous public write. This is why autonomous labeling a
 this system are deterministic (no-LLM), reversible, *and* watchdogged — and why autonomous public
 *replies* are deliberately not built (drafting is fine; sending stays human).
 
-**What a role's output may carry.** A role that reads untrusted content writes text, and some
-of that text ends up in a public write: a bounce comment, an auto-filed issue, the wording of a
-close. Being allowed to read something doesn't make it publishable. A Watcher reads the
-reporter's name and exact words and may publish neither. So what the write may quote is a smaller
-set: only what is already public on the project's surfaces, and less wherever another rule says so
-(a reporter's words, a suspected vulnerability). The role's own words are bounded by the read
-scope, not by this set. Output the role produced itself from sources in its scope (a failing
-assertion, a review tool's finding) counts as its own words here; what a sandboxed run can expose
-is bounded by the sandbox, not by this check.
+**What a role's output may carry.** A role that reads untrusted content writes text, and some of
+that text ends up in a public write: a bounce comment, an auto-filed issue, the wording of a close.
+Being allowed to read something doesn't make it publishable. A Watcher reads the reporter's name and
+exact words and may publish neither. So what the write may quote is a smaller set: what is already
+public on the project's surfaces, plus the gate's own record of a run or review-tool pass on this
+head, and less wherever another rule says so (a reporter's words, a suspected vulnerability). The
+role's own words are bounded by the read scope, not by this set. Neither bound replaces the rules
+that shrink the set: the [divert](#6-the-vulnerability-divert) and the capture path's reporter rules
+bound the whole write, quoted or paraphrased. A failing assertion or a tool's finding is not the
+role's words: the head's author chose what the test prints, and the sandbox bounds what a run can
+reach, not what it says. Quote it like anything else, citing the gate's record, so a fix-spec can
+carry test output and the check can still confirm the span is in that record.
 
 Before the write, and before any decision row that carries it is shown, a check with no model in it
 confirms that every quoted span in the role's output matches the span it cites in a source from that
 set, and that the citation resolves, as
 [evidence that resolves](../playbooks/output-loop.md#the-decision-row) requires. A quote that
-doesn't match or doesn't resolve blocks the write. The check can't see a paraphrase: a summary of a
-file the role should never have opened passes it, and nothing downstream reliably catches one. A
-human at Band C reads the text and may notice. A watchdog verifies the action, not where its words
-came from. That's why the read scope comes first.
+doesn't match or doesn't resolve blocks the write. The check can't see a paraphrase or an unmarked
+copy: a summary of a file the role should never have opened passes it, and nothing downstream
+reliably catches one. A human at Band C reads the text and may notice. A watchdog verifies the
+action, not where its words came from. That's why the read scope comes first.
 
 Both bounds are bars, not a description of today. The skills that read untrusted content and
 post a role's words predate them: none has a written read scope, and none runs this check yet.
