@@ -94,8 +94,8 @@ Sort the cleared PRs by where they should go:
 ## [3] Deep review (Reviewer + Builder)
 
 Read the **whole diff**, not just the hunks. Reproduce the bug or exercise the change. Read the
-files at the PR's head *and* on the trunk to see what changed. Reading is always safe; exercising
-the change runs the PR's code, so decide first whether it may run under the
+files at the PR's head *and* on the trunk to see what changed. Inert reading needs no sandbox;
+exercising the change runs the PR's code, so decide first whether it may run under the
 [sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution). For every
 flaw, decide:
 - **Bounce** — leave an exact, reproducible fix-spec and let the author iterate. Reconcile against

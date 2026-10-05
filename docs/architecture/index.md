@@ -125,8 +125,11 @@ spine is the set of rules that hold regardless of what any of that content says.
 4. **Untrusted code is never executed unsandboxed.** If the system must run a contributor's code
    (e.g. their tests), it runs inside a locked-down sandbox with no network and no credential
    access — and fails closed if the sandbox can't be built. With no sandbox configured, that code
-   doesn't run and the gate that needed it is not all-clear. Static reading of untrusted code is
-   always safe; *execution* is always gated.
+   doesn't run and the gate that needed it is not all-clear.
+   [Inert reading](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution) of
+   untrusted code needs no sandbox; *execution* is always gated. What a role writes after reading
+   is bounded separately, at the
+   [membrane](../reference/security-spine.md#5-the-public-write-membrane).
 5. **The public-write membrane.** Any action that writes to a public surface in the project's voice
    is Band C (human) or Band A **with an independent watchdog** — never an unverified autonomous
    write. This is the single line that separates "safe to run unattended" from "a reputational
