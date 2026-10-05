@@ -177,17 +177,20 @@ close. Being allowed to read something doesn't make it publishable. A Watcher re
 reporter's name and exact words and may publish neither. So what the write may quote is a smaller
 set: only what is already public on the project's surfaces, and less wherever another rule says so
 (a reporter's words, a suspected vulnerability). The role's own words are bounded by the read
-scope, not by this set.
+scope, not by this set. Output the role produced itself from sources in its scope (a failing
+assertion, a review tool's finding) counts as its own words here; what a sandboxed run can expose
+is bounded by the sandbox, not by this check.
 
-Before the write, a check with no model in it confirms that every quoted span in the role's
-output points into that set and that the pointer resolves, as
+Before the write, and before any decision row that carries it is shown, a check with no model in it
+confirms that every quoted span in the role's output matches the span it cites in a source from that
+set, and that the citation resolves, as
 [evidence that resolves](../playbooks/output-loop.md#the-decision-row) requires. A quote that
-doesn't resolve blocks the write. The check can't see a paraphrase: a summary of a file the role
-should never have opened passes it, and nothing downstream reliably catches one. A human at Band C
-reads the text and may notice. A watchdog verifies the action, not where its words came from.
-That's why the read scope comes first.
+doesn't match or doesn't resolve blocks the write. The check can't see a paraphrase: a summary of a
+file the role should never have opened passes it, and nothing downstream reliably catches one. A
+human at Band C reads the text and may notice. A watchdog verifies the action, not where its words
+came from. That's why the read scope comes first.
 
-Both bounds are a bar, not a description of today. The skills that read untrusted content and
+Both bounds are bars, not a description of today. The skills that read untrusted content and
 post a role's words predate them: none has a written read scope, and none runs this check yet.
 
 ## 6. The vulnerability divert
