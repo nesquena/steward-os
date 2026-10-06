@@ -78,17 +78,17 @@ the human's decision into a signature.
      one needs a reason stated in the decision row, because a planted copy is the cheap way to get a
      real issue closed. If the canonical item is closed, the candidate is `likely-done` or neither.
 6. **Run the divert again on what the evidence cites**: the canonical item and every cited change.
-   A hit on any of them means no proposal. A hit on the canonical item follows step 3, since it's an
-   open issue triage covers. A cited change may never have passed intake, so a hit on it goes to the
-   private path the divert defines (the vulnerability destinations from step 1, failing closed as
-   the divert says). Route each change once: record that it was routed where the decision log
-   lives, never in the index, because a note that an item was routed is itself a disclosure, and
-   don't route a change already recorded there. If the destinations fall through to the index, that
-   index must be confirmed private, as the divert requires. A cited change that links an issue the
-   read scope doesn't cover can't be checked: no proposal, and nothing to route, since the divert
-   never ran on it. The divert reads wording and shape, so a fix that was kept quiet on purpose
-   won't trip it; that's one more reason the human reads the decision row. A close comment that
-   links a symptom to a quiet security fix publishes the link.
+   First confirm the read scope covers every issue a cited change links. If it doesn't, the divert
+   can't run on that change: no proposal, and nothing to route. A hit on any of them means no
+   proposal. A hit on the canonical item follows step 3, since it's an open issue triage covers. A
+   cited change may never have passed intake, so a hit on it goes to the private path the divert
+   defines (the vulnerability destinations from step 1, failing closed as the divert says). Route
+   each change once: record that it was routed where the decision log lives, never in the index,
+   because a note that an item was routed is itself a disclosure, and don't route a change already
+   recorded there. If the destinations fall through to the index, that index must be confirmed
+   private, as the divert requires. The divert reads wording and shape, so a fix that was kept quiet
+   on purpose won't trip it; that's one more reason the human reads the decision row. A close
+   comment that links a symptom to a quiet security fix publishes the link.
 7. **Draft the exact write.** The close action, the tracker's close reason where it has one
    (completed or duplicate, never "not planned"), and the comment. The comment cites the pointers,
    credits the author of the resolving change, thanks the reporter, names the canonical item for a
@@ -170,8 +170,9 @@ the human's decision into a signature.
       voids the approval: send nothing, record nothing, and don't propose again while it holds.
     - **Edited:** sort the edit by step 11 before anything else. A changed action or close reason is
       recorded as a rejection. An added or changed pointer, or anything else the proposal rests on,
-      expires the row: send nothing, record nothing, and run steps 3 to 10 again. Only a wording
-      edit reaches the bullets below.
+      expires the row: send nothing, record nothing, mark the row expired naming the edit, and run
+      steps 3 to 10 again, so step 2 doesn't act on it twice and the human sees why the edit didn't
+      go out. Only a wording edit reaches the bullets below.
     - **Approved, and the steward sends:** run the step 8 checks again on the final write (a
       wording edit included), then compare the live inputs with the stamp, then write the decision
       record, then send. In that order. The stored text goes out as shown, or as the human edited
