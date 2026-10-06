@@ -151,7 +151,7 @@ predate this section.
 One workable form:
 
 ```
-Recommend   close #517 as a duplicate of #310                  capability: issue judgment close, Band C
+Recommend   close #517 as a duplicate of #310            capability: issue judgment close, Band C
 Evidence    #310 is open and reports the same crash on the same path (src/sync.py:88)
 Will send   close #517, with the comment:
             "Closing as a duplicate of #310, which tracks the same crash in the sync path."
