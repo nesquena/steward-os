@@ -197,7 +197,8 @@ reliably catches one. A human at Band C reads the text and may notice. A watchdo
 action, not where its words came from. That's why the read scope comes first.
 
 Both bounds are bars, not a description of today. The skills that read untrusted content and
-post a role's words predate them: none has a written read scope, and none runs this check yet.
+post a role's words predate them: only `issue-close-proposal` has a written read scope, and none
+runs this check yet.
 
 ## 6. The vulnerability divert
 The confidence-tiered capture path ([community](../lifecycle/community.md#confidence-tiered-capture--action-the-safe-way-to-auto-file),
