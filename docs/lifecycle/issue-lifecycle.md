@@ -93,11 +93,11 @@ Anything short of that stays open and is surfaced to a human. **Under-close rath
 a wrongly-closed issue erodes reporter trust. Every autonomous close is logged and
 [fact-checked by the watchdog](../playbooks/watchdog-pattern.md).
 
-A close short of that gate is a human's decision. For two cases, an issue that's done with no
-change linking it and an issue filed twice, the `issue-close-proposal` skill prepares the
-[decision row](../playbooks/output-loop.md#the-decision-row) the human decides from. That
-capability stays Band C. Its evidence comes from a model reading the issue, so it never becomes
-the unattended path.
+A human can still close an issue that falls short of that gate. For two cases, an issue that's
+done with no change linking it and an issue filed twice, the `issue-close-proposal` skill prepares
+the [decision row](../playbooks/output-loop.md#the-decision-row) the human decides from. That
+capability stays Band C. Its recommendation rests on a model's reading of issues and code, so it
+never becomes the unattended path.
 
 ## The dropped-ball guard
 The most common trust leak is an issue where *you* asked the reporter a question, they answered, and
