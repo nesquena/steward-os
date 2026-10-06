@@ -150,5 +150,6 @@ the human's decision into a signature.
 - Every decision row shown had all five properties and passed step 8.
 - Every close the steward sent has a decision record written before it.
 - Every close a human sent by hand has a dated mark with an outcome, or no decision record.
-- No write was proposed twice against the same stamp after a rejection.
+- No close was proposed again after a rejection while the candidate and the canonical item were
+  unchanged.
 - Nothing was sent with no human present.
