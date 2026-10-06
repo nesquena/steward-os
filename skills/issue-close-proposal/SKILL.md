@@ -17,8 +17,8 @@ close: the agent prepares, a human decides. Steward role. **Band C, and it stays
 > governs the shipped-fix close and doesn't cover this one. The reason is in what this skill reads:
 > `issue-autoclose` decides from structured signals and never from prose, and this skill asks a
 > model to read the issue and the code. A recommendation built that way is something a human
-> checks, every time. Outside a release a human ships (`release-pipeline` closes the issues the
-> shipped change links), `issue-autoclose` is the only skill that closes an issue no human decided.
+> checks, every time. Outside `release-pipeline`'s shipping flow, which closes the issues a shipped
+> change links, `issue-autoclose` is the only skill that closes an issue no human decided.
 > A close sent from here, in a scheduled run or not, carries a human's decision on its exact text.
 
 > Read scope: the checkout at the trunk head, the issues and merged changes of the repos in
@@ -42,8 +42,8 @@ the human's decision into a signature.
 
 1. **Read `config.yaml`.** `repositories:`, the vulnerability destinations, and
    `autonomy.human_reachable_at`.
-2. **Act on decisions first, then select candidates.** Act on every decision the human left on a
-   decision row since the last run, as step 12 says, including marks on rows whose issue has since
+2. **Act on decisions first, then select candidates.** Act on every decision on a decision row
+   that hasn't been acted on yet, as step 12 says, including marks on rows whose issue has since
    closed, so the decision log is current before step 9 reads it. Then take the open issues in the
    configured repos. Skip any issue under a human hold. A human reopening an issue after an
    earlier close is a hold, and so is a rejection whose reason says the close is never wanted: it
@@ -112,15 +112,14 @@ the human's decision into a signature.
    human does that.
 9. **Read the [decision log](../../docs/playbooks/output-loop.md#the-decision-record).** A
    rejection holds while the stamp it was recorded against is current. If a close of this candidate
-   in this class (and, for a `duplicate`, into this canonical item) was rejected, and the candidate,
-   the canonical item and the files that rejected row's stamp covered are all as it recorded them,
-   show nothing. Citing different lines or redrafting the comment doesn't make a new proposal. A
-   change to either issue, or to a stamped file, does: assess again, and the earlier reason is
-   input to your judgment that never goes into the comment. The rejection record says what reopens
-   it, so a human who wants it looked at again otherwise knows to comment on the issue or append a
-   correction to the decision log. Take a correction
-   over the record it names. Where the decision log lives is the operator's choice: somewhere
-   private, outside anything a contributor can write to.
+   in this class (and, for a `duplicate`, into this canonical item) was rejected, and every input
+   that rejected row's stamp covered is as it recorded them, show nothing. Citing different lines
+   or redrafting the comment doesn't make a new proposal. A change to a stamped input does: assess
+   again, and the earlier reason is input to your judgment that never goes into the comment. The
+   rejection record says what reopens it, so a human who wants it looked at again otherwise knows
+   to comment on the issue or append a correction to the decision log. Take a correction over the
+   record it names. Where the decision log lives is the operator's choice: somewhere private,
+   outside anything a contributor can write to.
 10. **Show the decision row**, with all five properties:
 
     ```
@@ -131,21 +130,26 @@ the human's decision into a signature.
                 "This looks resolved by a1b2c3d, which caps the retries (src/fetch.py:40-52).
                  Thanks @author for the fix and @reporter for the report."
     Undo        reopen #88, delete the comment; the notification already sent isn't recalled
-    Made at     #88 5e1f90, trunk 9d41b2, src/fetch.py:40-52 c4d7e1, src/client.py
-                covers: state, title, body, labels, comments, linked changes, both files
-                since trunk 9d41b2
+    Made at     #88 5e1f90, a1b2c3d 7e0b44, security 2f9a10, trunk 9d41b2,
+                src/fetch.py:40-52 c4d7e1, src/client.py
+                covers: #88 state and close/reopen history, title, body, labels, comments,
+                linked changes; a1b2c3d state, description, labels, comments, links and the
+                issues it links; the security block; both files since trunk 9d41b2
     ```
 
     The stamp covers the candidate (state and its close/reopen history, title, body, labels,
-    comments, linked changes), the same for the canonical item, every cited change the divert read
-    (state, title, description, labels, comments, links), the `security` block of `config.yaml` the
-    divert ran under, the trunk head commit of each repo the evidence comes from, and the
+    comments, linked changes), the same for the canonical item, every source the divert read (each
+    cited change's state, title, description, labels, comments and links, and the contents of every
+    issue it links), the `security` block of `config.yaml` the divert ran under, the trunk head
+    commit of each repo the evidence comes from, and the
     files the evidence rests on: every file you read to decide a symptom is covered, cited or not (a
     caller, a config default). The commit alone isn't enough: a commit never changes, so a fix
     that's later reverted would still match. A later trunk head that changes none of the stamped
     files leaves the row current; one that changes any of them expires it. Stamp every file you
     relied on, because a file left out is a change the row can't see. If you can't name the files a
     coverage claim rests on, the stamp is the whole trunk, and any later trunk head expires the row.
+    A stamped input that has changed, gone missing, or can't be read expires the row, and the
+    comparison in step 12 runs before either sender acts.
     The hash of the cited lines is for the human's eye; the check is whether a stamped file changed.
     Append the decision row to the index. If `autonomy.human_reachable_at` is set, also push the
     row, or a pointer to it, there.
@@ -199,4 +203,5 @@ the human's decision into a signature.
 - Every close a human sent by hand has a dated mark with an outcome, or no decision record.
 - No close was proposed again after a rejection while that rejection's stamp was current.
 - Nothing was sent without a human's decision on the decision row that carried it.
-- Every divert hit on a cited change or canonical item reached the private path once.
+- Every divert hit on a cited change reached the private path once; a hit on a candidate or a
+  canonical item got no proposal and was left to triage.
