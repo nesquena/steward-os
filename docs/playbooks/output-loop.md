@@ -125,7 +125,7 @@ Like [the state handoff](state-handoff.md#the-contract-mechanism-neutral), this 
 stated as properties, not a mechanism. A decision row can live in a markdown file, a chat message,
 a terminal prompt, or a dashboard. It's also a bar, not a description of today: the properties and
 the three rules below say what a skill should do, and the skills that prepare human-gated work
-predate this section.
+predate this section, apart from `issue-close-proposal`, which was written against it.
 
 1. **One recommendation, stated first.** The action the agent proposes, and the capability it
    belongs to. A list of options with no pick isn't a recommendation.
@@ -151,8 +151,8 @@ predate this section.
 One workable form:
 
 ```
-Recommend   close #517 as a duplicate of #310                     capability: issue close, Band C
-Evidence    #310 is open and reports the same crash on the same path (src/sync.py:88)
+Recommend   close #517 as a duplicate of #310            capability: issue judgment close, Band C
+Evidence    #310 is open, older than #517, and reports the same crash in the sync path
 Will send   close #517, with the comment:
             "Closing as a duplicate of #310, which tracks the same crash in the sync path."
 Undo        reopen #517, delete the comment
@@ -202,8 +202,8 @@ append-only **decision log**. For decisions taken on a decision row, that log gi
 [the autonomy ladder](autonomy-ladder.md)'s "log every decision" a place to land. A Band B question
 with no write behind it (a design call, a dedupe pick) leaves no decision record.
 
-No shipped skill writes a decision record yet. This section defines one so the skills that prepare
-human-gated work can pick the step up as each is revised.
+One shipped skill has the step so far, `issue-close-proposal`. This section defines the decision
+record so the other skills that prepare human-gated work can pick the step up as each is revised.
 
 Whatever it's stored in, a decision record answers six questions:
 
@@ -271,7 +271,7 @@ human sent by hand: each applies to nothing.
 One workable form:
 
 ```
-- 2026-06-25T14:02Z · issue close · example/project#517 @3f9c1a, #310 @9b2e07 · covers: state, title, body, labels, comments, linked changes · proposed: close as duplicate of #310 · rejected · #310 covers a different path
+- 2026-06-25T14:02Z · issue judgment close · example/project#517 @3f9c1a, #310 @9b2e07 · covers: state, title, body, labels, comments, linked changes · proposed: close as duplicate of #310 · rejected · #310 covers a different path
 ```
 
 **Read the decision log before proposing.** That's how the rule in

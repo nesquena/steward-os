@@ -16,6 +16,7 @@ they read your project's [`config.yaml`](../setup/config.template.yaml) for the 
 | [`issue-triage`](issue-triage/SKILL.md) | Steward | [issue lifecycle](../docs/lifecycle/issue-lifecycle.md) | A/B |
 | [`label-sync`](label-sync/SKILL.md) | Steward | [issue lifecycle](../docs/lifecycle/issue-lifecycle.md) label step + [watchdog](../docs/playbooks/watchdog-pattern.md) | A |
 | [`issue-autoclose`](issue-autoclose/SKILL.md) | Steward | [issue lifecycle](../docs/lifecycle/issue-lifecycle.md) close-with-credit + [watchdog](../docs/playbooks/watchdog-pattern.md) | A |
+| [`issue-close-proposal`](issue-close-proposal/SKILL.md) | Steward | [issue lifecycle](../docs/lifecycle/issue-lifecycle.md) close-with-credit + [output loop](../docs/playbooks/output-loop.md) decision row | C |
 | [`triage-scoreboard`](triage-scoreboard/SKILL.md) | Steward | [scoreboard playbook](../docs/playbooks/triage-scoreboard.md) | A |
 | [`contributor-trust`](contributor-trust/SKILL.md) | Steward | [contributor recognition](../docs/lifecycle/contributor-recognition.md) trust ledger + [scoreboard playbook](../docs/playbooks/triage-scoreboard.md) | A |
 | [`action-watchdog`](action-watchdog/SKILL.md) | Steward | [watchdog pattern](../docs/playbooks/watchdog-pattern.md) | A |

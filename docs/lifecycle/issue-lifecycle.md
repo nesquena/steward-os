@@ -80,7 +80,8 @@ A serious issue that nobody is building becomes a Builder task → it enters the
 [PR lifecycle](pr-lifecycle.md). The fix, the regression test, and the release all happen there.
 
 ## Close with credit (careful — this is irreversible)
-An issue closes when its fix is **provably shipped** and it's **fully resolved** — never partially.
+An issue closes without a human only when its fix is **provably shipped** and it's **fully
+resolved**, never partially.
 The safe autonomous gate (Band A *with watchdog*) is mechanically strict:
 - a merged PR explicitly links the issue as closing it, **and**
 - the merge commit is contained in a released tag (provably shipped, not just on the trunk), **and**
@@ -91,6 +92,12 @@ The safe autonomous gate (Band A *with watchdog*) is mechanically strict:
 Anything short of that stays open and is surfaced to a human. **Under-close rather than mis-close** —
 a wrongly-closed issue erodes reporter trust. Every autonomous close is logged and
 [fact-checked by the watchdog](../playbooks/watchdog-pattern.md).
+
+A human can still close an issue that falls short of that gate. For two cases, an issue that's
+done with no change linking it and an issue filed twice, the `issue-close-proposal` skill prepares
+the [decision row](../playbooks/output-loop.md#the-decision-row) the human decides from. That
+capability stays Band C. Its recommendation rests on a model's reading of issues and code, so it
+never becomes the unattended path.
 
 ## The dropped-ball guard
 The most common trust leak is an issue where *you* asked the reporter a question, they answered, and
@@ -104,6 +111,7 @@ pure-detection Band-A signal (never an auto-reply); it just tells the maintainer
 - `issue-capture` — Watcher: stage non-tracker inbound, dedupe, and mark only after durable capture.
 - `issue-triage` — Steward: reply, label, milestone, sprint-candidate.
 - `issue-autoclose` — the strict, watchdog-verified shipped-issue closer.
+- `issue-close-proposal`: Steward. Prepares an evidence-backed close (done, or duplicate) for a human to decide.
 
 _Related: [PR lifecycle](pr-lifecycle.md) · [community](community.md) ·
 [the watchdog pattern](../playbooks/watchdog-pattern.md)._

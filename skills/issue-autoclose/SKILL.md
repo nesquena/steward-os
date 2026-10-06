@@ -13,7 +13,9 @@ signals only, **no LLM**. Steward role. Designed as a
 the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage never auto-closes.
 
 > Precondition: **the fix has shipped.** This skill closes issues that a released PR resolved; it
-> never closes on taste, staleness, or a maintainer's judgment call — those stay human. If no issue
+> never closes on taste, staleness, or a maintainer's judgment call — those stay human
+> ([`issue-close-proposal`](../issue-close-proposal/SKILL.md) prepares two kinds for that human:
+> done with no linking PR, and duplicate). If no issue
 > has a merged, released, single-surface fix since the last run, there is nothing to close — stop.
 
 > Config: read the repos from [`config.yaml`](../../setup/config.template.yaml) (`repositories:`),
