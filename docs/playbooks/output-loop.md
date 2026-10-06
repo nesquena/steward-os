@@ -151,7 +151,7 @@ predate this section.
 One workable form:
 
 ```
-Recommend   close #517 as a duplicate of #310                     capability: issue close, Band C
+Recommend   close #517 as a duplicate of #310                  capability: issue judgment close, Band C
 Evidence    #310 is open and reports the same crash on the same path (src/sync.py:88)
 Will send   close #517, with the comment:
             "Closing as a duplicate of #310, which tracks the same crash in the sync path."
@@ -271,7 +271,7 @@ human sent by hand: each applies to nothing.
 One workable form:
 
 ```
-- 2026-06-25T14:02Z · issue close · example/project#517 @3f9c1a, #310 @9b2e07 · covers: state, title, body, labels, comments, linked changes · proposed: close as duplicate of #310 · rejected · #310 covers a different path
+- 2026-06-25T14:02Z · issue judgment close · example/project#517 @3f9c1a, #310 @9b2e07 · covers: state, title, body, labels, comments, linked changes · proposed: close as duplicate of #310 · rejected · #310 covers a different path
 ```
 
 **Read the decision log before proposing.** That's how the rule in

@@ -80,7 +80,8 @@ A serious issue that nobody is building becomes a Builder task → it enters the
 [PR lifecycle](pr-lifecycle.md). The fix, the regression test, and the release all happen there.
 
 ## Close with credit (careful — this is irreversible)
-An issue closes when its fix is **provably shipped** and it's **fully resolved** — never partially.
+An issue closes without a human only when its fix is **provably shipped** and it's **fully
+resolved**, never partially.
 The safe autonomous gate (Band A *with watchdog*) is mechanically strict:
 - a merged PR explicitly links the issue as closing it, **and**
 - the merge commit is contained in a released tag (provably shipped, not just on the trunk), **and**
@@ -91,6 +92,12 @@ The safe autonomous gate (Band A *with watchdog*) is mechanically strict:
 Anything short of that stays open and is surfaced to a human. **Under-close rather than mis-close** —
 a wrongly-closed issue erodes reporter trust. Every autonomous close is logged and
 [fact-checked by the watchdog](../playbooks/watchdog-pattern.md).
+
+A close short of that gate is a human's decision. For two cases, an issue that's done with no
+change linking it and an issue filed twice, the `issue-close-proposal` skill prepares the
+[decision row](../playbooks/output-loop.md#the-decision-row) the human decides from. That
+capability stays Band C. Its evidence comes from a model reading the issue, so it never becomes
+the unattended path.
 
 ## The dropped-ball guard
 The most common trust leak is an issue where *you* asked the reporter a question, they answered, and
