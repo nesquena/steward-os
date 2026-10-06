@@ -168,10 +168,10 @@ the human's decision into a signature.
     - **Rejected:** write the decision record against the stamp.
     - **Before either sender acts on an approval:** check for a human hold (step 2). A current hold
       voids the approval: send nothing, record nothing, and don't propose again while it holds.
-    - **Edited:** sort the edit by step 11 before anything else. A changed action or close reason
-      is a rejection. An added or changed pointer, or anything else the proposal rests on, expires
-      the row: send nothing, record nothing, and run steps 3 to 10 again. Only a wording edit
-      reaches the bullets below.
+    - **Edited:** sort the edit by step 11 before anything else. A changed action or close reason is
+      recorded as a rejection. An added or changed pointer, or anything else the proposal rests on,
+      expires the row: send nothing, record nothing, and run steps 3 to 10 again. Only a wording
+      edit reaches the bullets below.
     - **Approved, and the steward sends:** run the step 8 checks again on the final write (a
       wording edit included), then compare the live inputs with the stamp, then write the decision
       record, then send. In that order. The stored text goes out as shown, or as the human edited
