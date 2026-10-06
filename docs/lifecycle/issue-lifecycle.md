@@ -104,6 +104,7 @@ pure-detection Band-A signal (never an auto-reply); it just tells the maintainer
 - `issue-capture` — Watcher: stage non-tracker inbound, dedupe, and mark only after durable capture.
 - `issue-triage` — Steward: reply, label, milestone, sprint-candidate.
 - `issue-autoclose` — the strict, watchdog-verified shipped-issue closer.
+- `issue-close-proposal`: Steward. Prepares an evidence-backed close (done, or duplicate) for a human to decide.
 
 _Related: [PR lifecycle](pr-lifecycle.md) · [community](community.md) ·
 [the watchdog pattern](../playbooks/watchdog-pattern.md)._
