@@ -84,10 +84,10 @@ the human's decision into a signature.
    the divert says). Route each change once: record that it was routed where the decision log
    lives, never in the index, because a note that an item was routed is itself a disclosure, and
    don't route a change already recorded there. If the destinations fall through to the index, that
-   index must be confirmed private, as the divert requires. The divert reads wording and shape, so
-   a fix that
-   was kept quiet on purpose won't trip it; that's one more reason the human reads the decision row.
-   A close comment that links a symptom to a quiet security fix publishes the link.
+   index must be confirmed private, as the divert requires. A cited change that links an issue the
+   read scope doesn't cover counts as a hit: no proposal. The divert reads wording and shape, so a
+   fix that was kept quiet on purpose won't trip it; that's one more reason the human reads the
+   decision row. A close comment that links a symptom to a quiet security fix publishes the link.
 7. **Draft the exact write.** The close action, the tracker's close reason where it has one
    (completed or duplicate, never "not planned"), and the comment. The comment cites the pointers,
    credits the author of the resolving change, thanks the reporter, names the canonical item for a
@@ -140,17 +140,18 @@ the human's decision into a signature.
     The stamp covers the candidate (state and its close/reopen history, title, body, labels,
     comments, linked changes), the same for the canonical item, every source the divert read (each
     cited change's state, title, description, labels, comments and links, and the contents of every
-    issue it links), the `security` block of `config.yaml` the divert ran under, the trunk head
-    commit of each repo the evidence comes from, and the
-    files the evidence rests on: every file you read to decide a symptom is covered, cited or not (a
-    caller, a config default). The commit alone isn't enough: a commit never changes, so a fix
-    that's later reverted would still match. A later trunk head that changes none of the stamped
-    files leaves the row current; one that changes any of them expires it. Stamp every file you
-    relied on, because a file left out is a change the row can't see. If you can't name the files a
-    coverage claim rests on, the stamp is the whole trunk, and any later trunk head expires the row.
-    A stamped input that has changed, gone missing, or can't be read expires the row, and the
-    comparison in step 12 runs before either sender acts.
-    The hash of the cited lines is for the human's eye; the check is whether a stamped file changed.
+    issue it links; for a commit with no merged change behind it, its message, its comments and the
+    issues its message links), the `security` block of `config.yaml` the divert ran under, the trunk
+    head commit of each repo the evidence comes from, and the files the evidence rests on: every
+    file you read to decide a symptom is covered, cited or not (a caller, a config default). The
+    commit alone isn't enough: a commit never changes, so a fix that's later reverted would still
+    match. A later trunk head that changes none of the stamped files leaves the row current; one
+    that changes any of them expires it. Stamp every file you relied on, because a file left out is
+    a change the row can't see. If you can't name the files a coverage claim rests on, the stamp is
+    the whole trunk, and any later trunk head expires the row. A stamped input that has changed,
+    gone missing, or can't be read expires the row, and the comparison in step 12 runs before either
+    sender acts. The hash of the cited lines is for the human's eye; the check is whether a stamped
+    file changed.
     Append the decision row to the index. If `autonomy.human_reachable_at` is set, also push the
     row, or a pointer to it, there.
 11. **The human decides**: accept, edit, or reject. "Not now" isn't a decision, and the decision row
@@ -158,8 +159,10 @@ the human's decision into a signature.
     `autonomy.human_reachable_at`, and only where that surface is one that human and the steward
     alone write to. A mark on the tracker, in the issue or its comments, or from anyone else isn't a
     decision. An edit that changes the action or the close reason is a rejection, not an edit; the
-    human sends that one by hand. Preparing and deciding are separate turns:
-    a run that prepares decision rows doesn't wait for an answer.
+    human sends that one by hand. An edit that adds or changes a pointer, or anything else the
+    proposal rests on, is a new proposal: the row expires, steps 3 to 10 run again on the edited
+    text, and a human decides on the new row before either sender acts. Preparing and deciding are
+    separate turns: a run that prepares decision rows doesn't wait for an answer.
 12. **Act on the decision.**
     - **Rejected:** write the decision record against the stamp.
     - **Before either sender acts on an approval:** check for a human hold (step 2). A current hold
@@ -170,10 +173,11 @@ the human's decision into a signature.
       it. A failed check sends nothing and records nothing, since no approval stands before the
       comparison passes: mark the row expired, naming the check and the span it failed on, so step
       2 prepares a new one and the human sees why the write didn't go out.
-    - **Approved, and the human sends by hand:** the human marks the decision row with the time and
-      the outcome, compares the live inputs with the stamp, and sends. Record the mark on the next
-      run. Show the current stamp when asked, since nobody compares a hash by eye.
-    - **The comparison fails:** send nothing, discard the approval, and prepare a new decision row.
+    - **Approved, and the human sends by hand:** the human compares the live inputs with the stamp,
+      then marks the decision row with the time and the outcome, and sends. Record the mark on the
+      next run. Show the current stamp when asked, since nobody compares a hash by eye.
+    - **The comparison fails:** send nothing, discard the approval, and prepare a new decision row,
+      unless one is already open against the current inputs.
 13. **Keep it out of the action ledger.** Don't append this close to the action ledger the
     [watchdog](../action-watchdog/SKILL.md)'s "Autonomous closes" check reads: that check expects a
     release tag and a linking change, and would flag every close made here. The decision log is the
