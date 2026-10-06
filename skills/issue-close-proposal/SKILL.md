@@ -85,9 +85,10 @@ the human's decision into a signature.
    lives, never in the index, because a note that an item was routed is itself a disclosure, and
    don't route a change already recorded there. If the destinations fall through to the index, that
    index must be confirmed private, as the divert requires. A cited change that links an issue the
-   read scope doesn't cover counts as a hit: no proposal. The divert reads wording and shape, so a
-   fix that was kept quiet on purpose won't trip it; that's one more reason the human reads the
-   decision row. A close comment that links a symptom to a quiet security fix publishes the link.
+   read scope doesn't cover can't be checked: no proposal, and nothing to route, since the divert
+   never ran on it. The divert reads wording and shape, so a fix that was kept quiet on purpose
+   won't trip it; that's one more reason the human reads the decision row. A close comment that
+   links a symptom to a quiet security fix publishes the link.
 7. **Draft the exact write.** The close action, the tracker's close reason where it has one
    (completed or duplicate, never "not planned"), and the comment. The comment cites the pointers,
    credits the author of the resolving change, thanks the reporter, names the canonical item for a
@@ -133,8 +134,8 @@ the human's decision into a signature.
     Made at     #88 5e1f90, a1b2c3d 7e0b44, security 2f9a10, trunk 9d41b2,
                 src/fetch.py:40-52 c4d7e1, src/client.py
                 covers: #88 state and close/reopen history, title, body, labels, comments,
-                linked changes; a1b2c3d state, description, labels, comments, links and the
-                issues it links; the security block; both files since trunk 9d41b2
+                linked changes; a1b2c3d message, comments and the issues its message links;
+                the security block; both files since trunk 9d41b2
     ```
 
     The stamp covers the candidate (state and its close/reopen history, title, body, labels,
@@ -167,8 +168,12 @@ the human's decision into a signature.
     - **Rejected:** write the decision record against the stamp.
     - **Before either sender acts on an approval:** check for a human hold (step 2). A current hold
       voids the approval: send nothing, record nothing, and don't propose again while it holds.
-    - **Approved, and the steward sends:** run the step 8 checks again on the final write (the
-      human's edit included), then compare the live inputs with the stamp, then write the decision
+    - **Edited:** sort the edit by step 11 before anything else. A changed action or close reason
+      is a rejection. An added or changed pointer, or anything else the proposal rests on, expires
+      the row: send nothing, record nothing, and run steps 3 to 10 again. Only a wording edit
+      reaches the bullets below.
+    - **Approved, and the steward sends:** run the step 8 checks again on the final write (a
+      wording edit included), then compare the live inputs with the stamp, then write the decision
       record, then send. In that order. The stored text goes out as shown, or as the human edited
       it. A failed check sends nothing and records nothing, since no approval stands before the
       comparison passes: mark the row expired, naming the check and the span it failed on, so step
