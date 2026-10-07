@@ -19,14 +19,16 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
    fix-spec bounce that reproduces the exploit, no routing record on a public surface), route the PR
    to the private path (`security_contact` → `alarms_to` → private index; never public, never a silent
    no-op), and let a human coordinate the fix (private patch, advisory, then merge). Then stop public
-   triage of that PR.
+   triage of that PR. A lane or judgment an earlier run already put on the board stays: a retraction
+   is a visible diff.
 3. **Fit / scope screen [0].** Does the PR serve a scope anchor?
    - Health fix (bug/security/reliability on a shipped feature)? → bypass the scope gate, proceed.
      Note the bypass marker (`bypass`) for step 6.
    - Hits an anchor? → in-scope, proceed.
    - Hits no anchor / trips the philosophy veto? → out of scope. Close politely (Band C — draft the
-     kind explanation, human sends) or escalate if uncertain. **Never auto-close on scope at <90%
-     confidence.** Write no judgment for an out-of-scope or escalated PR.
+     kind explanation, human sends) or escalate if uncertain, naming the head commit and target
+     branch you screened. **Never auto-close on scope at <90% confidence.** Write no judgment for an
+     out-of-scope or escalated PR.
 4. **Marginal-benefit screen [1].** "What would real users concretely lose if we never merged this?"
    If "nothing concrete" → maintainer-review or close, regardless of code quality.
 5. **Route [2].** Sort the survivors:
@@ -40,12 +42,13 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
    [the rubric](../../docs/playbooks/triage-scoreboard.md#the-default-rubric) your project uses.
    Set the severity flag only under
    [its rule](../../docs/playbooks/triage-scoreboard.md#severity-is-a-flag). Write no judgment for a
-   `hold` or draft PR, and write only where the board holds no judgment for this PR: one already
-   there, a human's or an earlier run's, stands. If you disagree with it, say so in your output and
-   leave it.
-7. **Resume after a ruling.** When a human rules an escalated PR in scope, run step 2 again. If
-   the PR is still at the head the human ruled on, continue from step 4. If it has changed since,
-   run step 3 again on the new head, and escalate again if what changed is in question.
+   `hold` or draft PR, and write only a dimension that is empty on the board: one already set, by a
+   human or an earlier run, stands. If you disagree with it, say so in your output and leave it.
+7. **Resume after a ruling.** When a human rules an escalated PR in scope, re-read `config.yaml` and
+   run step 2 again. If the PR is still at the head commit and target branch you named when you
+   escalated, and the scope settings haven't changed, continue from step 4. If any of them changed,
+   or you can't tell which head the ruling covered, run step 3 again on the current head and
+   escalate again if what changed is in question.
 
 ## Pitfalls
 - **Don't code-review before scope-screening** — the cheapest review is the one you skip.
@@ -56,8 +59,9 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
 - Every PR routed to a review lane has that lane and an in-range judgment on the scoreboard. This
   skill writes no judgment for a PR that is waiting on a human, on hold or in draft, and never
   changes a judgment already there. *A step-2 diverted PR has only its private-path record; this
-  skill writes nothing about it to the scoreboard. The board lists it like any other open item,
-  mechanical dimensions only, so its empty judgment looks like every other unjudged row.*
-- A diverted PR left no public trace (no comment, review, or routing record) and reached a private
-  destination.
+  skill writes nothing about it to the scoreboard. The board keeps any judgment written before the
+  divert unchanged; where there is none, it lists the PR like any other unjudged row, mechanical
+  dimensions only.*
+- A PR diverted at step 2 before any routing left no public trace (no comment, review, or routing
+  record) and reached a private destination.
 - Out-of-scope closes were either human-sent or ≥90%-confidence; uncertain ones escalated.

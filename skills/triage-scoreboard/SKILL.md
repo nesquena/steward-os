@@ -20,7 +20,8 @@ Band A (read-only, deterministic where possible). Ideal as a scheduled job.
 4. **Compute the composite** = weighted sum of dimensions (weights from config; tune to match "what
    I'd pick up next"). Read the bypass marker (`bypass`) as the plain in-scope level of
    [the rubric](../../docs/playbooks/triage-scoreboard.md#the-default-rubric). An item with no
-   judgment ranks on its mechanical dimensions, judgment columns empty. Promote items carrying the
+   judgment ranks on its mechanical dimensions, judgment columns empty; an empty dimension counts
+   as unjudged for that dimension. Promote items carrying the
    severity flag to a spotlight at the top.
 5. **Tag evidence-readiness** per item: which review streams have landed (automated review present?
    visual preview? deep-review dossier?). Compact ✓/· marker. Presence ≠ clean.

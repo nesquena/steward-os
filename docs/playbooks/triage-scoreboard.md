@@ -64,9 +64,9 @@ What the table can't show:
   judgment was written, change nothing on the board: a retraction is a visible diff too. Note the
   judgment in the private record; whether to change it is the human's call, made with the rest of
   the private handling.
-- **An agent writes a judgment only where none exists.** A judgment already on the board, a
-  human's or an earlier run's, stands. An agent that disagrees says so in its output and leaves the
-  judgment alone.
+- **An agent writes only a dimension that is empty.** A dimension already on the board, set by a
+  human or an earlier run, stands. An agent that disagrees says so in its output and leaves it
+  alone. An empty dimension counts as unjudged for that dimension.
 
 ### Severity is a flag
 Severity isn't a fourth scale. It's a flag stored with the judgment, and the refresh doesn't
@@ -74,7 +74,9 @@ recompute it.
 
 - An agent sets the flag only when criticality is at the top level *and* the judgment cites
   evidence that doesn't come from the item's author: a line on the trunk, a failing check on the
-  trunk, or a report from someone else whose claim the agent then confirmed on the trunk. The
+  trunk, or a report from someone else whose claim the agent then confirmed on the trunk, by
+  reading or with a repro it wrote itself under
+  [the sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution). The
   item's own text, diff and checks don't count, and neither does a report's say-so.
 - A human may set the flag without citing anything.
 - Whoever changes criticality decides the flag again. An agent changes neither once either is on
