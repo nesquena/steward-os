@@ -22,7 +22,7 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
    triage of that PR.
 3. **Fit / scope screen [0].** Does the PR serve a scope anchor?
    - Health fix (bug/security/reliability on a shipped feature)? → bypass the scope gate, proceed.
-     Note the bypass marker for step 6.
+     Note the bypass marker (`bypass`) for step 6.
    - Hits an anchor? → in-scope, proceed.
    - Hits no anchor / trips the philosophy veto? → out of scope. Close politely (Band C — draft the
      kind explanation, human sends) or escalate if uncertain. **Never auto-close on scope at <90%
@@ -40,9 +40,12 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
    [the rubric](../../docs/playbooks/triage-scoreboard.md#the-default-rubric) your project uses.
    Set the severity flag only under
    [its rule](../../docs/playbooks/triage-scoreboard.md#severity-is-a-flag). Write no judgment for a
-   `hold` or draft PR.
-7. **Resume after a ruling.** When a human rules an escalated PR in scope, run step 2 again (the
-   PR may have changed while it waited), then continue from step 4.
+   `hold` or draft PR, and write only where the board holds no judgment for this PR: one already
+   there, a human's or an earlier run's, stands. If you disagree with it, say so in your output and
+   leave it.
+7. **Resume after a ruling.** When a human rules an escalated PR in scope, run step 2 again. If
+   the PR is still at the head the human ruled on, continue from step 4. If it has changed since,
+   run step 3 again on the new head, and escalate again if what changed is in question.
 
 ## Pitfalls
 - **Don't code-review before scope-screening** — the cheapest review is the one you skip.
@@ -51,8 +54,10 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
 
 ## Verification
 - Every PR routed to a review lane has that lane and an in-range judgment on the scoreboard. This
-  skill writes no judgment for a PR that is waiting on a human, on hold or in draft. *A step-2
-  diverted PR has only its private-path record and no public scoreboard entry.*
+  skill writes no judgment for a PR that is waiting on a human, on hold or in draft, and never
+  changes a judgment already there. *A step-2 diverted PR has only its private-path record; this
+  skill writes nothing about it to the scoreboard. The board lists it like any other open item,
+  mechanical dimensions only, so its empty judgment looks like every other unjudged row.*
 - A diverted PR left no public trace (no comment, review, or routing record) and reached a private
   destination.
 - Out-of-scope closes were either human-sent or ≥90%-confidence; uncertain ones escalated.

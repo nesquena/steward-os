@@ -32,7 +32,8 @@ precious and persisted.
 The three judgment dimensions need a shared scale. Without one, two boards can't be compared and
 the weights have nothing fixed to tune against. This is a default: replace it if your project
 values something else, and keep four things when you do: named dimensions, a stated range, a
-stated direction, and a written anchor for every level.
+stated direction, and a written anchor for every level. Until your project writes a replacement
+beside this playbook, the default applies and the board validates against its range.
 
 Each dimension is an integer from 0 to 3. Higher always means *pick this up sooner*.
 
@@ -58,7 +59,14 @@ What the table can't show:
 - **A suspected vulnerability gets no judgment.** Run the
   [vulnerability divert](../reference/security-spine.md#6-the-vulnerability-divert) and write no
   score and no severity flag. The board is committed, and either would confirm in public what the
-  divert keeps private.
+  divert keeps private. The board still lists the item like any other unjudged one, mechanical
+  dimensions only, since a missing row would be its own signal. If the divert fires after a
+  judgment was written, change nothing on the board: a retraction is a visible diff too. Note the
+  judgment in the private record; whether to change it is the human's call, made with the rest of
+  the private handling.
+- **An agent writes a judgment only where none exists.** A judgment already on the board, a
+  human's or an earlier run's, stands. An agent that disagrees says so in its output and leaves the
+  judgment alone.
 
 ### Severity is a flag
 Severity isn't a fourth scale. It's a flag stored with the judgment, and the refresh doesn't
@@ -66,10 +74,11 @@ recompute it.
 
 - An agent sets the flag only when criticality is at the top level *and* the judgment cites
   evidence that doesn't come from the item's author: a line on the trunk, a failing check on the
-  trunk, a report from someone else that the agent read. The item's own text, diff and checks
-  don't count.
+  trunk, or a report from someone else whose claim the agent then confirmed on the trunk. The
+  item's own text, diff and checks don't count, and neither does a report's say-so.
 - A human may set the flag without citing anything.
-- Whoever changes criticality decides the flag again.
+- Whoever changes criticality decides the flag again. An agent changes neither once either is on
+  the board.
 
 ### The scope gate and the scope grade
 The scope gate decides in or out. `scope_fit` grades what the gate let in. Two cases fall outside
@@ -80,8 +89,8 @@ the grade:
   mechanical dimensions, judgment columns empty. An empty judgment says nothing about the item.
   When the human rules it in scope, triage resumes and records the judgment.
 - **Bypass.** A health fix (a bug, security or reliability fix on a shipped feature) skips the
-  gate, so there's no `scope_fit` to give. Record a bypass marker in place of `scope_fit`. The
-  composite reads the bypass marker as the plain in-scope level, 2 in the default; a replacement
+  gate, so there's no `scope_fit` to give. Record the bypass marker, `bypass`, in place of
+  `scope_fit`. The composite reads it as the plain in-scope level, 2 in the default; a replacement
   rubric names its own. The bypass means "don't re-litigate whether the feature should exist", not
   "central to an anchor", and the fix earns its rank through criticality.
 
