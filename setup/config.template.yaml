@@ -20,11 +20,11 @@ repositories:                   # list every repo the project spans
   # - { host: github.com, owner: "", name: "", role: "desktop", visibility: public }
 
 scope:                          # the fit/scope screen — the most important section
-  anchors:                      # a change must serve at least one of these to be in-scope
+  anchors:                      # a change must serve at least one of these to be in-scope; the scoreboard grades how directly (scope_fit)
     - ""
   philosophy_veto:              # qualities that disqualify a change even if well-built
     - ""
-  bypass_scope_gate:            # change classes that skip the scope screen entirely
+  bypass_scope_gate:            # change classes that skip the scope screen entirely; they carry a bypass marker on the scoreboard
     - "bug-fix-on-shipped-feature"
     - "security-fix"
     - "reliability-fix"

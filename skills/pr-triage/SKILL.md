@@ -22,10 +22,11 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
    triage of that PR.
 3. **Fit / scope screen [0].** Does the PR serve a scope anchor?
    - Health fix (bug/security/reliability on a shipped feature)? → bypass the scope gate, proceed.
+     Note the bypass marker for step 6.
    - Hits an anchor? → in-scope, proceed.
    - Hits no anchor / trips the philosophy veto? → out of scope. Close politely (Band C — draft the
      kind explanation, human sends) or escalate if uncertain. **Never auto-close on scope at <90%
-     confidence.**
+     confidence.** Write no judgment for an out-of-scope or escalated PR.
 4. **Marginal-benefit screen [1].** "What would real users concretely lose if we never merged this?"
    If "nothing concrete" → maintainer-review or close, regardless of code quality.
 5. **Route [2].** Sort the survivors:
@@ -33,8 +34,14 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
    - medium/large / sensitive subsystem / design judgment → **deep lane** (→ `pr-deep-review`)
    - visible surface → **screenshot/UX gate** (request before/after at config'd viewports)
    - `hold` / draft → **skip entirely** (hard block)
-6. **Record the routing** on the [scoreboard](../../docs/playbooks/triage-scoreboard.md) (persisted
-   judgment dims: scope_fit, criticality, risk).
+6. **Record the routing and the judgment** on the
+   [scoreboard](../../docs/playbooks/triage-scoreboard.md): the lane, plus `scope_fit` (or the
+   bypass marker), `criticality` and `risk`, scored on
+   [the rubric](../../docs/playbooks/triage-scoreboard.md#the-default-rubric) your project uses.
+   Set the severity flag only under
+   [its rule](../../docs/playbooks/triage-scoreboard.md#severity-is-a-flag).
+7. **Resume after a ruling.** When a human rules an escalated PR in scope, run step 2 again (the
+   PR may have changed while it waited), then continue from step 4.
 
 ## Pitfalls
 - **Don't code-review before scope-screening** — the cheapest review is the one you skip.
@@ -42,8 +49,9 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
 - **Uncertain scope → escalate with a recommendation**, don't guess and don't silently sit on it.
 
 ## Verification
-- Every open PR has a routing decision and persisted judgment dims on the scoreboard — *except a
-  step-2 diverted PR, which has only its private-path record and no public scoreboard entry.*
+- Every PR routed to a review lane has that lane and an in-range judgment on the scoreboard. A PR
+  that is waiting on a human, on hold or in draft has no judgment. *A step-2 diverted PR has only its private-path record and no public scoreboard
+  entry.*
 - A diverted PR left no public trace (no comment, review, or routing record) and reached a private
   destination.
 - Out-of-scope closes were either human-sent or ≥90%-confidence; uncertain ones escalated.
