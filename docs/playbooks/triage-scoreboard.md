@@ -21,7 +21,7 @@ current without anyone asking.
 ## Two kinds of dimension
 - **Mechanical** (recomputed fresh every run, no judgment): CI status, mergeable/conflicting,
   how far behind the trunk, diff size, age, contributor trust score.
-- **Judgment** (set by a reviewer/agent, persisted across runs): scope fit, criticality, risk,
+- **Judgment** (set by a reviewer/agent, persisted across runs): `scope_fit`, `criticality`, `risk`,
   scored on [the default rubric](#the-default-rubric). These survive regeneration so a human's
   assessment isn't lost when the mechanical data refreshes.
 
@@ -31,7 +31,7 @@ precious and persisted.
 ## The default rubric
 The three judgment dimensions need a shared scale. Without one, two boards can't be compared and
 the weights have nothing fixed to tune against. This is a default: replace it if your project
-values something else, and keep four things when you do. Named dimensions, a stated range, a
+values something else, and keep four things when you do: named dimensions, a stated range, a
 stated direction, and a written anchor for every level.
 
 Each dimension is an integer from 0 to 3. Higher always means *pick this up sooner*.
@@ -39,25 +39,26 @@ Each dimension is an integer from 0 to 3. Higher always means *pick this up soon
 | Dimension | Measures | 0 | 1 | 2 | 3 |
 |---|---|---|---|---|---|
 | `scope_fit` | how directly the item serves a scope anchor | serves none | serves one in part | serves one plainly | the anchor can't be met without it |
-| `criticality` | the harm the item fixes or reports | none, or already resolved | cosmetic, or an inconvenience | a shipped feature fails for some users | data loss, or a core path fails |
+| `criticality` | the harm the item fixes or reports | none, or already resolved | cosmetic, or an inconvenience | a shipped feature fails | data loss, or a core path fails |
 | `risk` | the cost of leaving the item alone | nothing changes | the cost grows slowly | it worsens on a known trigger | it's worsening now, or it blocks work by someone other than the item's author |
 
 What the table can't show:
 
 - **Criticality is the harm; risk is whether the harm grows.** A broken export with no way around
-  it is high criticality. If nothing else breaks while it waits, it's low risk.
+  it is criticality 2. If nothing else breaks while it waits, it's risk 0.
 - **A workaround lowers criticality by one level**, and never below 1.
-- **A feature fixes no harm**, so its criticality is 0 and its rank comes from scope fit.
+- **A feature fixes no harm**, so its criticality is 0 and its rank comes from `scope_fit` and
+  `risk`.
 - **Score from what you found, not from what the item says.** The item's own text is a claim.
 - **Risk is not the danger of merging.** That question picks the PR's lane and has no dimension
   here.
 - **`scope_fit` 0 is a human's value:** an out-of-scope item a maintainer chose to keep open. An
   agent that finds no anchor takes the out-of-scope path and writes no 0. An item that could be
   argued in or out of scope is escalated, not graded.
-- **A suspected vulnerability gets no score.** Run the
-  [vulnerability divert](../reference/security-spine.md#6-the-vulnerability-divert) and write
-  nothing on the board. The board is committed, and a score would confirm in public what the divert keeps
-  private.
+- **A suspected vulnerability gets no judgment.** Run the
+  [vulnerability divert](../reference/security-spine.md#6-the-vulnerability-divert) and write no
+  score and no severity flag. The board is committed, and either would confirm in public what the
+  divert keeps private.
 
 ### Severity is a flag
 Severity isn't a fourth scale. It's a flag stored with the judgment, and the refresh doesn't
@@ -78,10 +79,11 @@ the grade:
   sent, gets no judgment. The board treats it like any item nobody has judged yet: ranked on its
   mechanical dimensions, judgment columns empty. An empty judgment says nothing about the item.
   When the human rules it in scope, triage resumes and records the judgment.
-- **Bypass.** A health fix skips the gate, so there's no grade to give. Record a bypass marker in
-  place of `scope_fit`. The composite reads the bypass marker as the plain in-scope level, 2 in
-  the default; a replacement rubric names its own. The bypass means "don't re-litigate whether the feature should exist", not "central
-  to an anchor", and the fix earns its rank through criticality.
+- **Bypass.** A health fix (a bug, security or reliability fix on a shipped feature) skips the
+  gate, so there's no `scope_fit` to give. Record a bypass marker in place of `scope_fit`. The
+  composite reads the bypass marker as the plain in-scope level, 2 in the default; a replacement
+  rubric names its own. The bypass means "don't re-litigate whether the feature should exist", not
+  "central to an anchor", and the fix earns its rank through criticality.
 
 ## The composite
 A weighted sum of the dimensions, tuned so the ranking matches "what a maintainer would actually

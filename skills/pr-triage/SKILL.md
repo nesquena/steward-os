@@ -39,7 +39,8 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
    bypass marker), `criticality` and `risk`, scored on
    [the rubric](../../docs/playbooks/triage-scoreboard.md#the-default-rubric) your project uses.
    Set the severity flag only under
-   [its rule](../../docs/playbooks/triage-scoreboard.md#severity-is-a-flag).
+   [its rule](../../docs/playbooks/triage-scoreboard.md#severity-is-a-flag). Write no judgment for a
+   `hold` or draft PR.
 7. **Resume after a ruling.** When a human rules an escalated PR in scope, run step 2 again (the
    PR may have changed while it waited), then continue from step 4.
 
@@ -49,9 +50,9 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
 - **Uncertain scope → escalate with a recommendation**, don't guess and don't silently sit on it.
 
 ## Verification
-- Every PR routed to a review lane has that lane and an in-range judgment on the scoreboard. A PR
-  that is waiting on a human, on hold or in draft has no judgment. *A step-2 diverted PR has only its private-path record and no public scoreboard
-  entry.*
+- Every PR routed to a review lane has that lane and an in-range judgment on the scoreboard. This
+  skill writes no judgment for a PR that is waiting on a human, on hold or in draft. *A step-2
+  diverted PR has only its private-path record and no public scoreboard entry.*
 - A diverted PR left no public trace (no comment, review, or routing record) and reached a private
   destination.
 - Out-of-scope closes were either human-sent or ≥90%-confidence; uncertain ones escalated.
