@@ -41,7 +41,7 @@ Each dimension is an integer from 0 to 3. Higher always means *pick this up soon
 |---|---|---|---|---|---|
 | `scope_fit` | how directly the item serves a scope anchor | serves none | serves one in part | serves one plainly | the anchor can't be met without it |
 | `criticality` | the harm the item fixes or reports | none, or already resolved | cosmetic, or an inconvenience | a shipped feature fails | data loss, or a core path fails |
-| `risk` | the cost of leaving the item alone | nothing changes | the cost grows slowly | it worsens on a known trigger | it's worsening now, or it blocks work by someone other than the item's author |
+| `risk` | the cost of leaving the item alone | nothing changes | the cost grows slowly | it worsens on a known trigger | it's worsening now, or another open change or issue you can point at is blocked on it |
 
 What the table can't show:
 
@@ -77,9 +77,10 @@ recompute it.
   trunk, or a report from someone else whose claim the agent then confirmed on the trunk, by
   reading or with a repro it wrote itself under
   [the sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution). The
-  item's own text, diff and checks don't count, and neither does a report's say-so.
+  item's own text, diff and checks don't count, and neither does a report's say-so. Cite the trunk
+  confirmation; name the report only where it already sits on a public surface of the project.
 - A human may set the flag without citing anything.
-- Whoever changes criticality decides the flag again. An agent changes neither once either is on
+- Whoever changes criticality decides the flag again. An agent writes neither once either is on
   the board.
 
 ### The scope gate and the scope grade
