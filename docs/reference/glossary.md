@@ -73,7 +73,12 @@ project's identity constraints).
 applied before code-level review.
 
 **Triage scoreboard** — the [living, ranked board](../playbooks/triage-scoreboard.md) of open work,
-combining mechanical + judgment dimensions into a composite rank, tagged with evidence-readiness.
+combining mechanical + judgment dimensions (scope fit, criticality, risk) and a severity flag
+into a composite rank, tagged with evidence-readiness.
+
+**Judgment rubric** — the [default scale](../playbooks/triage-scoreboard.md#the-default-rubric)
+for the scoreboard's judgment dimensions: integers 0 to 3, a written anchor per level, higher
+meaning sooner. A default an adopter may replace.
 
 **Trust ledger** — the append-only record of each [contributor's](../lifecycle/contributor-recognition.md)
 outcomes, shrunk-and-decayed into a reliability score that weights review priority and gate
