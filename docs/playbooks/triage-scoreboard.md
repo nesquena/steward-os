@@ -96,8 +96,8 @@ the grade:
 
 - **Waiting on a human.** An item escalated as uncertain, or out of scope with the close not yet
   sent, gets no judgment. The board treats it like any item nobody has judged yet: listed under
-  [not yet judged](#not-yet-judged), judgment columns empty. An empty judgment says nothing about the item.
-  When the human rules it in scope, triage resumes and records the judgment.
+  [not yet judged](#not-yet-judged), judgment columns empty. An empty judgment says nothing about
+  the item. When the human rules it in scope, triage resumes and records the judgment.
 - **Bypass.** A health fix (a bug, security or reliability fix on a shipped feature) skips the
   gate, so there's no `scope_fit` to give. Record the bypass marker, `bypass`, in place of
   `scope_fit`. The composite reads it as the plain in-scope level, 2 in the default; a replacement
