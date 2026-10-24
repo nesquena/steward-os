@@ -19,8 +19,14 @@ rank**, and render a living document sorted by that rank. Re-generate it on a sc
 current without anyone asking.
 
 ## Two kinds of dimension
-- **Mechanical** (recomputed fresh every run, no judgment): CI status, mergeable/conflicting,
-  how far behind the trunk, diff size, age, contributor trust score.
+- **Mechanical** (recomputed fresh every run, no judgment):
+  - for a PR: CI status, mergeable/conflicting, how far behind the trunk, diff size, age,
+    contributor trust score.
+  - for an issue: age, cross-references (how many other items link to it), and whether an open
+    PR would close it. An open PR lowers the issue's rank: someone is already on it.
+
+  PRs and issues rank separately. Their mechanical dimensions differ, so their composites aren't
+  on one scale.
 - **Judgment** (set by a reviewer/agent, persisted across runs): `scope_fit`, `criticality`, `risk`,
   scored on [the default rubric](#the-default-rubric). These survive regeneration so a human's
   assessment isn't lost when the mechanical data refreshes.
@@ -52,15 +58,16 @@ What the table can't show:
   `risk`.
 - **Score from what you found, not from what the item says.** The item's own text is a claim.
 - **Risk is not the danger of merging.** That question picks the PR's lane and has no dimension
-  here.
+  here. For an issue, `risk` is the cost of the reported harm staying unaddressed.
 - **`scope_fit` 0 is a human's value:** an out-of-scope item a maintainer chose to keep open. An
   agent that finds no anchor takes the out-of-scope path and writes no 0. An item that could be
   argued in or out of scope is escalated, not graded.
 - **A suspected vulnerability gets no judgment.** Run the
   [vulnerability divert](../reference/security-spine.md#6-the-vulnerability-divert) and write no
   score and no severity flag. The board is committed, and either would confirm in public what the
-  divert keeps private. The board still lists the item like any other unjudged one, mechanical
-  dimensions only, since a missing row would be its own signal. If the divert fires after a
+  divert keeps private. The board still lists the item under
+  [not yet judged](#not-yet-judged) like any other unjudged item, since a missing row would be its
+  own signal. If the divert fires after a
   judgment was written, change nothing on the board: a retraction is a visible diff too. Note the
   judgment in the private record; whether to change it is the human's call, made with the rest of
   the private handling.
@@ -88,21 +95,52 @@ The scope gate decides in or out. `scope_fit` grades what the gate let in. Two c
 the grade:
 
 - **Waiting on a human.** An item escalated as uncertain, or out of scope with the close not yet
-  sent, gets no judgment. The board treats it like any item nobody has judged yet: ranked on its
-  mechanical dimensions, judgment columns empty. An empty judgment says nothing about the item.
+  sent, gets no judgment. The board treats it like any item nobody has judged yet: listed under
+  [not yet judged](#not-yet-judged), judgment columns empty. An empty judgment says nothing about the item.
   When the human rules it in scope, triage resumes and records the judgment.
 - **Bypass.** A health fix (a bug, security or reliability fix on a shipped feature) skips the
   gate, so there's no `scope_fit` to give. Record the bypass marker, `bypass`, in place of
   `scope_fit`. The composite reads it as the plain in-scope level, 2 in the default; a replacement
   rubric names its own. The bypass means "don't re-litigate whether the feature should exist", not
   "central to an anchor", and the fix earns its rank through criticality.
+  An issue earns the bypass marker when the agent confirmed the failure in a shipped feature on
+  the trunk, by reading or with a repro under
+  [the sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution). A
+  report's say-so doesn't: an unconfirmed bug report goes through the anchors like any other
+  issue.
 
 ## The composite
 A weighted sum of the dimensions, tuned so the ranking matches "what a maintainer would actually
 pick up next." Weights are a knob you adjust as you learn what your project values (e.g. how much to
 weight contributor trust vs. raw criticality). Promote items carrying the
 [severity flag](#severity-is-a-flag) to the top regardless of their composite (the severity
-spotlight).
+spotlight). Judgment dimensions should outweigh mechanical ones: the mechanical dimensions say how
+an item stands, the judgment says whether it matters. For issues, age and cross-references break
+ties between equal judgments.
+
+### Not yet judged
+An item with no judgment at all can't be ranked against judged ones: its composite rests on
+mechanical dimensions alone, a different scale. The board lists every such item, per kind, in a
+section titled **Not yet judged**, after the spotlight and before the ranking. The section opens
+collapsed: its count and the first five in mechanical order, with every other member listed
+beneath. The "review these first" short-list draws from this section and the ranking both.
+
+The section records only that no judgment exists. An item can be there because it's new,
+untriaged, escalated, halted by triage's confidence gate, on hold, in draft, or diverted. The
+title names none of these and the board shows none of them per row, so no member reads as any
+one of them.
+
+An item with some judgment dimensions set stays in the ranking. Each empty dimension counts as
+unjudged for that dimension.
+
+### A dimension that carries no signal
+A mechanical dimension that takes the same value for every item of a kind on the board is
+**inert**: it adds nothing to that kind's ranking. Check each run, per kind. Drop an inert
+dimension from that kind's composite and name it in the board's header. The usual case is a
+dimension that reads labels on a backlog that carries none: unchecked, it scores the same for
+everyone and nobody notices. A board that spans several repos counts a dimension only when it's
+live in every repo on the board; otherwise one repo's missing labels shift its items against
+every other repo's.
 
 ## Evidence-readiness tags
 Beyond rank, show **which review streams have landed** for each item — turning the board from a

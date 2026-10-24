@@ -80,6 +80,11 @@ rank, with a severity flag that promotes an item past the rank, tagged with evid
 for the scoreboard's judgment dimensions: integers 0 to 3, a written anchor per level, higher
 meaning sooner. A default an adopter may replace.
 
+**Inert dimension** — a scoreboard
+[mechanical dimension](../playbooks/triage-scoreboard.md#a-dimension-that-carries-no-signal) that
+takes one value across every item of a kind on the board. The board drops it from that kind's
+composite and names it in the header.
+
 **Trust ledger** — the append-only record of each [contributor's](../lifecycle/contributor-recognition.md)
 outcomes, shrunk-and-decayed into a reliability score that weights review priority and gate
 intensity (never a reason to skip the gate).
