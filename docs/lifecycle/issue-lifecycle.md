@@ -71,10 +71,11 @@ The Steward keeps the tracker healthy:
 - **Initial reply** — a substantive, code-grounded response (or a targeted needinfo question), under
   a confidence gate: if you can't ground it in actual code, say nothing rather than post a guess.
 - **Judgment for the scoreboard** — score `scope_fit`, `criticality` and `risk` on the
-  [scoreboard rubric](../playbooks/triage-scoreboard.md#the-default-rubric) for a new issue, or
-  escalate one that fits no scope anchor and isn't a confirmed health failure. An issue triage
-  can't ground in code gets no judgment. Older issues are judged when a human names them, never
-  in a backfill.
+  [scoreboard rubric](../playbooks/triage-scoreboard.md#the-default-rubric) for a new issue
+  (opened since the previous triage run), or escalate one that fits no scope anchor or trips the
+  philosophy veto and isn't a confirmed health failure. An issue triage can't ground in code,
+  replied or not, gets no judgment. Older issues are judged when a human names them, never in a
+  backfill.
 - **Label + milestone** — mechanical, reversible metadata. A good candidate for autonomous,
   deterministic labeling (size, area, type) with a tight allowlist that never overrides a human's
   label.
