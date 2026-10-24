@@ -79,7 +79,10 @@ well-built change may be *compensating for a model's mistakes* — an alias tabl
 names, a repair pass for malformed model output. Both are open-ended games against every way a model
 can misbehave, and they mask the failure instead of surfacing it. Fix wire-transport artifacts;
 surface model non-compliance. A *bounded, documented* compatibility shim can be legitimate — the test
-is whether the behavior is finite and declared. _(Field note from Teknium; see
+is whether the behavior is finite and declared. For a scheduled job,
+[the model-output rules](../playbooks/scheduled-jobs.md#when-a-models-output-feeds-a-script) draw
+the line: declared shims for how a reply arrives, then a closed schema that rejects. _(Field note
+from Teknium; see
 [reviewing at volume](reviewing-at-volume.md#dont-absorb-model-failures-into-the-codebase).)_
 
 ## Scope & contributor anti-patterns
