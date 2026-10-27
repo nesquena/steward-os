@@ -29,7 +29,8 @@ Band A (read-only, deterministic where possible). Ideal as a scheduled job.
    ranking for the [not yet judged](../../docs/playbooks/triage-scoreboard.md#not-yet-judged)
    section; an item with some judgment ranks, and an empty dimension counts as unjudged for that
    dimension. Promote items carrying the
-   severity flag to a spotlight at the top.
+   severity flag to a spotlight at the top; the flag counts as judgment, and a flagged item is
+   listed nowhere else.
 5. **Tag evidence-readiness** per item: which review streams have landed (automated review present?
    visual preview? deep-review dossier?). Compact ✓/· marker. Presence ≠ clean.
 6. **Render** the living board: the spotlight, then per kind the not yet judged section (its count

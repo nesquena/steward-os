@@ -107,7 +107,9 @@ the grade:
   the trunk, by reading or with a repro under
   [the sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution). A
   report's say-so doesn't: an unconfirmed bug report goes through the anchors like any other
-  issue.
+  issue. A failure that, once confirmed, has vulnerability shape is a
+  [divert](../reference/security-spine.md#6-the-vulnerability-divert) hit whenever it's found:
+  no judgment, no bypass marker, no severity flag, and it's routed privately as the divert says.
 
 ## The composite
 A weighted sum of the dimensions, tuned so the ranking matches "what a maintainer would actually
@@ -115,8 +117,10 @@ pick up next." Weights are a knob you adjust as you learn what your project valu
 weight contributor trust vs. raw criticality). Promote items carrying the
 [severity flag](#severity-is-a-flag) to the top regardless of their composite (the severity
 spotlight). Judgment dimensions should outweigh mechanical ones: the mechanical dimensions say how
-an item stands, the judgment says whether it matters. For issues, age and cross-references break
-ties between equal judgments.
+an item stands, the judgment says whether it matters. For issues, cap or scale the mechanical
+dimensions so their combined range in the composite is smaller than one level of the
+lowest-weighted judgment dimension: age and cross-references then only break ties between equal
+judgments.
 
 ### Not yet judged
 An item with no judgment at all can't be ranked against judged ones: its composite rests on
@@ -131,7 +135,8 @@ title names none of these and the board shows none of them per row, so no member
 one of them.
 
 An item with some judgment dimensions set stays in the ranking. Each empty dimension counts as
-unjudged for that dimension.
+unjudged for that dimension. The severity flag counts as judgment: a flagged item is in the
+spotlight and nowhere else.
 
 ### A dimension that carries no signal
 A mechanical dimension that takes the same value for every item of a kind on the board is
@@ -140,7 +145,9 @@ dimension from that kind's composite and name it in the board's header. The usua
 dimension that reads labels on a backlog that carries none: unchecked, it scores the same for
 everyone and nobody notices. A board that spans several repos counts a dimension only when it's
 live in every repo on the board; otherwise one repo's missing labels shift its items against
-every other repo's.
+every other repo's. A dimension is live in a repo when the source it reads exists there (for a
+label dimension, its labels are declared or in use); a repo with fewer than two items of a kind
+doesn't decide.
 
 ## Evidence-readiness tags
 Beyond rank, show **which review streams have landed** for each item — turning the board from a
