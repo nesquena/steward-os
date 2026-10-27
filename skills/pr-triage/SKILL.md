@@ -62,8 +62,8 @@ Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [0]–[2]. Band
   a human set. This skill writes no judgment for a PR that is waiting on a human, on hold or in
   draft, and never changes a judgment already there. *A step-2 diverted PR gets only a private-path
   record from this run; this skill writes nothing about it to the scoreboard. The board keeps any
-  judgment written before the divert unchanged; where there is none, it lists the PR like any other
-  unjudged row, mechanical dimensions only.*
+  judgment written before the divert unchanged; where there is none, it lists the PR under not yet
+  judged like any other unjudged PR.*
 - A PR diverted at step 2 reached a private destination and left no new public trace; one diverted
   before any routing left none at all (no comment, review, or routing record).
 - Out-of-scope closes were either human-sent or ≥90%-confidence; uncertain ones escalated.
