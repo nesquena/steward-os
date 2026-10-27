@@ -71,10 +71,13 @@ it honest:
    read (a notification, a log a scheduler reads, a run summary) carries counts, the ids the job
    sent, and rejection classes from a fixed list the job defines. Never the validator's message
    or the offending key or value: those quote what the model wrote, and the model wrote from
-   untrusted content. The rejected text itself goes only where no model reads it: a run log the
-   human opens. That holds for any job with a model in it, not only one that feeds a script, and
-   most of all when the reading model can run commands. What the job is for (a digest, a draft, a
-   decision row) is bounded by the injection guard, [the output loop](output-loop.md) and the
+   untrusted content. The rejected text itself goes only where no model reads it: a rejection
+   file of the job's own that only the human opens, kept apart from the
+   [audit trail](output-loop.md#2-separate-the-audit-trail-from-the-actionable-output), which the
+   steward reads to diff runs. That holds for any job with a model in it, not only one that feeds
+   a script, and most of all when the reading model can run commands. What the job is for (a
+   digest, a draft, a decision row) is bounded by the injection guard,
+   [the output loop](output-loop.md) and the
    [public-write membrane](../reference/security-spine.md#5-the-public-write-membrane), not by
    this rule.
 6. **A rejection is reported.** List each one in the run's output by class, with the id the job
