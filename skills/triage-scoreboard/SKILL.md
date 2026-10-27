@@ -25,7 +25,9 @@ Band A (read-only, deterministic where possible). Ideal as a scheduled job.
 4. **Compute the composite** = weighted sum of dimensions (weights from config; tune to match "what
    I'd pick up next"). Read the bypass marker (`bypass`) as the plain in-scope level of the rubric
    your project uses ([the default](../../docs/playbooks/triage-scoreboard.md#the-default-rubric),
-   or its replacement). Rank PRs and issues separately. An item with no judgment at all leaves the
+   or its replacement). Rank PRs and issues separately; sort issues on the judgment dimensions'
+   weighted sum first, and on the mechanical dimensions only between equal sums. An item with no
+   judgment at all leaves the
    ranking for the [not yet judged](../../docs/playbooks/triage-scoreboard.md#not-yet-judged)
    section; an item with some judgment ranks, and an empty dimension counts as unjudged for that
    dimension. Promote items carrying the

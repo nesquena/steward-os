@@ -117,10 +117,9 @@ pick up next." Weights are a knob you adjust as you learn what your project valu
 weight contributor trust vs. raw criticality). Promote items carrying the
 [severity flag](#severity-is-a-flag) to the top regardless of their composite (the severity
 spotlight). Judgment dimensions should outweigh mechanical ones: the mechanical dimensions say how
-an item stands, the judgment says whether it matters. For issues, cap or scale the mechanical
-dimensions so their combined range in the composite is smaller than one level of the
-lowest-weighted judgment dimension: age and cross-references then only break ties between equal
-judgments.
+an item stands, the judgment says whether it matters. For issues, sort on the judgment dimensions'
+weighted sum first, and on the mechanical dimensions only between equal sums: age and
+cross-references break ties between equal judgments and never reverse unequal ones.
 
 ### Not yet judged
 An item with no judgment at all can't be ranked against judged ones: its composite rests on
