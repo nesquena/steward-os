@@ -75,6 +75,15 @@ module ConfigContract
     sandbox_required
   ].freeze
 
+  # Every rule ParseRules can emit. The meta-test reads this list and
+  # SEMANTIC_RULES, so keep it in sync when adding a parse rule.
+  PARSE_RULES = %i[
+    multiple_documents
+    duplicate_key
+    merge_key
+    explicit_tag
+  ].freeze
+
   CAPTURE_STATE_PATHS = %w[queue_path ledger_path checkpoint_path].freeze
 
   # Pure. Given the parsed config and the parsed template, return violations.
@@ -558,6 +567,90 @@ module ConfigContract
                    message: "#{unverifiable.size} destination(s) could not be verified as private:\n" \
                             "#{unverifiable.map { |u| "      #{u}" }.join("\n")}\n" \
                             '    Confirm each before enabling autonomous capture.')]
+  end
+
+  # Rules that read the YAML stream before anything converts it. Each names a
+  # construct that lets the parsed hash differ from what a reader of the file
+  # sees, so every later phase would vet a config nobody wrote. Inspection
+  # only: conversion stays YAML.safe_load on the source text. Never call
+  # to_ruby on these nodes; it builds whatever a !ruby/object tag names.
+  module ParseRules
+    # Resolves a plain key the way the safe loader would (`yes` and `true` both
+    # become true), so keys that collide only after resolution are caught.
+    KEY_SCANNER = Psych::ScalarScanner.new(Psych::ClassLoader::Restricted.new([], []))
+
+    module_function
+
+    def violations(text)
+      documents = Psych.parse_stream(text).children
+      return [] if documents.empty?
+      return [multiple_documents(documents)] if documents.size > 1
+
+      walk(documents.first.root, '')
+    end
+
+    def multiple_documents(documents)
+      ConfigContract.err(:multiple_documents, '(document)',
+                         "#{documents.size} YAML documents, but the lint reads only the first; " \
+                         "document 2 starts at line #{documents[1].start_line + 1} " \
+                         '(a trailing --- opens a document too)')
+    end
+
+    def walk(node, path)
+      found = []
+      found << explicit_tag(node, path) if node.respond_to?(:tag) && node.tag
+
+      case node
+      when Psych::Nodes::Mapping
+        found.concat(mapping(node, path))
+      when Psych::Nodes::Sequence
+        node.children.each_with_index { |child, i| found.concat(walk(child, "#{path}[#{i}]")) }
+      end
+      found
+    end
+
+    def mapping(node, path)
+      found = []
+      seen = {}
+      node.children.each_slice(2) do |key, value|
+        found.concat(walk(key, path))
+        unless key.is_a?(Psych::Nodes::Scalar)
+          found.concat(walk(value, path))
+          next
+        end
+
+        child = path.empty? ? key.value : "#{path}.#{key.value}"
+        found << merge_key(child) if key.value == '<<'
+        identities = [[:text, key.value], [:resolved, resolve(key)]]
+        earlier = identities.filter_map { |id| seen[id] }.first
+        found << duplicate_key(child, earlier, key.start_line + 1) if earlier
+        identities.each { |id| seen[id] ||= key.start_line + 1 }
+        found.concat(walk(value, child))
+      end
+      found
+    end
+
+    def resolve(key)
+      key.quoted ? key.value : KEY_SCANNER.tokenize(key.value)
+    end
+
+    def duplicate_key(path, first_line, line)
+      ConfigContract.err(:duplicate_key, path,
+                         "key repeated at lines #{first_line} and #{line}; YAML readers keep " \
+                         'different copies, so the lint cannot know which one you meant')
+    end
+
+    def merge_key(path)
+      ConfigContract.err(:merge_key, path,
+                         'a << merge key lets merged values override keys written explicitly, ' \
+                         'and readers disagree on which wins; write the keys out')
+    end
+
+    def explicit_tag(node, path)
+      ConfigContract.err(:explicit_tag, path.empty? ? '(document)' : path,
+                         "explicit YAML tag #{node.tag} at line #{node.start_line + 1}; readers " \
+                         'resolve tags differently, and this config needs none')
+    end
   end
 
   # Repo readers. Each is small and testable against real files.

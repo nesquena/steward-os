@@ -77,6 +77,79 @@ class ExtractLoadTest < Minitest::Test
 end
 
 # --- repo_relative? / escapes_repo_root?: the privacy-classification primitive ---
+class ParseRulesTest < Minitest::Test
+  def rules(text) = ConfigContract::ParseRules.violations(text).map(&:rule)
+  def keys(text)  = ConfigContract::ParseRules.violations(text).map(&:key)
+
+  def test_a_plain_single_document_is_clean
+    assert_empty rules("a: 1\nb:\n  c: 2\n")
+  end
+
+  def test_a_leading_marker_or_an_end_marker_is_still_one_document
+    assert_empty rules("---\na: 1\n")
+    assert_empty rules("a: 1\n...\n")
+  end
+
+  def test_an_empty_or_comment_only_file_has_no_parse_violations
+    assert_empty rules('')
+    assert_empty rules("# only a comment\n")
+  end
+
+  def test_a_second_document_is_refused_even_when_empty
+    assert_equal %i[multiple_documents], rules("a: 1\n---\nb: 2\n")
+    assert_equal %i[multiple_documents], rules("a: 1\n---\n")
+    assert_equal ['(document)'], keys("a: 1\n---\nb: 2\n")
+  end
+
+  def test_a_repeated_top_level_key_is_refused_with_both_lines
+    v = ConfigContract::ParseRules.violations("a: 1\nb: 2\na: 3\n")
+    assert_equal %i[duplicate_key], v.map(&:rule)
+    assert_equal 'a', v.first.key
+    assert_match(/\b1\b/, v.first.message)
+    assert_match(/\b3\b/, v.first.message)
+  end
+
+  def test_a_repeated_key_is_found_at_depth_and_in_lists
+    assert_equal ['x.y'], keys("x:\n  y: 1\n  y: 2\n")
+    assert_equal ['scheduled_jobs.jobs[0].name'],
+                 keys("scheduled_jobs:\n  jobs:\n    - { name: a, name: b }\n")
+  end
+
+  def test_keys_that_resolve_to_the_same_ruby_key_are_duplicates
+    assert_includes rules("m:\n  yes: 1\n  true: 2\n"), :duplicate_key
+    assert_includes rules("m:\n  ~: 1\n  null: 2\n"), :duplicate_key
+    assert_includes rules("m:\n  16: 1\n  0x10: 2\n"), :duplicate_key
+  end
+
+  def test_opaque_subtrees_are_checked_too
+    assert_equal ['labels.area.map.a/**'],
+                 keys("labels:\n  area:\n    map:\n      \"a/**\": x\n      \"a/**\": y\n")
+  end
+
+  def test_a_merge_key_is_refused_plain_or_quoted
+    assert_equal %i[merge_key], rules("a: 1\n<<: {a: 2}\n")
+    assert_equal %i[merge_key], rules("a: 1\n\"<<\": {a: 2}\n")
+  end
+
+  def test_any_explicit_tag_is_refused
+    assert_includes rules("!!binary aXNzdWVfY2FwdHVyZQ==: 1\n"), :explicit_tag
+    assert_includes rules("a: !foo 1\n"), :explicit_tag
+    assert_includes rules("a: !ruby/object:Gem::Version {version: '1'}\n"), :explicit_tag
+    assert_includes rules("a: !!str 1\n"), :explicit_tag
+  end
+
+  def test_inspection_never_instantiates_a_tagged_object
+    ObjectSpace.garbage_collect
+    before = ObjectSpace.each_object(Gem::Version).count
+    ConfigContract::ParseRules.violations("a: !ruby/object:Gem::Version {version: '99.9'}\n")
+    assert_operator ObjectSpace.each_object(Gem::Version).count, :<=, before
+  end
+
+  def test_unparseable_text_raises
+    assert_raises(Psych::SyntaxError) { ConfigContract::ParseRules.violations("a: [unclosed\n") }
+  end
+end
+
 class RepoRelativeTest < Minitest::Test
   def rel(path)
     ConfigContract.repo_relative?(path)
