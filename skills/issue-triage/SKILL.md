@@ -58,9 +58,11 @@ make commitments.
    Set the severity flag only under
    [its rule](../../docs/playbooks/triage-scoreboard.md#severity-is-a-flag). Record each value
    with setter `agent`, the judgment stamp from the shared routine and the rubric identifier.
-   Write an empty dimension, or re-judge a stale one an agent set (step 9); any other stands
-   ([who set it](../../docs/playbooks/triage-scoreboard.md#who-set-it)). If you disagree with it, say so in your output and leave it. An issue you can't ground in
-   code, replied or not, gets no judgment: there's nothing found to score. A step-3 halt is one
+   Write an empty dimension, or re-judge a stale one an agent set, or a `legacy` one on an issue
+   a human named (step 9); any other stands
+   ([who set it](../../docs/playbooks/triage-scoreboard.md#who-set-it)). If you disagree with it,
+   say so in your output and leave it. An issue you can't ground in code, replied or not, gets
+   no judgment: there's nothing found to score. A step-3 halt is one
    such case.
 5. **Label + milestone.** Apply mechanical, reversible metadata. Prefer a deterministic
    label-sync (size/area/type) on a tight allowlist that is **add-only and never overrides a human's
@@ -86,10 +88,11 @@ make commitments.
    matches its current judgment stamp and rubric identifier. Then take every edited issue, then
    rubric-stale issues by composite, highest first, up to ten. An issue a human named for this
    run joins the queue, its attempt record clears, and its `legacy` values may be re-judged too.
-   For each, run step 2, then step 4's screen and record for the stale values only. Rewriting an
-   agent's `criticality` under a flag a human set writes the judgment stamp `stale` on that flag.
-   A halt (an issue you can't ground in code), an escalation or a divert writes only the attempt
-   record
+   For each, run step 2, then step 4's screen and record for the stale values only (and, on a
+   named issue, its `legacy` ones). Rewriting an agent's `criticality` under a flag a human set
+   writes the judgment stamp `stale` on that flag. A halt (an issue you can't ground in code), an
+   escalation or a divert writes only the attempt record on the board, with no reason; the
+   escalation and the private routing still happen
    ([when a judgment goes stale](../../docs/playbooks/triage-scoreboard.md#when-a-judgment-goes-stale)).
    An escalated issue keeps its stale values.
 

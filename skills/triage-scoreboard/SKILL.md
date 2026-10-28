@@ -44,7 +44,8 @@ Band A (read-only, deterministic where possible). Ideal as a scheduled job.
    visual preview? deep-review dossier?). Compact ✓/· marker. Presence ≠ clean.
 6. **Render** the living board: the spotlight, then per kind the not yet judged section (its count
    and first five in mechanical order) and the ranking by composite; name inert dimensions in the
-   header; mark each stale value and give the stale count per kind in the header; add a curated "review these first" short-list drawn from both.
+   header; mark each stale value and give the stale count per kind in the header; add a curated
+   "review these first" short-list drawn from both.
    Persist the computed data as a machine-readable artifact for other jobs.
 7. **Commit** following [scheduled-job](../../docs/playbooks/scheduled-jobs.md) rules
    (idempotent, silent-on-no-op).
@@ -53,8 +54,9 @@ Band A (read-only, deterministic where possible). Ideal as a scheduled job.
 - **Keep mechanical and judgment dims in separate storage** — mechanical is re-derived and
   disposable; judgment is precious and persisted. Don't let a refresh wipe a human's assessment.
 - **Mark, never re-judge** — the refresh's one judgment write is the judgment stamp on a value
-  that has none. It never changes a value or a setter, never drops a stale value, and never shows
-  one as fresh. Re-judging is triage's.
+  that has none, plus the setter `legacy` on the first run after adoption. It never changes a
+  value or a recorded setter, never drops a stale value, and never shows one as fresh.
+  Re-judging is triage's.
 - **A dimension that reads labels goes inert without an error** — on a backlog with no labels it
   scores the same for every item. Name it in the header; never let it count silently.
 - **An out-of-range value is an error, not a number to clamp** — surface it. In range means an

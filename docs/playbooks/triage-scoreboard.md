@@ -75,9 +75,10 @@ What the table can't show:
   attempt record any re-judge that writes nothing leaves
   ([when a judgment goes stale](#when-a-judgment-goes-stale)). Note the judgment in the private
   record; whether to change it is the human's call, made with the rest of the private handling.
-- **An agent writes an empty dimension, or re-judges a stale one an agent set.** Any other
-  dimension on the board stands: a fresh one whoever set it, and one a human set even when it's
-  stale. An agent that disagrees says so in its output and leaves it alone. An empty dimension
+- **An agent writes an empty dimension, or re-judges a stale one an agent set.** On an item a
+  human named, it may also re-judge a `legacy` one. Any other dimension on the board stands: a
+  fresh one whoever set it, and one a human set even when it's stale. An agent that disagrees
+  says so in its output and leaves it alone. An empty dimension
   counts as unjudged for that dimension. See [who set it](#who-set-it).
 
 ### Severity is a flag
@@ -179,7 +180,8 @@ a judgment rests on what the item says.
 **When a value is stamped.** An agent judge records the judgment stamp of the inputs it read, as
 it writes. A human's write carries none. The scheduled refresh stamps any value without one,
 recording the judgment stamp and the rubric identifier together. Writing that judgment stamp is
-the refresh's only write to judgment data. An edit made between a human's write and the next
+the refresh's only write to judgment data, except the setter `legacy` it records on its first
+run after adoption ([who set it](#who-set-it)). An edit made between a human's write and the next
 refresh is folded into the judgment stamp it records.
 
 **When a value is stale.** Its judgment stamp differs from the item's current one, or its rubric
@@ -195,7 +197,9 @@ fix shouldn't hide a flagged issue. The board's header gives the stale count per
   the item. Like new items, edited ones aren't capped.
 - A rubric change: every value goes stale. Each triage run re-judges a capped number of items,
   highest composite first, so the top of the board is right first. The default cap is ten items
-  per kind per run. An item stale for both reasons counts as edited.
+  per kind per run. Before taking the cap, drop items triage skips (hold and draft PRs) and
+  items whose attempt record matches, so they can't fill it every run. An item stale for both
+  reasons counts as edited.
 - Either way, a stale value a human set keeps its value and waits for a human. Triage that
   disagrees with it says so in its output.
 
@@ -221,8 +225,8 @@ Each judgment dimension and the severity flag records a setter: `human`, `agent`
   `human`: the level is their decision.
 - The setter is stored with the value and written only with it. It's never read off the last
   writer, such as a commit author: the judgment stamp the refresh writes never changes it.
-- An agent writes an empty value, or re-judges a stale one an agent set. A human may overwrite
-  any value.
+- An agent writes an empty value, or re-judges a stale one an agent set, or a `legacy` one on an
+  item a human named. A human may overwrite any value.
 - A human confirms a stale value by writing it, the same value or a new one. The write clears
   its judgment stamp and rubric identifier, and the next refresh stamps it.
 - `legacy` is a value that was on the board before setters were recorded. The first refresh
@@ -244,8 +248,9 @@ Presence ≠ clean — it means the evidence *exists to review*; the authoritati
 ## Make it self-refreshing
 Run the generation on a schedule ([scheduled-jobs](scheduled-jobs.md) rules apply): pull live
 metadata, recompute mechanical dims, merge in persisted judgment dims, stamp and mark stale ones,
-render, commit. The maintainer never has to ask for a fresh scan — the board is current when they open it. A companion "review these
-first" curated short-list can ride on top for the highest-priority handful.
+render, commit. The maintainer never has to ask for a fresh scan — the board is current when
+they open it. A companion "review these first" curated short-list can ride on top for the
+highest-priority handful.
 
 ## Why it works
 - It **separates ranking from doing** — the agent ranks continuously and cheaply; the human (or a
