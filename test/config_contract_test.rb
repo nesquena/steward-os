@@ -2,6 +2,7 @@
 
 require 'minitest/autorun'
 require 'tmpdir'
+require 'fileutils'
 require 'English'
 require_relative '../lib/config_contract'
 
@@ -74,9 +75,141 @@ class ExtractLoadTest < Minitest::Test
       assert_equal({}, ConfigContract::Extract.load(path))
     end
   end
+
+  # Pins that conversion stays YAML.safe_load. An alias carries no tag, so it
+  # reaches conversion; safe_load refuses it, node.to_ruby would accept it.
+  def test_read_converts_with_the_safe_loader
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'c.yaml')
+      File.write(path, "a: &x 1\nb: *x\n")
+      err = assert_raises(RuntimeError) { ConfigContract::Extract.read(path) }
+      assert_match(/could not parse/, err.message)
+    end
+  end
+
+  def test_read_of_an_empty_file_is_an_empty_hash
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'c.yaml')
+      File.write(path, '')
+      assert_equal [{}, []], ConfigContract::Extract.read(path)
+    end
+  end
+
+  def test_read_returns_parse_violations_instead_of_a_hash
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'c.yaml')
+      File.write(path, "a: 1\na: 2\n")
+      config, violations = ConfigContract::Extract.read(path)
+      assert_nil config
+      assert_equal %i[duplicate_key], violations.map(&:rule)
+    end
+  end
 end
 
 # --- repo_relative? / escapes_repo_root?: the privacy-classification primitive ---
+class ParseRulesTest < Minitest::Test
+  def rules(text) = ConfigContract::ParseRules.violations(text).map(&:rule)
+  def keys(text)  = ConfigContract::ParseRules.violations(text).map(&:key)
+
+  def test_a_plain_single_document_is_clean
+    assert_empty rules("a: 1\nb:\n  c: 2\n")
+  end
+
+  def test_a_leading_marker_or_an_end_marker_is_still_one_document
+    assert_empty rules("---\na: 1\n")
+    assert_empty rules("a: 1\n...\n")
+  end
+
+  def test_an_empty_or_comment_only_file_has_no_parse_violations
+    assert_empty rules('')
+    assert_empty rules("# only a comment\n")
+  end
+
+  def test_a_second_document_is_refused_even_when_empty
+    assert_equal %i[multiple_documents], rules("a: 1\n---\nb: 2\n")
+    assert_equal %i[multiple_documents], rules("a: 1\n---\n")
+    assert_equal ['(document)'], keys("a: 1\n---\nb: 2\n")
+  end
+
+  def test_a_repeated_top_level_key_is_refused_with_both_lines
+    v = ConfigContract::ParseRules.violations("a: 1\nb: 2\na: 3\n")
+    assert_equal %i[duplicate_key], v.map(&:rule)
+    assert_equal 'a', v.first.key
+    assert_match(/\b1\b/, v.first.message)
+    assert_match(/\b3\b/, v.first.message)
+  end
+
+  def test_a_repeated_key_is_found_at_depth_and_in_lists
+    assert_equal ['x.y'], keys("x:\n  y: 1\n  y: 2\n")
+    assert_equal ['scheduled_jobs.jobs[0].name'],
+                 keys("scheduled_jobs:\n  jobs:\n    - { name: a, name: b }\n")
+  end
+
+  def test_keys_that_resolve_to_the_same_ruby_key_are_duplicates
+    assert_includes rules("m:\n  yes: 1\n  true: 2\n"), :duplicate_key
+    assert_includes rules("m:\n  ~: 1\n  null: 2\n"), :duplicate_key
+    assert_includes rules("m:\n  16: 1\n  0x10: 2\n"), :duplicate_key
+  end
+
+  def test_opaque_subtrees_are_checked_too
+    assert_equal ['labels.area.map.a/**'],
+                 keys("labels:\n  area:\n    map:\n      \"a/**\": x\n      \"a/**\": y\n")
+  end
+
+  def test_a_merge_key_is_refused_plain_or_quoted
+    assert_equal %i[merge_key], rules("a: 1\n<<: {a: 2}\n")
+    assert_equal %i[merge_key], rules("a: 1\n\"<<\": {a: 2}\n")
+  end
+
+  def test_any_explicit_tag_is_refused
+    assert_includes rules("!!binary aXNzdWVfY2FwdHVyZQ==: 1\n"), :explicit_tag
+    assert_includes rules("a: !foo 1\n"), :explicit_tag
+    assert_includes rules("a: !ruby/object:Gem::Version {version: '1'}\n"), :explicit_tag
+    assert_includes rules("a: !!str 1\n"), :explicit_tag
+  end
+
+  # Psych reads these as booleans, nulls or numbers; PyYAML reads them as
+  # strings (truthy) or other numbers. Canonical spellings stay allowed.
+  def test_a_scalar_two_readers_resolve_differently_is_refused
+    %w[fALSE oFF nO tRUE yEs nULL 1:30].each do |v|
+      assert_equal %i[ambiguous_scalar], rules("a: #{v}\n"), v
+    end
+    assert_equal ['a'], keys("a: oFF\n")
+  end
+
+  def test_canonical_booleans_and_nulls_pass
+    %w[true True TRUE false False FALSE yes Yes YES no No NO on On ON off Off OFF null Null NULL ~].each do |v|
+      assert_empty rules("a: #{v}\n"), v
+    end
+    assert_empty rules("a: \"oFF\"\nb: '1:30'\nc: 30 8 * * *\n")
+  end
+
+  def test_inspection_never_instantiates_a_tagged_object
+    ObjectSpace.garbage_collect
+    before = ObjectSpace.each_object(Gem::Version).count
+    ConfigContract::ParseRules.violations("a: !ruby/object:Gem::Version {version: '99.9'}\n")
+    assert_operator ObjectSpace.each_object(Gem::Version).count, :<=, before
+  end
+
+  def test_a_repeated_complex_key_is_a_duplicate
+    assert_includes rules("? [a]\n: 1\n? [a]\n: 2\n"), :duplicate_key
+    assert_empty rules("? [a]\n: 1\n? [b]\n: 2\n")
+  end
+
+  def test_a_violation_under_a_complex_key_names_that_key
+    assert_equal ['[key at line 1].<<'], keys("? [a]\n: {<<: {}}\n")
+  end
+
+  def test_a_same_line_duplicate_names_both_columns
+    message = ConfigContract::ParseRules.violations("j: { name: a, name: b }\n").first.message
+    assert_match(/line 1, columns \d+ and \d+/, message)
+  end
+
+  def test_unparseable_text_raises
+    assert_raises(Psych::SyntaxError) { ConfigContract::ParseRules.violations("a: [unclosed\n") }
+  end
+end
+
 class RepoRelativeTest < Minitest::Test
   def rel(path)
     ConfigContract.repo_relative?(path)
@@ -285,7 +418,7 @@ class TypeTest < Minitest::Test
       'security' => { 'security_contact' => '', 'security_sensitive_surfaces' => [] },
       'secrets' => { 'execute_contributor_code' => false, 'sandbox_available' => false },
       'scheduled_jobs' => {
-        'jobs' => [{ 'name' => 'action-watchdog', 'every' => '6h', 'enabled' => false }],
+        'jobs' => [{ 'name' => 'action-watchdog', 'every' => '6h', 'enabled' => false, 'agent' => false }],
         'outputs' => { 'index_path' => '', 'digest_to' => '', 'alarms_to' => '' }
       }
     }
@@ -340,6 +473,23 @@ class TypeTest < Minitest::Test
     cfg = base
     cfg['scheduled_jobs']['jobs'][0]['enabled'] = 'yes'
     assert_equal 'scheduled_jobs.jobs[0].enabled', find(cfg, :type_boolean).key
+  end
+
+  # enabled_job_needs_skill fires only on a literal true, so every job's
+  # `agent` must be a real boolean: a quoted "true", a 1, a null or a missing
+  # key would otherwise let a model job with no skill run unbounded.
+  def test_non_boolean_or_missing_job_agent_is_an_error
+    ['true', 1, nil, :missing].each do |value|
+      cfg = base
+      job = cfg['scheduled_jobs']['jobs'][0]
+      # A second job carries the key, which satisfies the template shape the
+      # way a real config does; a lone job without it is a missing_key error.
+      cfg['scheduled_jobs']['jobs'] << job.merge('name' => 'label-sync')
+      value == :missing ? job.delete('agent') : job['agent'] = value
+      v = find(cfg, :type_boolean)
+      refute_nil v, "agent #{value.inspect} passed the type phase"
+      assert_equal 'scheduled_jobs.jobs[0].agent', v.key
+    end
   end
 
   def test_security_sensitive_surfaces_must_be_an_array_of_strings
@@ -419,7 +569,7 @@ class SemanticTest < Minitest::Test
                       'security_sensitive_surfaces' => ['auth'] },
       'secrets' => { 'execute_contributor_code' => false, 'sandbox_available' => false },
       'scheduled_jobs' => {
-        'jobs' => [{ 'name' => 'action-watchdog', 'every' => '6h', 'enabled' => true }],
+        'jobs' => [{ 'name' => 'action-watchdog', 'every' => '6h', 'enabled' => true, 'agent' => false }],
         'outputs' => { 'index_path' => '/srv/steward/index.md', 'digest_to' => '',
                        'alarms_to' => 'ops@example.com' }
       }
@@ -440,6 +590,63 @@ class SemanticTest < Minitest::Test
 
   def test_the_fully_enabled_base_has_no_errors
     assert_empty errors(base).map(&:rule)
+  end
+
+  # base with the watchdog plus `jobs`. Every job carries `agent`: base is also
+  # the template here, so a job without it would not match the template's shape.
+  def with_jobs(*jobs)
+    cfg = base
+    cfg['scheduled_jobs']['jobs'] += jobs
+    cfg
+  end
+
+  def test_two_jobs_with_one_normalized_name_are_refused
+    cfg = with_jobs({ 'name' => 'nightly', 'every' => '1h', 'enabled' => false, 'agent' => false },
+                    { 'name' => 'Nightly ', 'every' => '2h', 'enabled' => false, 'agent' => false })
+    assert rule(cfg, :job_name_unique)
+  end
+
+  def test_an_enabled_model_job_with_no_skill_is_refused
+    cfg = with_jobs({ 'name' => 'mentions_sweep', 'every' => '24h', 'enabled' => true, 'agent' => true })
+    assert rule(cfg, :enabled_job_needs_skill)
+  end
+
+  def test_a_deterministic_job_with_no_skill_passes
+    cfg = with_jobs({ 'name' => 'fleet-heartbeat', 'cron' => '30 8 * * *', 'enabled' => true, 'agent' => false })
+    assert_nil rule(cfg, :enabled_job_needs_skill)
+    assert_nil rule(cfg, :phases_skipped)
+  end
+
+  def test_a_disabled_or_custom_job_is_not_checked_for_a_skill
+    disabled = with_jobs({ 'name' => 'mentions-sweep', 'every' => '24h', 'enabled' => false, 'agent' => true })
+    custom = with_jobs({ 'name' => 'my-own-job', 'every' => '1h', 'enabled' => true, 'agent' => true })
+    [disabled, custom].each do |cfg|
+      assert_nil rule(cfg, :enabled_job_needs_skill)
+      assert_nil rule(cfg, :phases_skipped)
+    end
+  end
+
+  def test_an_invisible_format_character_does_not_hide_a_job_name
+    cfg = with_jobs({ 'name' => "issue-capture\u200B", 'every' => '1h', 'enabled' => true, 'agent' => true })
+    cfg['issue_capture']['enabled'] = false
+    assert rule(cfg, :job_flag_agree)
+  end
+
+  def test_the_capture_job_on_with_capture_off_is_refused
+    cfg = with_jobs({ 'name' => "Issue_Capture\u00A0", 'every' => '1h', 'enabled' => true, 'agent' => true })
+    cfg['issue_capture']['enabled'] = false
+    assert rule(cfg, :job_flag_agree)
+  end
+
+  def test_the_chat_job_on_with_monitoring_off_is_refused
+    cfg = with_jobs({ 'name' => 'chat-monitor', 'every' => '1h', 'enabled' => true, 'agent' => false })
+    cfg['community']['chat']['monitor'] = false
+    assert rule(cfg, :job_flag_agree)
+  end
+
+  def test_the_flag_on_with_its_job_off_passes
+    assert_nil rule(base, :job_flag_agree)
+    assert_nil rule(base, :phases_skipped)
   end
 
   def test_enabled_capture_without_alarms_to_is_an_error
@@ -537,7 +744,7 @@ class SemanticTest < Minitest::Test
 
   def test_marker_with_no_watchdog_job_at_all_is_an_error
     cfg = base
-    cfg['scheduled_jobs']['jobs'] = [{ 'name' => 'label-sync', 'every' => '4h', 'enabled' => true }]
+    cfg['scheduled_jobs']['jobs'] = [{ 'name' => 'label-sync', 'every' => '4h', 'enabled' => true, 'agent' => false }]
     assert_equal :error, rule(cfg, :marker_needs_watchdog).severity
   end
 
@@ -797,6 +1004,61 @@ class EntrypointTest < Minitest::Test
     assert_equal 1, status
     assert_match(/could not read/, out)
   end
+
+  # The shipped template with a skill-less model job switched on, and its
+  # `agent` flag written in a shape that is not the boolean true.
+  def test_a_skill_less_job_with_a_non_boolean_agent_fails_the_run
+    template = File.read(File.expand_path('../setup/config.template.yaml', __dir__))
+    line = '    - { name: "mentions-sweep",     every: "24h", enabled: false, agent: true  }'
+    assert_includes template, line
+    ['"true"', '1', '~'].each do |agent|
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'config.yaml')
+        File.write(path, template.sub(line, %(    - { name: "mentions-sweep", every: "24h", enabled: true, agent: #{agent} })))
+        out, status = run_lint(path)
+        assert_equal 1, status, "agent: #{agent} passed\n#{out}"
+        assert_match(/scheduled_jobs\.jobs\[3\]\.agent — expected true or false/, out)
+      end
+    end
+  end
+
+  def test_a_parse_violation_prints_its_rule_and_skips_the_phases
+    out, status = run_lint(File.join(FIXTURE_ROOT, 'red-duplicate_key.yaml'))
+    assert_equal 1, status
+    assert_match(/red-duplicate_key\.yaml — 1 error\(s\), 0 warning\(s\)/, out)
+    assert_match(/repositories/, out)
+    assert_match(/NOT evaluated/, out)
+  end
+
+  def test_a_template_with_a_parse_violation_fails_the_run
+    Dir.mktmpdir do |dir|
+      root = File.expand_path('..', __dir__)
+      %w[bin lib setup].each { |d| FileUtils.cp_r(File.join(root, d), dir) }
+      File.open(File.join(dir, 'setup', 'config.template.yaml'), 'a') { |f| f.puts 'repositories: []' }
+      out, status = run_in(dir)
+      assert_equal 1, status, out
+      assert_match(/config\.template\.yaml/, out)
+      assert_match(/repositories/, out)
+      assert_match(/statically decidable subset/, out)
+    end
+  end
+
+  def test_a_too_deeply_nested_file_fails_without_skipping_the_next_target
+    Dir.mktmpdir do |dir|
+      deep = File.join(dir, 'deep.yaml')
+      File.write(deep, "a: #{'[' * 5000}#{']' * 5000}\n")
+      out, status = run_lint(deep, File.join(FIXTURE_ROOT, 'green-enabled.yaml'))
+      assert_equal 1, status
+      assert_match(/deep\.yaml: could not read/, out)
+      assert_match(/green-enabled\.yaml — 0 error\(s\)/, out)
+    end
+  end
+
+  # Runs the copy of bin/config-lint under `dir` with no arguments.
+  def run_in(dir)
+    out = IO.popen([File.join(dir, 'bin', 'config-lint')], err: [:child, :out], &:read)
+    [out, $CHILD_STATUS.exitstatus]
+  end
 end
 
 # --- Corpus: every rule has a fixture that provokes it ---
@@ -811,12 +1073,12 @@ class CorpusTest < Minitest::Test
     template = ConfigContract::Extract.load(
       File.expand_path('../setup/config.template.yaml', __dir__)
     )
-    ConfigContract.check(config: ConfigContract::Extract.load(path), template: template)
+    ConfigContract.check_file(path, template: template)
                   .select { |v| v.severity == :error }.map(&:rule)
   end
 
   def test_the_corpus_is_not_empty
-    floor = ConfigContract::SEMANTIC_RULES.size + 4
+    floor = ConfigContract::SEMANTIC_RULES.size + ConfigContract::PARSE_RULES.size + 4
     assert_operator self.class.red_fixtures.size, :>=, floor,
                     'red fixtures went missing — the corpus proves nothing if it does not load'
   end
@@ -843,12 +1105,39 @@ class CorpusTest < Minitest::Test
   end
 end
 
+# --- JOB_SKILLS stays in step with the template and skills/ ---
+class JobSkillsMapTest < Minitest::Test
+  ROOT = File.expand_path('..', __dir__)
+
+  def template_job_names
+    ConfigContract::Extract.load(File.join(ROOT, 'setup/config.template.yaml'))
+                  .dig('scheduled_jobs', 'jobs').map { |j| j['name'] }
+  end
+
+  def test_the_map_covers_exactly_the_template_jobs
+    assert_equal template_job_names.sort, ConfigContract::JOB_SKILLS.keys.sort
+  end
+
+  def test_every_mapped_skill_exists
+    ConfigContract::JOB_SKILLS.values.compact.each do |skill|
+      assert File.directory?(File.join(ROOT, 'skills', skill)), "skills/#{skill} is missing"
+    end
+  end
+
+  def test_a_job_mapped_to_no_skill_really_has_none
+    ConfigContract::JOB_SKILLS.select { |_, skill| skill.nil? }.each_key do |job|
+      refute File.directory?(File.join(ROOT, 'skills', job)),
+             "skills/#{job} now exists: map it in JOB_SKILLS"
+    end
+  end
+end
+
 # --- Anti-vacuity: a rule with no fixture fails the suite ---
 class MetaTest < Minitest::Test
-  def test_every_semantic_rule_has_a_red_fixture
+  def test_every_semantic_and_parse_rule_has_a_red_fixture
     covered = Dir.glob(File.join(FIXTURE_ROOT, 'red-*.yaml'))
                  .map { |p| File.basename(p, '.yaml').sub(/\Ared-/, '').to_sym }
-    missing = ConfigContract::SEMANTIC_RULES - covered
+    missing = (ConfigContract::SEMANTIC_RULES + ConfigContract::PARSE_RULES) - covered
     assert_empty missing,
                  "these rules have no red fixture, so nothing proves they fire: #{missing.inspect}"
   end

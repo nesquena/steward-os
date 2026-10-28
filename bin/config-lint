@@ -35,9 +35,20 @@ end
 targets = ARGV.empty? ? DEFAULT_TARGETS : ARGV
 
 begin
-  template = ConfigContract::Extract.load(TEMPLATE_PATH)
+  template, template_violations = ConfigContract::Extract.read(TEMPLATE_PATH)
 rescue StandardError => e
   warn "could not read #{TEMPLATE_PATH}: #{e.message}"
+  exit 1
+end
+
+# Every config is checked against the template, so a template the lint can't
+# read faithfully fails the whole run.
+unless template_violations.empty?
+  puts "#{TEMPLATE_PATH} — #{template_violations.size} error(s), 0 warning(s)"
+  template_violations.each { |v| puts v.to_line }
+  puts
+  puts BOUNDARY
+  puts "FAILED — #{template_violations.size} violation(s)."
   exit 1
 end
 
@@ -46,14 +57,14 @@ total_warnings = 0
 
 targets.each do |path|
   begin
-    config = ConfigContract::Extract.load(path)
-  rescue StandardError => e
+    violations = ConfigContract.check_file(path, template: template)
+  # SystemStackError is not a StandardError: a file nested thousands of levels
+  # deep would otherwise end the run before the remaining targets are checked.
+  rescue StandardError, SystemStackError => e
     puts "#{path}: could not read — #{e.message}"
     total_errors += 1
     next
   end
-
-  violations = ConfigContract.check(config: config, template: template)
   errors   = violations.select { |v| v.severity == :error }
   warnings = violations.select { |v| v.severity == :warning }
   infos    = violations.select { |v| v.severity == :info }

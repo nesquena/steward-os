@@ -103,8 +103,9 @@ replies in the project's voice** — keep it draft→approve. See
 ---
 
 ## Skills for this area
-- `chat-monitor` — Watcher adapter: read channels, normalize, and invoke `issue-capture`.
-- `mentions-sweep` — Watcher: web sweep, disambiguate, curate a digest.
+- `chat-monitor` (no skill yet) — Watcher adapter: read channels, normalize, and invoke
+  `issue-capture`.
+- `mentions-sweep` (no skill yet) — Watcher: web sweep, disambiguate, curate a digest.
 - `release-announce` — Steward: templated announcement via a secret-isolating helper.
 
 _Related: [issue lifecycle](issue-lifecycle.md) · [contributor recognition](contributor-recognition.md)

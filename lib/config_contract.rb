@@ -73,6 +73,39 @@ module ConfigContract
     chat_needs_platform
     public_files_need_watchdog
     sandbox_required
+    job_name_unique
+    enabled_job_needs_skill
+    job_flag_agree
+  ].freeze
+
+  # Each template job and the skill that runs it, or nil where none ships yet.
+  # JobSkillsMapTest keeps this in step with the template and skills/.
+  JOB_SKILLS = {
+    'scoreboard-refresh' => 'triage-scoreboard',
+    'chat-monitor' => nil,
+    'issue-capture' => 'issue-capture',
+    'mentions-sweep' => nil,
+    'announcements' => 'release-announce',
+    'label-sync' => 'label-sync',
+    'issue-autoclose' => 'issue-autoclose',
+    'action-watchdog' => 'action-watchdog',
+    'fleet-heartbeat' => nil
+  }.freeze
+
+  # Jobs whose enabled run needs a feature flag on: job name => flag path.
+  JOB_FLAGS = {
+    'issue-capture' => 'issue_capture.enabled',
+    'chat-monitor' => 'community.chat.monitor'
+  }.freeze
+
+  # Every rule ParseRules can emit. The meta-test reads this list and
+  # SEMANTIC_RULES, so keep it in sync when adding a parse rule.
+  PARSE_RULES = %i[
+    multiple_documents
+    duplicate_key
+    merge_key
+    explicit_tag
+    ambiguous_scalar
   ].freeze
 
   CAPTURE_STATE_PATHS = %w[queue_path ledger_path checkpoint_path].freeze
@@ -106,6 +139,15 @@ module ConfigContract
     violations << phases_skipped unless ran_semantics
 
     violations
+  end
+
+  # Read a config file and check it. A parse violation means the hash is not
+  # the file, so every phase is skipped and said to be.
+  def self.check_file(path, template:)
+    config, parse_violations = Extract.read(path)
+    return parse_violations + [phases_skipped] unless parse_violations.empty?
+
+    check(config: config, template: template)
   end
 
   def self.phases_skipped
@@ -295,9 +337,14 @@ module ConfigContract
       unless job['name'].is_a?(String)
         violations << type_error(:type_string, "scheduled_jobs.jobs[#{i}].name", job['name'], 'a string')
       end
-      unless [true, false].include?(job['enabled'])
-        violations << type_error(:type_boolean, "scheduled_jobs.jobs[#{i}].enabled", job['enabled'],
-                                 'true or false')
+      # `agent` is checked per job, like `enabled`: the template shape is
+      # satisfied when any one job carries the key, and enabled_job_needs_skill
+      # only fires on a literal true, so a quoted "true", a 1 or a missing key
+      # would otherwise slip past it.
+      %w[enabled agent].each do |key|
+        next if [true, false].include?(job[key])
+
+        violations << type_error(:type_boolean, "scheduled_jobs.jobs[#{i}].#{key}", job[key], 'true or false')
       end
       violations
     end
@@ -503,7 +550,49 @@ module ConfigContract
                         '(config.template.yaml:106)')
     end
 
-    violations + unverifiable_warning(config, outputs, index)
+    violations + job_violations(config) + unverifiable_warning(config, outputs, index)
+  end
+
+  # Runtimes differ on whether `Issue_Capture ` is `issue-capture`, so the job
+  # rules assume it is: an exact match would let a near-miss name slip past.
+  # Invisible format characters (zero-width space, BOM) are dropped too.
+  def self.normalize_job_name(name)
+    unicode_strip(name.gsub(/\p{Cf}/, '')).downcase.tr('_', '-')
+  end
+
+  def self.job_violations(config)
+    first_index = {}
+    violations_for_each(config, 'scheduled_jobs', 'jobs') do |job, i|
+      next [] unless job['name'].is_a?(String)
+
+      name = normalize_job_name(job['name'])
+      found = []
+      if first_index.key?(name)
+        found << err(:job_name_unique, "scheduled_jobs.jobs[#{i}]",
+                     "job '#{job['name']}' repeats the name of job #{first_index[name]}; a " \
+                     'scheduler picks one of them, and nothing says which')
+      end
+      first_index[name] ||= i
+      found + enabled_job_violations(config, job, name, i)
+    end
+  end
+
+  def self.enabled_job_violations(config, job, name, index)
+    return [] unless job['enabled'] == true
+
+    found = []
+    if job['agent'] == true && JOB_SKILLS.key?(name) && JOB_SKILLS[name].nil?
+      found << err(:enabled_job_needs_skill, "scheduled_jobs.jobs[#{index}]",
+                   "job '#{job['name']}' has no skill in this repo yet, so nothing shipped " \
+                   'bounds the model it runs')
+    end
+    flag = JOB_FLAGS[name]
+    if flag && fetch_path(config, flag) != true
+      found << err(:job_flag_agree, "scheduled_jobs.jobs[#{index}]",
+                   "job '#{job['name']}' is enabled but #{flag} is not true, so the rules that " \
+                   'guard it never run')
+    end
+    found
   end
 
   # Fail closed on "no declared repositories". An adopter who declares none
@@ -560,6 +649,132 @@ module ConfigContract
                             '    Confirm each before enabling autonomous capture.')]
   end
 
+  # Rules that read the YAML stream before anything converts it. Each names a
+  # construct that lets the parsed hash differ from what a reader of the file
+  # sees, so every later phase would vet a config nobody wrote. Inspection
+  # only: conversion stays YAML.safe_load on the source text. Never call
+  # to_ruby on these nodes; it builds whatever a !ruby/object tag names.
+  module ParseRules
+    # Resolves a plain key the way the safe loader would (`yes` and `true` both
+    # become true), so keys that collide only after resolution are caught.
+    KEY_SCANNER = Psych::ScalarScanner.new(Psych::ClassLoader::Restricted.new([], []))
+
+    # Psych matches these words in any case; other readers accept only the
+    # spellings below and read the rest as strings, which are truthy. So
+    # `enabled: oFF` is off to the lint and on to such a runtime.
+    CANONICAL_WORDS = %w[
+      true True TRUE false False FALSE yes Yes YES no No NO
+      on On ON off Off OFF null Null NULL
+    ].freeze
+    BOOL_OR_NULL_WORD = /\A(?:true|false|yes|no|on|off|null)\z/i
+    # Base-60 numbers (`1:30`): Psych and other readers compute different values.
+    SEXAGESIMAL = /\A[-+]?\d[\d_]*(?::[0-5]?\d)+(?:\.\d*)?\z/
+
+    module_function
+
+    def violations(text)
+      documents = Psych.parse_stream(text).children
+      return [] if documents.empty?
+      return [multiple_documents(documents)] if documents.size > 1
+
+      walk(documents.first.root, '')
+    end
+
+    def multiple_documents(documents)
+      ConfigContract.err(:multiple_documents, '(document)',
+                         "#{documents.size} YAML documents, but the lint reads only the first; " \
+                         "document 2 starts at line #{documents[1].start_line + 1} " \
+                         '(a trailing --- opens a document too)')
+    end
+
+    def walk(node, path)
+      found = []
+      found << explicit_tag(node, path) if node.respond_to?(:tag) && node.tag
+      found << ambiguous_scalar(node, path) if ambiguous?(node)
+
+      case node
+      when Psych::Nodes::Mapping
+        found.concat(mapping(node, path))
+      when Psych::Nodes::Sequence
+        node.children.each_with_index { |child, i| found.concat(walk(child, "#{path}[#{i}]")) }
+      end
+      found
+    end
+
+    def mapping(node, path)
+      found = []
+      seen = {}
+      node.children.each_slice(2) do |key, value|
+        found.concat(walk(key, path))
+        label = key.is_a?(Psych::Nodes::Scalar) ? key.value : "[key at line #{key.start_line + 1}]"
+        child = path.empty? ? label : "#{path}.#{label}"
+        found << merge_key(child) if key.is_a?(Psych::Nodes::Scalar) && key.value == '<<'
+        identities = key_identities(key)
+        earlier = identities.filter_map { |id| seen[id] }.first
+        found << duplicate_key(child, earlier, key) if earlier
+        identities.each { |id| seen[id] ||= key }
+        found.concat(walk(value, child))
+      end
+      found
+    end
+
+    # A scalar key matches by its text or by what it resolves to; a list or
+    # map key matches by its structure.
+    def key_identities(key)
+      return [[:shape, shape(key)]] unless key.is_a?(Psych::Nodes::Scalar)
+
+      [[:text, key.value], [:resolved, resolve(key)]]
+    end
+
+    def shape(node)
+      case node
+      when Psych::Nodes::Scalar then [:scalar, node.value]
+      when Psych::Nodes::Alias then [:alias, node.anchor]
+      else [node.class.name, node.children.map { |child| shape(child) }]
+      end
+    end
+
+    def ambiguous?(node)
+      return false unless node.is_a?(Psych::Nodes::Scalar) && node.plain && !node.tag
+
+      value = node.value
+      (value.match?(BOOL_OR_NULL_WORD) && !CANONICAL_WORDS.include?(value)) || value.match?(SEXAGESIMAL)
+    end
+
+    def resolve(key)
+      key.quoted ? key.value : KEY_SCANNER.tokenize(key.value)
+    end
+
+    def duplicate_key(path, first, again)
+      where = if first.start_line == again.start_line
+                "line #{again.start_line + 1}, columns #{first.start_column + 1} and #{again.start_column + 1}"
+              else
+                "lines #{first.start_line + 1} and #{again.start_line + 1}"
+              end
+      ConfigContract.err(:duplicate_key, path,
+                         "key repeated at #{where}; YAML readers keep different copies, so the " \
+                         'lint cannot know which one you meant')
+    end
+
+    def merge_key(path)
+      ConfigContract.err(:merge_key, path,
+                         'a << merge key lets merged values override keys written explicitly, ' \
+                         'and readers disagree on which wins; write the keys out')
+    end
+
+    def ambiguous_scalar(node, path)
+      ConfigContract.err(:ambiguous_scalar, path.empty? ? '(document)' : path,
+                         "'#{node.value}' at line #{node.start_line + 1} reads as a different " \
+                         'value in other YAML readers; write a lowercase true/false/null, or quote it')
+    end
+
+    def explicit_tag(node, path)
+      ConfigContract.err(:explicit_tag, path.empty? ? '(document)' : path,
+                         "explicit YAML tag #{node.tag} at line #{node.start_line + 1}; readers " \
+                         'resolve tags differently, and this config needs none')
+    end
+  end
+
   # Repo readers. Each is small and testable against real files.
   module Extract
     # Subtrees whose keys are adopter-defined (path globs, title prefixes, bucket
@@ -576,6 +791,19 @@ module ConfigContract
     # Parse a config. Raises a clear error rather than a bare Psych stacktrace.
     def load(path)
       YAML.safe_load(File.read(path)) || {}
+    rescue Psych::Exception => e
+      raise "could not parse #{path}: #{e.message}"
+    end
+
+    # Parse a config and run the parse rules first. Returns [hash, []] for a
+    # file the lint can trust, or [nil, violations] when the parsed hash would
+    # not be what the file says. Conversion is YAML.safe_load on the text.
+    def read(path)
+      text = File.read(path)
+      violations = ParseRules.violations(text)
+      return [nil, violations] unless violations.empty?
+
+      [YAML.safe_load(text) || {}, []]
     rescue Psych::Exception => e
       raise "could not parse #{path}: #{e.message}"
     end
