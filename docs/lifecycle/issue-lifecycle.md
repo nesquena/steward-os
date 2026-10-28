@@ -75,7 +75,9 @@ The Steward keeps the tracker healthy:
   (opened after the adoption mark and not yet handled by a triage run), or escalate one that fits
   no scope anchor or trips the philosophy veto and isn't a confirmed bug or reliability failure.
   An issue triage can't ground in code, replied or not, gets no judgment. Other issues are judged
-  when a human names them or rules them in scope, never in a backfill.
+  when a human names them or rules them in scope, never in a backfill. After an edit or a rubric
+  change, a [stale judgment](../playbooks/triage-scoreboard.md#when-a-judgment-goes-stale) an
+  agent set is re-judged; one a human set stands.
 - **Label + milestone** — mechanical, reversible metadata. A good candidate for autonomous,
   deterministic labeling (size, area, type) with a tight allowlist that never overrides a human's
   label.

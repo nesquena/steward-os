@@ -25,6 +25,7 @@ make commitments.
    vulnerability shape (unauthorized access, data exposure, tampering, code execution, or
    attacker-triggerable service loss) is a hit whenever you find it, at a later step too: post
    nothing more about it, write no judgment, bypass marker or severity flag, and route it as above.
+   On a re-judge (step 9), a hit writes only the attempt record.
 3. **Initial reply (confidence-gated).** For an un-replied issue that cleared the vuln check, post a
    substantive, code-grounded response OR a targeted needinfo question — **only if** you can ground
    it in actual code. If you can't (vague report, can't parse, not clearly about this project) →
@@ -55,9 +56,10 @@ make commitments.
      open state, title, body, labels and comments, and the scope settings from `config.yaml`.
 
    Set the severity flag only under
-   [its rule](../../docs/playbooks/triage-scoreboard.md#severity-is-a-flag). Write only a
-   dimension that is empty on the board: one already set, by a human or an earlier run, stands.
-   If you disagree with it, say so in your output and leave it. An issue you can't ground in
+   [its rule](../../docs/playbooks/triage-scoreboard.md#severity-is-a-flag). Record each value
+   with setter `agent`, the judgment stamp from the shared routine and the rubric identifier.
+   Write an empty dimension, or re-judge a stale one an agent set (step 9); any other stands
+   ([who set it](../../docs/playbooks/triage-scoreboard.md#who-set-it)). If you disagree with it, say so in your output and leave it. An issue you can't ground in
    code, replied or not, gets no judgment: there's nothing found to score. A step-3 halt is one
    such case.
 5. **Label + milestone.** Apply mechanical, reversible metadata. Prefer a deterministic
@@ -76,8 +78,20 @@ make commitments.
    unless it is plainly a reaction or a bare "+1"; when unsure, a change bears on scope. If
    nothing that bears on scope changed, the ruling stands in place of the anchor
    check: record `criticality` and `risk` at step 4, and `scope_fit` only at a level the ruling
-   states, else leave it empty for the human. If something did, or a comparison isn't possible,
-   run step 4 again on the current issue and escalate again if what changed is in question.
+   states, with setter `human`, else leave it as it is (empty, or a stale agent value) for the
+   human. If something did, or a comparison isn't possible, run step 4 again on the current issue
+   and escalate again if what changed is in question.
+9. **Re-judge a stale issue.** Each run, compute judgment stamps with the shared routine and
+   queue issues with a stale value an agent set. First drop any issue whose attempt record
+   matches its current judgment stamp and rubric identifier. Then take every edited issue, then
+   rubric-stale issues by composite, highest first, up to ten. An issue a human named for this
+   run joins the queue, its attempt record clears, and its `legacy` values may be re-judged too.
+   For each, run step 2, then step 4's screen and record for the stale values only. Rewriting an
+   agent's `criticality` under a flag a human set writes the judgment stamp `stale` on that flag.
+   A halt (an issue you can't ground in code), an escalation or a divert writes only the attempt
+   record
+   ([when a judgment goes stale](../../docs/playbooks/triage-scoreboard.md#when-a-judgment-goes-stale)).
+   An escalated issue keeps its stale values.
 
 ## Pitfalls
 - **Confidence gate is mandatory** — a guess posted publicly erodes trust more than silence.
@@ -92,8 +106,9 @@ make commitments.
 ## Verification
 - Every new, human-named or resumed issue this run could ground in code has an in-range judgment
   on the scoreboard, one a human set, an escalation, or a divert. An ungrounded or diverted issue,
-  or one escalated this run, got no judgment from this run, and no judgment already on the board
-  changed.
+  or one escalated this run, got no judgment from this run, and no value a human set changed. No
+  more than ten rubric-stale issues were re-judged. A re-judge that wrote nothing left only an
+  attempt record.
 - Every new issue this run finished carries a handled mark; one it didn't finish carries none.
 - Un-replied issues got a grounded reply or a deliberate skip.
 - Labels are add-only and didn't override humans.
