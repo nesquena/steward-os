@@ -168,6 +168,22 @@ class ParseRulesTest < Minitest::Test
     assert_includes rules("a: !!str 1\n"), :explicit_tag
   end
 
+  # Psych reads these as booleans, nulls or numbers; PyYAML reads them as
+  # strings (truthy) or other numbers. Canonical spellings stay allowed.
+  def test_a_scalar_two_readers_resolve_differently_is_refused
+    %w[fALSE oFF nO tRUE yEs nULL 1:30].each do |v|
+      assert_equal %i[ambiguous_scalar], rules("a: #{v}\n"), v
+    end
+    assert_equal ['a'], keys("a: oFF\n")
+  end
+
+  def test_canonical_booleans_and_nulls_pass
+    %w[true True TRUE false False FALSE yes Yes YES no No NO on On ON off Off OFF null Null NULL ~].each do |v|
+      assert_empty rules("a: #{v}\n"), v
+    end
+    assert_empty rules("a: \"oFF\"\nb: '1:30'\nc: 30 8 * * *\n")
+  end
+
   def test_inspection_never_instantiates_a_tagged_object
     ObjectSpace.garbage_collect
     before = ObjectSpace.each_object(Gem::Version).count

@@ -105,6 +105,7 @@ module ConfigContract
     duplicate_key
     merge_key
     explicit_tag
+    ambiguous_scalar
   ].freeze
 
   CAPTURE_STATE_PATHS = %w[queue_path ledger_path checkpoint_path].freeze
@@ -652,6 +653,17 @@ module ConfigContract
     # become true), so keys that collide only after resolution are caught.
     KEY_SCANNER = Psych::ScalarScanner.new(Psych::ClassLoader::Restricted.new([], []))
 
+    # Psych matches these words in any case; other readers accept only the
+    # spellings below and read the rest as strings, which are truthy. So
+    # `enabled: oFF` is off to the lint and on to such a runtime.
+    CANONICAL_WORDS = %w[
+      true True TRUE false False FALSE yes Yes YES no No NO
+      on On ON off Off OFF null Null NULL
+    ].freeze
+    BOOL_OR_NULL_WORD = /\A(?:true|false|yes|no|on|off|null)\z/i
+    # Base-60 numbers (`1:30`): Psych and other readers compute different values.
+    SEXAGESIMAL = /\A[-+]?\d[\d_]*(?::[0-5]?\d)+(?:\.\d*)?\z/
+
     module_function
 
     def violations(text)
@@ -672,6 +684,7 @@ module ConfigContract
     def walk(node, path)
       found = []
       found << explicit_tag(node, path) if node.respond_to?(:tag) && node.tag
+      found << ambiguous_scalar(node, path) if ambiguous?(node)
 
       case node
       when Psych::Nodes::Mapping
@@ -703,6 +716,13 @@ module ConfigContract
       found
     end
 
+    def ambiguous?(node)
+      return false unless node.is_a?(Psych::Nodes::Scalar) && node.plain && !node.tag
+
+      value = node.value
+      (value.match?(BOOL_OR_NULL_WORD) && !CANONICAL_WORDS.include?(value)) || value.match?(SEXAGESIMAL)
+    end
+
     def resolve(key)
       key.quoted ? key.value : KEY_SCANNER.tokenize(key.value)
     end
@@ -717,6 +737,12 @@ module ConfigContract
       ConfigContract.err(:merge_key, path,
                          'a << merge key lets merged values override keys written explicitly, ' \
                          'and readers disagree on which wins; write the keys out')
+    end
+
+    def ambiguous_scalar(node, path)
+      ConfigContract.err(:ambiguous_scalar, path.empty? ? '(document)' : path,
+                         "'#{node.value}' at line #{node.start_line + 1} reads as a different " \
+                         'value in other YAML readers; write a lowercase true/false/null, or quote it')
     end
 
     def explicit_tag(node, path)
