@@ -23,13 +23,15 @@ Pitfalls). Ideal as a scheduled job.
    from that kind's composite and record it for the header.
 3. **Merge in persisted judgment** (scope_fit, criticality, risk, the severity flag, each with
    its setter, judgment stamp and rubric identifier) from the prior board. Compute each item's
-   judgment stamp with the shared routine. Stamp any value that has none, with the current
-   judgment stamp and rubric identifier, setter unchanged; on the first run after adoption,
-   record a value with no setter as `legacy`. Mark a value stale when its judgment stamp or
-   rubric identifier doesn't match
+   judgment stamp with the shared routine; if you can't call it, write no stamp, carry each
+   value's stale mark over from the prior board, and say so. Stamp any value that has none, with
+   the current judgment stamp and rubric identifier, setter unchanged. A run that finds no setters
+   mark in this skill's [state](../../docs/playbooks/scheduled-jobs.md#incremental-not-full-rescan)
+   records every value with no setter as `legacy`, then writes the mark. Mark a value stale when
+   its judgment stamp or rubric identifier doesn't match
    ([the rule](../../docs/playbooks/triage-scoreboard.md#when-a-judgment-goes-stale)); a judgment
-   stamp of `stale` never matches. Keep its value. After that first run, a value with no setter
-   is an error: surface it.
+   stamp of `stale` never matches. Keep its value. Once the setters mark is written, a value with
+   no setter is an error: surface it.
 4. **Compute the composite** = weighted sum of dimensions (weights from config; tune to match "what
    I'd pick up next"). Read the bypass marker (`bypass`) as the plain in-scope level of the rubric
    your project uses ([the default](../../docs/playbooks/triage-scoreboard.md#the-default-rubric),
@@ -55,8 +57,8 @@ Pitfalls). Ideal as a scheduled job.
 - **Keep mechanical and judgment dims in separate storage** — mechanical is re-derived and
   disposable; judgment is precious and persisted. Don't let a refresh wipe a human's assessment.
 - **Mark, never re-judge** — the refresh's one judgment write is the judgment stamp on a value
-  that has none, plus the setter `legacy` on the first run after adoption. It never changes a
-  value or a recorded setter, never drops a stale value, and never shows one as fresh.
+  that has none, plus the setter `legacy` on the run that writes the setters mark. It never
+  changes a value or a recorded setter, never drops a stale value, and never shows one as fresh.
   Re-judging is triage's.
 - **A dimension that reads labels goes inert without an error** — on a backlog with no labels it
   scores the same for every item. Name it in the header; never let it count silently.

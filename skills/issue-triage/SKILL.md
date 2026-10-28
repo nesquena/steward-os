@@ -25,7 +25,7 @@ make commitments.
    vulnerability shape (unauthorized access, data exposure, tampering, code execution, or
    attacker-triggerable service loss) is a hit whenever you find it, at a later step too: post
    nothing more about it, write no judgment, bypass marker or severity flag, and route it as above.
-   On a re-judge (step 9), a hit writes only the attempt record.
+   On a re-judge (step 9), a hit records only the attempt record, in this skill's state.
 3. **Initial reply (confidence-gated).** For an un-replied issue that cleared the vuln check, post a
    substantive, code-grounded response OR a targeted needinfo question — **only if** you can ground
    it in actual code. If you can't (vague report, can't parse, not clearly about this project) →
@@ -84,14 +84,17 @@ make commitments.
    human. If something did, or a comparison isn't possible, run step 4 again on the current issue
    and escalate again if what changed is in question.
 9. **Re-judge a stale issue.** Each run, compute judgment stamps with the shared routine and
-   queue issues with a stale value an agent set. First drop any issue whose attempt record
-   matches its current judgment stamp and rubric identifier. Then take every edited issue, then
-   rubric-stale issues by composite, highest first, up to ten. An issue a human named for this
-   run joins the queue, its attempt record clears, and its `legacy` values may be re-judged too.
+   queue issues with a stale value an agent set. If you can't call the routine, re-judge nothing
+   and say so. First drop any issue whose attempt record matches its current judgment stamp and
+   rubric identifier. Then take every edited issue (ten, highest composite first, when more than
+   ten are edited), then rubric-stale issues by composite, highest first, up to ten. An issue a
+   human named for this run joins the queue, its attempt record clears, and its `legacy` values
+   may be re-judged too.
    For each, run step 2, then step 4's screen and record for the stale values only (and, on a
    named issue, its `legacy` ones). Rewriting an agent's `criticality` under a flag a human set
    writes the judgment stamp `stale` on that flag. A halt (an issue you can't ground in code), an
-   escalation or a divert writes only the attempt record on the board, with no reason; the
+   escalation or a divert records only the attempt record, in this skill's state and never on
+   the board, with no reason; the
    escalation and the private routing still happen
    ([when a judgment goes stale](../../docs/playbooks/triage-scoreboard.md#when-a-judgment-goes-stale)).
    An escalated issue keeps its stale values.
@@ -110,8 +113,8 @@ make commitments.
 - Every new, human-named or resumed issue this run could ground in code has an in-range judgment
   on the scoreboard, one a human set, an escalation, or a divert. An ungrounded or diverted issue,
   or one escalated this run, got no judgment from this run, and no value a human set changed. No
-  more than ten rubric-stale issues were re-judged. A re-judge that wrote nothing left only an
-  attempt record.
+  more than ten edited and ten rubric-only-stale issues were re-judged. A re-judge that wrote
+  nothing left only an attempt record, in this skill's state.
 - Every new issue this run finished carries a handled mark; one it didn't finish carries none.
 - Un-replied issues got a grounded reply or a deliberate skip.
 - Labels are add-only and didn't override humans.

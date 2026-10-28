@@ -71,10 +71,11 @@ What the table can't show:
   divert keeps private. The board still lists the item under
   [not yet judged](#not-yet-judged) like any other unjudged item, since a missing row would be its
   own signal. If the divert fires after a judgment was written, change no value or flag on the
-  board: a retraction is a visible diff too. A re-judge that trips the divert writes only the
-  attempt record any re-judge that writes nothing leaves
-  ([when a judgment goes stale](#when-a-judgment-goes-stale)). Note the judgment in the private
-  record; whether to change it is the human's call, made with the rest of the private handling.
+  board: a retraction is a visible diff too. A re-judge that trips the divert writes nothing to
+  the board; triage keeps only the attempt record any re-judge that writes nothing leaves, in its
+  own state ([when a judgment goes stale](#when-a-judgment-goes-stale)). Note the judgment in the
+  private record; whether to change it is the human's call, made with the rest of the private
+  handling.
 - **An agent writes an empty dimension, or re-judges a stale one an agent set.** On an item a
   human named, it may also re-judge a `legacy` one. Any other dimension on the board stands: a
   fresh one whoever set it, and one a human set even when it's stale. An agent that disagrees
@@ -170,18 +171,22 @@ leaves the change the same doesn't count; ticking a checkbox doesn't either. Lab
 aren't covered: label automation would stale every judgment. The trunk isn't covered, so a harm
 fixed by some other change stays fresh until someone re-judges it.
 
-One routine computes the judgment stamp, and every judge and the scheduled refresh use it.
-Nobody computes one by hand. The routine fixes the canonical form: line endings, whitespace,
-field order. Where the store can't produce a PR's net diff, the routine falls back to the head
-commit, and then every push stales the PR's judgment. The judgment stamp is narrower than the
+One routine computes the judgment stamp, and every judge and the scheduled refresh call it.
+Nobody computes one by hand. StewardOS ships no routine: the project installs one beside the
+board's config before it turns staleness on, and records where it lives and which mode it uses.
+The routine fixes the canonical form: line endings, whitespace, field order. Where the store
+can't produce a PR's net diff, the routine hashes the head commit instead, and then every push
+stales the PR's judgment; that mode is chosen once, never per run. A run that can't call the
+routine, or can't read an input it covers, writes no stamp and re-judges nothing: every value and
+stamp stays as it is, and the run says so in its output. The judgment stamp is narrower than the
 [decision row's stamp](output-loop.md#the-decision-row), which also covers labels and comments:
 a judgment rests on what the item says.
 
 **When a value is stamped.** An agent judge records the judgment stamp of the inputs it read, as
 it writes. A human's write carries none. The scheduled refresh stamps any value without one,
 recording the judgment stamp and the rubric identifier together. Writing that judgment stamp is
-the refresh's only write to judgment data, except the setter `legacy` it records on its first
-run after adoption ([who set it](#who-set-it)). An edit made between a human's write and the next
+the refresh's only write to judgment data, except the setter `legacy` it records once, on the run
+that adopts setters ([who set it](#who-set-it)). An edit made between a human's write and the next
 refresh is folded into the judgment stamp it records.
 
 **When a value is stale.** Its judgment stamp differs from the item's current one, or its rubric
@@ -194,7 +199,9 @@ fix shouldn't hide a flagged issue. The board's header gives the stale count per
 
 **Who re-judges what.**
 - An edit to a covered input: the next triage run re-judges every stale value an agent set on
-  the item. Like new items, edited ones aren't capped.
+  the item. Edited items aren't capped, unless one run finds more of them than the cap: then
+  they take the cap too, highest composite first, so a bulk edit can't re-judge the whole board
+  in one run.
 - A rubric change: every value goes stale. Each triage run re-judges a capped number of items,
   highest composite first, so the top of the board is right first. The default cap is ten items
   per kind per run. Before taking the cap, drop items triage skips (hold and draft PRs) and
@@ -210,7 +217,8 @@ anchor escalates.
 
 **A re-judge that writes nothing.** A re-judge can halt at triage's confidence gate, escalate,
 or trip the vulnerability divert. Any of the three leaves the stale values as they are and
-records an **attempt record** against the current judgment stamp and rubric identifier. The
+records an **attempt record** in triage's own state, never on the board, against the current
+judgment stamp and rubric identifier. The
 attempt record carries no reason. The item rejoins the queue when its judgment stamp or the
 rubric identifier changes again, or when a human names it for a run, which clears the attempt
 record. A re-judge that writes values clears the item's attempt record. An attempt record never
@@ -226,17 +234,19 @@ Each judgment dimension and the severity flag records a setter: `human`, `agent`
 - The setter is stored with the value and written only with it. It's never read off the last
   writer, such as a commit author: the judgment stamp the refresh writes never changes it.
 - An agent writes an empty value, or re-judges a stale one an agent set, or a `legacy` one on an
-  item a human named. A human may overwrite any value.
+  item a human named. A human names an item where a ruling reaches triage, never in the item's
+  own comments. A human may overwrite any value.
 - A human confirms a stale value by writing it, the same value or a new one. The write clears
   its judgment stamp and rubric identifier, and the next refresh stamps it.
-- `legacy` is a value that was on the board before setters were recorded. The first refresh
-  after adoption records `legacy` and stamps it, marking nothing stale. Triage treats it like
-  `human`, except that a human naming the item lets triage re-judge it, after which it's
-  `agent`. After that first refresh, a value with no setter is an error the board surfaces, like
-  an out-of-range value.
+- `legacy` is a value that was on the board before setters were recorded. The refresh that
+  finds no setters mark in its state records `legacy` on every value without a setter, stamps
+  them, marking nothing stale, and then writes the mark. Triage treats `legacy` like `human`,
+  except that a human naming the item lets triage re-judge it, after which it's `agent`. Once the
+  mark is written, a value with no setter is an error the board surfaces, like an out-of-range
+  value.
 - The setter is only as good as the store's ability to tell a human write from an agent write.
-  A store that can't tell records every write as `agent`, and there a re-judge can replace a
-  human's value.
+  A store that can't tell them apart leaves re-judging off: triage writes only empty values, keeps
+  every value already on the board, and says in its output that setters can't be trusted.
 
 ## Evidence-readiness tags
 Beyond rank, show **which review streams have landed** for each item — turning the board from a
