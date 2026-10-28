@@ -1,0 +1,94 @@
+# Red fixture for enabled_job_needs_skill.
+# One edit vs green-enabled.yaml: the issue-capture job renamed to mentions-sweep.
+project:
+  name: "fixture project"
+  trunk_branch: "main"
+  release_model:
+    style: "tag-per-release"
+    changelog_file: "CHANGELOG.md"
+    shipped_means: "tag-exists-and-deployed"
+
+repositories:
+  - host: "github.com"
+    owner: "example"
+    name: "app"
+    role: "primary"
+    visibility: "private"
+
+scope:
+  anchors:
+    - "serves the product"
+  philosophy_veto:
+    - "scope creep"
+  bypass_scope_gate:
+    - "bug-fix-on-shipped-feature"
+    - "security-fix"
+    - "reliability-fix"
+
+community:
+  chat:
+    platform: "discord"
+    server_id: "1234"
+    bug_channels: ["bugs"]
+    monitor: true
+    capture_reaction: "white_check_mark"
+  mentions_sweep:
+    enabled: false
+    disambiguate_against: ""
+
+issue_capture:
+  enabled: true
+  sources: ["support-inbox"]
+  queue_path: "/srv/steward/queue.md"
+  ledger_path: "/srv/steward/ledger.md"
+  checkpoint_path: "/srv/steward/checkpoint.md"
+  max_per_run: 10
+  max_public_files_per_run: 0
+  capture_marker: "steward-captured"
+
+security:
+  security_contact: "github-advisory"
+  security_sensitive_surfaces: ["auth"]
+
+ci_and_gates:
+  test_command: "bundle exec rspec"
+  test_runtime_estimate: "4 min"
+  ci_present: true
+  code_review_tool: ""
+  adversarial_review_tool: ""
+  visual_preview_tool: ""
+  ui_viewports: []
+
+autonomy:
+  pr_labeling: "B"
+  issue_triage_replies: "B"
+  issue_autoclose: "C"
+  announcements: "C"
+  pr_merge: "B"
+  human_reachable_at: "#steward-ops"
+
+labels:
+  add_only: true
+  size: { by: diff_lines,   buckets: { S: 50, M: 200, L: 500, XL: null } }
+  area: { by: paths,        map: { "app/**": "area:app" } }
+  type: { by: title_prefix, map: { feat: "type:feature" } }
+
+trust:
+  ledger_path: "/srv/steward/trust.md"
+  prior: 0.5
+  shrinkage: 3.0
+  half_life_days: 180
+
+secrets:
+  credentials_file: "/srv/steward/.env"
+  execute_contributor_code: false
+  sandbox_available: false
+
+scheduled_jobs:
+  jobs:
+    - { name: "mentions-sweep",  every: "1h", enabled: true,  agent: true  }
+    - { name: "action-watchdog", every: "6h", enabled: true,  agent: false }
+  outputs:
+    index_path: "/srv/steward/index.md"
+    digest_to: ""
+    alarms_to: "ops@example.com"

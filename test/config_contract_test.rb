@@ -522,7 +522,7 @@ class SemanticTest < Minitest::Test
                       'security_sensitive_surfaces' => ['auth'] },
       'secrets' => { 'execute_contributor_code' => false, 'sandbox_available' => false },
       'scheduled_jobs' => {
-        'jobs' => [{ 'name' => 'action-watchdog', 'every' => '6h', 'enabled' => true }],
+        'jobs' => [{ 'name' => 'action-watchdog', 'every' => '6h', 'enabled' => true, 'agent' => false }],
         'outputs' => { 'index_path' => '/srv/steward/index.md', 'digest_to' => '',
                        'alarms_to' => 'ops@example.com' }
       }
@@ -543,6 +543,57 @@ class SemanticTest < Minitest::Test
 
   def test_the_fully_enabled_base_has_no_errors
     assert_empty errors(base).map(&:rule)
+  end
+
+  # base with the watchdog plus `jobs`. Every job carries `agent`: base is also
+  # the template here, so a job without it would not match the template's shape.
+  def with_jobs(*jobs)
+    cfg = base
+    cfg['scheduled_jobs']['jobs'] += jobs
+    cfg
+  end
+
+  def test_two_jobs_with_one_normalized_name_are_refused
+    cfg = with_jobs({ 'name' => 'nightly', 'every' => '1h', 'enabled' => false, 'agent' => false },
+                    { 'name' => 'Nightly ', 'every' => '2h', 'enabled' => false, 'agent' => false })
+    assert rule(cfg, :job_name_unique)
+  end
+
+  def test_an_enabled_model_job_with_no_skill_is_refused
+    cfg = with_jobs({ 'name' => 'mentions_sweep', 'every' => '24h', 'enabled' => true, 'agent' => true })
+    assert rule(cfg, :enabled_job_needs_skill)
+  end
+
+  def test_a_deterministic_job_with_no_skill_passes
+    cfg = with_jobs({ 'name' => 'fleet-heartbeat', 'cron' => '30 8 * * *', 'enabled' => true, 'agent' => false })
+    assert_nil rule(cfg, :enabled_job_needs_skill)
+    assert_nil rule(cfg, :phases_skipped)
+  end
+
+  def test_a_disabled_or_custom_job_is_not_checked_for_a_skill
+    disabled = with_jobs({ 'name' => 'mentions-sweep', 'every' => '24h', 'enabled' => false, 'agent' => true })
+    custom = with_jobs({ 'name' => 'my-own-job', 'every' => '1h', 'enabled' => true, 'agent' => true })
+    [disabled, custom].each do |cfg|
+      assert_nil rule(cfg, :enabled_job_needs_skill)
+      assert_nil rule(cfg, :phases_skipped)
+    end
+  end
+
+  def test_the_capture_job_on_with_capture_off_is_refused
+    cfg = with_jobs({ 'name' => "Issue_Capture\u00A0", 'every' => '1h', 'enabled' => true, 'agent' => true })
+    cfg['issue_capture']['enabled'] = false
+    assert rule(cfg, :job_flag_agree)
+  end
+
+  def test_the_chat_job_on_with_monitoring_off_is_refused
+    cfg = with_jobs({ 'name' => 'chat-monitor', 'every' => '1h', 'enabled' => true, 'agent' => false })
+    cfg['community']['chat']['monitor'] = false
+    assert rule(cfg, :job_flag_agree)
+  end
+
+  def test_the_flag_on_with_its_job_off_passes
+    assert_nil rule(base, :job_flag_agree)
+    assert_nil rule(base, :phases_skipped)
   end
 
   def test_enabled_capture_without_alarms_to_is_an_error
@@ -640,7 +691,7 @@ class SemanticTest < Minitest::Test
 
   def test_marker_with_no_watchdog_job_at_all_is_an_error
     cfg = base
-    cfg['scheduled_jobs']['jobs'] = [{ 'name' => 'label-sync', 'every' => '4h', 'enabled' => true }]
+    cfg['scheduled_jobs']['jobs'] = [{ 'name' => 'label-sync', 'every' => '4h', 'enabled' => true, 'agent' => false }]
     assert_equal :error, rule(cfg, :marker_needs_watchdog).severity
   end
 
@@ -968,6 +1019,33 @@ class CorpusTest < Minitest::Test
     define_method("test_#{name}_exits_nonzero") do
       IO.popen([BIN, path], err: [:child, :out], &:read)
       assert_equal 1, $CHILD_STATUS.exitstatus
+    end
+  end
+end
+
+# --- JOB_SKILLS stays in step with the template and skills/ ---
+class JobSkillsMapTest < Minitest::Test
+  ROOT = File.expand_path('..', __dir__)
+
+  def template_job_names
+    ConfigContract::Extract.load(File.join(ROOT, 'setup/config.template.yaml'))
+                  .dig('scheduled_jobs', 'jobs').map { |j| j['name'] }
+  end
+
+  def test_the_map_covers_exactly_the_template_jobs
+    assert_equal template_job_names.sort, ConfigContract::JOB_SKILLS.keys.sort
+  end
+
+  def test_every_mapped_skill_exists
+    ConfigContract::JOB_SKILLS.values.compact.each do |skill|
+      assert File.directory?(File.join(ROOT, 'skills', skill)), "skills/#{skill} is missing"
+    end
+  end
+
+  def test_a_job_mapped_to_no_skill_really_has_none
+    ConfigContract::JOB_SKILLS.select { |_, skill| skill.nil? }.each_key do |job|
+      refute File.directory?(File.join(ROOT, 'skills', job)),
+             "skills/#{job} now exists: map it in JOB_SKILLS"
     end
   end
 end

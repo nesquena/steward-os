@@ -73,7 +73,30 @@ module ConfigContract
     chat_needs_platform
     public_files_need_watchdog
     sandbox_required
+    job_name_unique
+    enabled_job_needs_skill
+    job_flag_agree
   ].freeze
+
+  # Each template job and the skill that runs it, or nil where none ships yet.
+  # JobSkillsMapTest keeps this in step with the template and skills/.
+  JOB_SKILLS = {
+    'scoreboard-refresh' => 'triage-scoreboard',
+    'chat-monitor' => nil,
+    'issue-capture' => 'issue-capture',
+    'mentions-sweep' => nil,
+    'announcements' => 'release-announce',
+    'label-sync' => 'label-sync',
+    'issue-autoclose' => 'issue-autoclose',
+    'action-watchdog' => 'action-watchdog',
+    'fleet-heartbeat' => nil
+  }.freeze
+
+  # Jobs whose enabled run needs a feature flag on: job name => flag path.
+  JOB_FLAGS = {
+    'issue-capture' => 'issue_capture.enabled',
+    'chat-monitor' => 'community.chat.monitor'
+  }.freeze
 
   # Every rule ParseRules can emit. The meta-test reads this list and
   # SEMANTIC_RULES, so keep it in sync when adding a parse rule.
@@ -521,7 +544,48 @@ module ConfigContract
                         '(config.template.yaml:106)')
     end
 
-    violations + unverifiable_warning(config, outputs, index)
+    violations + job_violations(config) + unverifiable_warning(config, outputs, index)
+  end
+
+  # Runtimes differ on whether `Issue_Capture ` is `issue-capture`, so the job
+  # rules assume it is: an exact match would let a near-miss name slip past.
+  def self.normalize_job_name(name)
+    unicode_strip(name).downcase.tr('_', '-')
+  end
+
+  def self.job_violations(config)
+    first_index = {}
+    violations_for_each(config, 'scheduled_jobs', 'jobs') do |job, i|
+      next [] unless job['name'].is_a?(String)
+
+      name = normalize_job_name(job['name'])
+      found = []
+      if first_index.key?(name)
+        found << err(:job_name_unique, "scheduled_jobs.jobs[#{i}]",
+                     "job '#{job['name']}' repeats the name of job #{first_index[name]}; a " \
+                     'scheduler picks one of them, and nothing says which')
+      end
+      first_index[name] ||= i
+      found + enabled_job_violations(config, job, name, i)
+    end
+  end
+
+  def self.enabled_job_violations(config, job, name, index)
+    return [] unless job['enabled'] == true
+
+    found = []
+    if job['agent'] == true && JOB_SKILLS.key?(name) && JOB_SKILLS[name].nil?
+      found << err(:enabled_job_needs_skill, "scheduled_jobs.jobs[#{index}]",
+                   "job '#{job['name']}' has no skill in this repo yet, so nothing shipped " \
+                   'bounds the model it runs')
+    end
+    flag = JOB_FLAGS[name]
+    if flag && fetch_path(config, flag) != true
+      found << err(:job_flag_agree, "scheduled_jobs.jobs[#{index}]",
+                   "job '#{job['name']}' is enabled but #{flag} is not true, so the rules that " \
+                   'guard it never run')
+    end
+    found
   end
 
   # Fail closed on "no declared repositories". An adopter who declares none
