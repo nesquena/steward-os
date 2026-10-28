@@ -550,8 +550,9 @@ module ConfigContract
 
   # Runtimes differ on whether `Issue_Capture ` is `issue-capture`, so the job
   # rules assume it is: an exact match would let a near-miss name slip past.
+  # Invisible format characters (zero-width space, BOM) are dropped too.
   def self.normalize_job_name(name)
-    unicode_strip(name).downcase.tr('_', '-')
+    unicode_strip(name.gsub(/\p{Cf}/, '')).downcase.tr('_', '-')
   end
 
   def self.job_violations(config)
@@ -700,20 +701,32 @@ module ConfigContract
       seen = {}
       node.children.each_slice(2) do |key, value|
         found.concat(walk(key, path))
-        unless key.is_a?(Psych::Nodes::Scalar)
-          found.concat(walk(value, path))
-          next
-        end
-
-        child = path.empty? ? key.value : "#{path}.#{key.value}"
-        found << merge_key(child) if key.value == '<<'
-        identities = [[:text, key.value], [:resolved, resolve(key)]]
+        label = key.is_a?(Psych::Nodes::Scalar) ? key.value : "[key at line #{key.start_line + 1}]"
+        child = path.empty? ? label : "#{path}.#{label}"
+        found << merge_key(child) if key.is_a?(Psych::Nodes::Scalar) && key.value == '<<'
+        identities = key_identities(key)
         earlier = identities.filter_map { |id| seen[id] }.first
-        found << duplicate_key(child, earlier, key.start_line + 1) if earlier
-        identities.each { |id| seen[id] ||= key.start_line + 1 }
+        found << duplicate_key(child, earlier, key) if earlier
+        identities.each { |id| seen[id] ||= key }
         found.concat(walk(value, child))
       end
       found
+    end
+
+    # A scalar key matches by its text or by what it resolves to; a list or
+    # map key matches by its structure.
+    def key_identities(key)
+      return [[:shape, shape(key)]] unless key.is_a?(Psych::Nodes::Scalar)
+
+      [[:text, key.value], [:resolved, resolve(key)]]
+    end
+
+    def shape(node)
+      case node
+      when Psych::Nodes::Scalar then [:scalar, node.value]
+      when Psych::Nodes::Alias then [:alias, node.anchor]
+      else [node.class.name, node.children.map { |child| shape(child) }]
+      end
     end
 
     def ambiguous?(node)
@@ -727,10 +740,15 @@ module ConfigContract
       key.quoted ? key.value : KEY_SCANNER.tokenize(key.value)
     end
 
-    def duplicate_key(path, first_line, line)
+    def duplicate_key(path, first, again)
+      where = if first.start_line == again.start_line
+                "line #{again.start_line + 1}, columns #{first.start_column + 1} and #{again.start_column + 1}"
+              else
+                "lines #{first.start_line + 1} and #{again.start_line + 1}"
+              end
       ConfigContract.err(:duplicate_key, path,
-                         "key repeated at lines #{first_line} and #{line}; YAML readers keep " \
-                         'different copies, so the lint cannot know which one you meant')
+                         "key repeated at #{where}; YAML readers keep different copies, so the " \
+                         'lint cannot know which one you meant')
     end
 
     def merge_key(path)

@@ -46,6 +46,8 @@ end
 unless template_violations.empty?
   puts "#{TEMPLATE_PATH} — #{template_violations.size} error(s), 0 warning(s)"
   template_violations.each { |v| puts v.to_line }
+  puts
+  puts BOUNDARY
   puts "FAILED — #{template_violations.size} violation(s)."
   exit 1
 end
@@ -56,7 +58,9 @@ total_warnings = 0
 targets.each do |path|
   begin
     violations = ConfigContract.check_file(path, template: template)
-  rescue StandardError => e
+  # SystemStackError is not a StandardError: a file nested thousands of levels
+  # deep would otherwise end the run before the remaining targets are checked.
+  rescue StandardError, SystemStackError => e
     puts "#{path}: could not read — #{e.message}"
     total_errors += 1
     next

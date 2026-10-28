@@ -191,6 +191,20 @@ class ParseRulesTest < Minitest::Test
     assert_operator ObjectSpace.each_object(Gem::Version).count, :<=, before
   end
 
+  def test_a_repeated_complex_key_is_a_duplicate
+    assert_includes rules("? [a]\n: 1\n? [a]\n: 2\n"), :duplicate_key
+    assert_empty rules("? [a]\n: 1\n? [b]\n: 2\n")
+  end
+
+  def test_a_violation_under_a_complex_key_names_that_key
+    assert_equal ['[key at line 1].<<'], keys("? [a]\n: {<<: {}}\n")
+  end
+
+  def test_a_same_line_duplicate_names_both_columns
+    message = ConfigContract::ParseRules.violations("j: { name: a, name: b }\n").first.message
+    assert_match(/line 1, columns \d+ and \d+/, message)
+  end
+
   def test_unparseable_text_raises
     assert_raises(Psych::SyntaxError) { ConfigContract::ParseRules.violations("a: [unclosed\n") }
   end
@@ -595,6 +609,12 @@ class SemanticTest < Minitest::Test
     end
   end
 
+  def test_an_invisible_format_character_does_not_hide_a_job_name
+    cfg = with_jobs({ 'name' => "issue-capture\u200B", 'every' => '1h', 'enabled' => true, 'agent' => true })
+    cfg['issue_capture']['enabled'] = false
+    assert rule(cfg, :job_flag_agree)
+  end
+
   def test_the_capture_job_on_with_capture_off_is_refused
     cfg = with_jobs({ 'name' => "Issue_Capture\u00A0", 'every' => '1h', 'enabled' => true, 'agent' => true })
     cfg['issue_capture']['enabled'] = false
@@ -985,6 +1005,18 @@ class EntrypointTest < Minitest::Test
       assert_equal 1, status, out
       assert_match(/config\.template\.yaml/, out)
       assert_match(/repositories/, out)
+      assert_match(/statically decidable subset/, out)
+    end
+  end
+
+  def test_a_too_deeply_nested_file_fails_without_skipping_the_next_target
+    Dir.mktmpdir do |dir|
+      deep = File.join(dir, 'deep.yaml')
+      File.write(deep, "a: #{'[' * 5000}#{']' * 5000}\n")
+      out, status = run_lint(deep, File.join(FIXTURE_ROOT, 'green-enabled.yaml'))
+      assert_equal 1, status
+      assert_match(/deep\.yaml: could not read/, out)
+      assert_match(/green-enabled\.yaml — 0 error\(s\)/, out)
     end
   end
 
