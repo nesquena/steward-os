@@ -107,6 +107,7 @@ secrets:
   sandbox_available: false          # both false: untrusted PR code never runs; a human runs the suite
 
 scheduled_jobs:                 # start with a few; add as you climb the autonomy ladder
+  # chat-monitor and mentions-sweep ship no skill yet; the config lint refuses them enabled with agent: true.
   jobs:
     - { name: "scoreboard-refresh", every: "2h",  enabled: true,  agent: false }
     - { name: "chat-monitor",       every: "1h",  enabled: false, agent: true  }
