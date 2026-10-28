@@ -2,6 +2,7 @@
 
 require 'minitest/autorun'
 require 'tmpdir'
+require 'fileutils'
 require 'English'
 require_relative '../lib/config_contract'
 
@@ -72,6 +73,35 @@ class ExtractLoadTest < Minitest::Test
       path = File.join(dir, 'empty.yaml')
       File.write(path, '')
       assert_equal({}, ConfigContract::Extract.load(path))
+    end
+  end
+
+  # Pins that conversion stays YAML.safe_load. An alias carries no tag, so it
+  # reaches conversion; safe_load refuses it, node.to_ruby would accept it.
+  def test_read_converts_with_the_safe_loader
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'c.yaml')
+      File.write(path, "a: &x 1\nb: *x\n")
+      err = assert_raises(RuntimeError) { ConfigContract::Extract.read(path) }
+      assert_match(/could not parse/, err.message)
+    end
+  end
+
+  def test_read_of_an_empty_file_is_an_empty_hash
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'c.yaml')
+      File.write(path, '')
+      assert_equal [{}, []], ConfigContract::Extract.read(path)
+    end
+  end
+
+  def test_read_returns_parse_violations_instead_of_a_hash
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'c.yaml')
+      File.write(path, "a: 1\na: 2\n")
+      config, violations = ConfigContract::Extract.read(path)
+      assert_nil config
+      assert_equal %i[duplicate_key], violations.map(&:rule)
     end
   end
 end
@@ -870,6 +900,32 @@ class EntrypointTest < Minitest::Test
     assert_equal 1, status
     assert_match(/could not read/, out)
   end
+
+  def test_a_parse_violation_prints_its_rule_and_skips_the_phases
+    out, status = run_lint(File.join(FIXTURE_ROOT, 'red-duplicate_key.yaml'))
+    assert_equal 1, status
+    assert_match(/red-duplicate_key\.yaml — 1 error\(s\), 0 warning\(s\)/, out)
+    assert_match(/repositories/, out)
+    assert_match(/NOT evaluated/, out)
+  end
+
+  def test_a_template_with_a_parse_violation_fails_the_run
+    Dir.mktmpdir do |dir|
+      root = File.expand_path('..', __dir__)
+      %w[bin lib setup].each { |d| FileUtils.cp_r(File.join(root, d), dir) }
+      File.open(File.join(dir, 'setup', 'config.template.yaml'), 'a') { |f| f.puts 'repositories: []' }
+      out, status = run_in(dir)
+      assert_equal 1, status, out
+      assert_match(/config\.template\.yaml/, out)
+      assert_match(/repositories/, out)
+    end
+  end
+
+  # Runs the copy of bin/config-lint under `dir` with no arguments.
+  def run_in(dir)
+    out = IO.popen([File.join(dir, 'bin', 'config-lint')], err: [:child, :out], &:read)
+    [out, $CHILD_STATUS.exitstatus]
+  end
 end
 
 # --- Corpus: every rule has a fixture that provokes it ---
@@ -884,12 +940,12 @@ class CorpusTest < Minitest::Test
     template = ConfigContract::Extract.load(
       File.expand_path('../setup/config.template.yaml', __dir__)
     )
-    ConfigContract.check(config: ConfigContract::Extract.load(path), template: template)
+    ConfigContract.check_file(path, template: template)
                   .select { |v| v.severity == :error }.map(&:rule)
   end
 
   def test_the_corpus_is_not_empty
-    floor = ConfigContract::SEMANTIC_RULES.size + 4
+    floor = ConfigContract::SEMANTIC_RULES.size + ConfigContract::PARSE_RULES.size + 4
     assert_operator self.class.red_fixtures.size, :>=, floor,
                     'red fixtures went missing — the corpus proves nothing if it does not load'
   end
@@ -918,10 +974,10 @@ end
 
 # --- Anti-vacuity: a rule with no fixture fails the suite ---
 class MetaTest < Minitest::Test
-  def test_every_semantic_rule_has_a_red_fixture
+  def test_every_semantic_and_parse_rule_has_a_red_fixture
     covered = Dir.glob(File.join(FIXTURE_ROOT, 'red-*.yaml'))
                  .map { |p| File.basename(p, '.yaml').sub(/\Ared-/, '').to_sym }
-    missing = ConfigContract::SEMANTIC_RULES - covered
+    missing = (ConfigContract::SEMANTIC_RULES + ConfigContract::PARSE_RULES) - covered
     assert_empty missing,
                  "these rules have no red fixture, so nothing proves they fire: #{missing.inspect}"
   end

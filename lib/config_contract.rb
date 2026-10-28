@@ -117,6 +117,15 @@ module ConfigContract
     violations
   end
 
+  # Read a config file and check it. A parse violation means the hash is not
+  # the file, so every phase is skipped and said to be.
+  def self.check_file(path, template:)
+    config, parse_violations = Extract.read(path)
+    return parse_violations + [phases_skipped] unless parse_violations.empty?
+
+    check(config: config, template: template)
+  end
+
   def self.phases_skipped
     Violation.new(severity: :info, rule: :phases_skipped, key: '(document)',
                   message: 'semantic invariants NOT evaluated — fix the errors above and re-run')
@@ -669,6 +678,19 @@ module ConfigContract
     # Parse a config. Raises a clear error rather than a bare Psych stacktrace.
     def load(path)
       YAML.safe_load(File.read(path)) || {}
+    rescue Psych::Exception => e
+      raise "could not parse #{path}: #{e.message}"
+    end
+
+    # Parse a config and run the parse rules first. Returns [hash, []] for a
+    # file the lint can trust, or [nil, violations] when the parsed hash would
+    # not be what the file says. Conversion is YAML.safe_load on the text.
+    def read(path)
+      text = File.read(path)
+      violations = ParseRules.violations(text)
+      return [nil, violations] unless violations.empty?
+
+      [YAML.safe_load(text) || {}, []]
     rescue Psych::Exception => e
       raise "could not parse #{path}: #{e.message}"
     end
