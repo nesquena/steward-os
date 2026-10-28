@@ -337,9 +337,14 @@ module ConfigContract
       unless job['name'].is_a?(String)
         violations << type_error(:type_string, "scheduled_jobs.jobs[#{i}].name", job['name'], 'a string')
       end
-      unless [true, false].include?(job['enabled'])
-        violations << type_error(:type_boolean, "scheduled_jobs.jobs[#{i}].enabled", job['enabled'],
-                                 'true or false')
+      # `agent` is checked per job, like `enabled`: the template shape is
+      # satisfied when any one job carries the key, and enabled_job_needs_skill
+      # only fires on a literal true, so a quoted "true", a 1 or a missing key
+      # would otherwise slip past it.
+      %w[enabled agent].each do |key|
+        next if [true, false].include?(job[key])
+
+        violations << type_error(:type_boolean, "scheduled_jobs.jobs[#{i}].#{key}", job[key], 'true or false')
       end
       violations
     end

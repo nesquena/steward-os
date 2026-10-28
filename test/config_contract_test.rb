@@ -418,7 +418,7 @@ class TypeTest < Minitest::Test
       'security' => { 'security_contact' => '', 'security_sensitive_surfaces' => [] },
       'secrets' => { 'execute_contributor_code' => false, 'sandbox_available' => false },
       'scheduled_jobs' => {
-        'jobs' => [{ 'name' => 'action-watchdog', 'every' => '6h', 'enabled' => false }],
+        'jobs' => [{ 'name' => 'action-watchdog', 'every' => '6h', 'enabled' => false, 'agent' => false }],
         'outputs' => { 'index_path' => '', 'digest_to' => '', 'alarms_to' => '' }
       }
     }
@@ -473,6 +473,23 @@ class TypeTest < Minitest::Test
     cfg = base
     cfg['scheduled_jobs']['jobs'][0]['enabled'] = 'yes'
     assert_equal 'scheduled_jobs.jobs[0].enabled', find(cfg, :type_boolean).key
+  end
+
+  # enabled_job_needs_skill fires only on a literal true, so every job's
+  # `agent` must be a real boolean: a quoted "true", a 1, a null or a missing
+  # key would otherwise let a model job with no skill run unbounded.
+  def test_non_boolean_or_missing_job_agent_is_an_error
+    ['true', 1, nil, :missing].each do |value|
+      cfg = base
+      job = cfg['scheduled_jobs']['jobs'][0]
+      # A second job carries the key, which satisfies the template shape the
+      # way a real config does; a lone job without it is a missing_key error.
+      cfg['scheduled_jobs']['jobs'] << job.merge('name' => 'label-sync')
+      value == :missing ? job.delete('agent') : job['agent'] = value
+      v = find(cfg, :type_boolean)
+      refute_nil v, "agent #{value.inspect} passed the type phase"
+      assert_equal 'scheduled_jobs.jobs[0].agent', v.key
+    end
   end
 
   def test_security_sensitive_surfaces_must_be_an_array_of_strings
@@ -986,6 +1003,23 @@ class EntrypointTest < Minitest::Test
     out, status = run_lint('no/such/config.yaml')
     assert_equal 1, status
     assert_match(/could not read/, out)
+  end
+
+  # The shipped template with a skill-less model job switched on, and its
+  # `agent` flag written in a shape that is not the boolean true.
+  def test_a_skill_less_job_with_a_non_boolean_agent_fails_the_run
+    template = File.read(File.expand_path('../setup/config.template.yaml', __dir__))
+    line = '    - { name: "mentions-sweep",     every: "24h", enabled: false, agent: true  }'
+    assert_includes template, line
+    ['"true"', '1', '~'].each do |agent|
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'config.yaml')
+        File.write(path, template.sub(line, %(    - { name: "mentions-sweep", every: "24h", enabled: true, agent: #{agent} })))
+        out, status = run_lint(path)
+        assert_equal 1, status, "agent: #{agent} passed\n#{out}"
+        assert_match(/scheduled_jobs\.jobs\[3\]\.agent — expected true or false/, out)
+      end
+    end
   end
 
   def test_a_parse_violation_prints_its_rule_and_skips_the_phases
