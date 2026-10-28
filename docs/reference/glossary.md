@@ -85,6 +85,11 @@ meaning sooner. A default an adopter may replace.
 takes one value across every item of a kind on the board. The board drops it from that kind's
 composite and names it in the header.
 
+**Stale judgment** — a scoreboard judgment value whose
+[judgment stamp or rubric](../playbooks/triage-scoreboard.md#when-a-judgment-goes-stale) no
+longer matches its item. It stays on the board and keeps counting; triage re-judges it when an
+agent set it; one a human set, or a `legacy` one, waits for a human.
+
 **Trust ledger** — the append-only record of each [contributor's](../lifecycle/contributor-recognition.md)
 outcomes, shrunk-and-decayed into a reliability score that weights review priority and gate
 intensity (never a reason to skip the gate).
