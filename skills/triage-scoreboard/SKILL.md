@@ -6,7 +6,8 @@ description: Compute and render the living, ranked triage board of open work —
 # triage-scoreboard
 
 **When to load:** generating or refreshing the [triage scoreboard](../../docs/playbooks/triage-scoreboard.md).
-Band A (read-only, deterministic where possible). Ideal as a scheduled job.
+Band A (read-only, deterministic where possible; its one judgment write is the judgment stamp, see
+Pitfalls). Ideal as a scheduled job.
 
 ## Steps
 
@@ -64,8 +65,7 @@ Band A (read-only, deterministic where possible). Ideal as a scheduled job.
   value hides a judge scoring on a different rubric.
 - **Evidence presence is not a verdict** — `✓` means the evidence exists to review, not that it's
   clean. The authoritative gate still runs at merge.
-- **Re-run cheaply** — this should be incremental and idempotent; it's a read-only ranking, not an
-  action.
+- **Re-run cheaply** — this should be incremental and idempotent; it's a ranking, not an action.
 
 ## Verification
 - Board re-renders with current data; judgment dims preserved across runs.

@@ -86,9 +86,11 @@ takes one value across every item of a kind on the board. The board drops it fro
 composite and names it in the header.
 
 **Stale judgment** — a scoreboard judgment value whose
-[judgment stamp or rubric](../playbooks/triage-scoreboard.md#when-a-judgment-goes-stale) no
-longer matches its item. It stays on the board and keeps counting; triage re-judges it when an
-agent set it; one a human set, or a `legacy` one, waits for a human.
+[judgment stamp](../playbooks/triage-scoreboard.md#when-a-judgment-goes-stale) no longer
+matches its item, or whose rubric identifier no longer matches the rubric in use. A flag a human
+set also goes stale when an agent rewrites the `criticality` beneath it. It stays on the board
+and keeps counting; triage re-judges it when an agent set it; one a human set, or a `legacy` one,
+waits for a human.
 
 **Trust ledger** — the append-only record of each [contributor's](../lifecycle/contributor-recognition.md)
 outcomes, shrunk-and-decayed into a reliability score that weights review priority and gate

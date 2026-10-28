@@ -31,10 +31,10 @@ make commitments.
    it in actual code. If you can't (vague report, can't parse, not clearly about this project) →
    HALT, post nothing. A non-response beats a wrong response.
 4. **Record the judgment** on the [scoreboard](../../docs/playbooks/triage-scoreboard.md) for an
-   issue that cleared step 2, when the issue is new, a human named it for this run, or step 8
-   resumed it after a ruling. New means opened after the adoption mark and carrying no handled
-   mark. A run that finds no adoption mark records its own start time as the mark, before it lists
-   any issue. Keep the adoption mark and the handled marks in this skill's
+   issue that cleared step 2, when the issue is new, a human named it for this run, step 8
+   resumed it after a ruling, or step 9 re-judges it. New means opened after the adoption mark
+   and carrying no handled mark. A run that finds no adoption mark records its own start time as
+   the mark, before it lists any issue. Keep the adoption mark and the handled marks in this skill's
    [state](../../docs/playbooks/scheduled-jobs.md#incremental-not-full-rescan), private and
    trusted like the [decision log](../../docs/playbooks/output-loop.md#the-decision-record). Mark
    an issue handled once its outcome is on record: a judgment on the board, whoever wrote it, an
