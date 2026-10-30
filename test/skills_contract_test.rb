@@ -287,7 +287,7 @@ class GuardExtractTest < Minitest::Test
   OK = '**Guard.** Line one wraps onto line two. Rules: link.'
 
   def block(name)
-    SkillsContract::Extract.first_blockquote(File.join(FIX, "#{name}.md"))
+    SkillsContract::Extract.first_blockquote(File.join(FIX, "#{name}.txt"))
   end
 
   def test_first_blockquote_after_the_title_is_read_and_normalized
