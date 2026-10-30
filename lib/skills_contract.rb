@@ -137,6 +137,14 @@ module SkillsContract
       end
     end
 
+    # A model reads whatever a scheduled job with agent: true feeds it, so the
+    # skill that job runs carries the guard, whatever its exemption says.
+    job_agents.each do |s, flags|
+      next unless flags.any? && present.include?(s) && !guarded.include?(s)
+
+      err.call(s, 'a scheduled job runs it with agent: true, so it must be in reads_untrusted')
+    end
+
     exempt.sort.each do |s, reason|
       unless EXEMPT_REASONS.include?(reason)
         err.call(s, "guard_exempt reason #{reason.inspect} is not one of #{EXEMPT_REASONS.join(', ')}")
@@ -145,9 +153,6 @@ module SkillsContract
       next unless reason == 'no-model'
 
       err.call(s, 'exempt as no-model but its SKILL.md never says "no LLM"') unless no_llm.include?(s)
-      if (job_agents[s] || []).any?
-        err.call(s, 'exempt as no-model but a scheduled job runs it with agent: true')
-      end
     end
 
     violations
@@ -169,7 +174,7 @@ module SkillsContract
     # Skills linked from the README, taking the last path segment before /SKILL.md
     # so bare (name/SKILL.md), (skills/name/SKILL.md), and (./name/SKILL.md) all work.
     def indexed_skills(readme_path)
-      File.read(readme_path)
+      File.read(readme_path, encoding: 'UTF-8')
           .scan(%r{([a-z0-9][a-z0-9-]*)/SKILL\.md})
           .flatten.uniq.sort
     end
@@ -190,7 +195,7 @@ module SkillsContract
       names = []
       doc_paths.each do |path|
         in_section = false
-        File.foreach(path) do |line|
+        File.foreach(path, encoding: 'UTF-8') do |line|
           if line =~ /\A##\s+Skills for this\b/
             in_section = true
             next
@@ -208,7 +213,7 @@ module SkillsContract
     # scheduled_jobs.jobs[].name from the config template. Raises a clear error
     # (rather than a bare stacktrace) if the YAML is malformed or uses anchors.
     def job_names(config_path)
-      cfg = YAML.safe_load(File.read(config_path)) || {}
+      cfg = YAML.safe_load(File.read(config_path, encoding: 'UTF-8')) || {}
       (cfg.dig('scheduled_jobs', 'jobs') || []).filter_map { |j| j['name'] }
     rescue Psych::Exception => e
       raise "could not parse #{config_path}: #{e.message}"
@@ -228,7 +233,7 @@ module SkillsContract
     # after the `# name` title, past any front matter. nil when that element
     # isn't a blockquote.
     def first_blockquote(path)
-      lines = File.read(path).lines.map(&:chomp)
+      lines = File.read(path, encoding: 'UTF-8').lines.map(&:chomp)
       i = 0
       if lines[0] == '---'
         i = 1
@@ -243,7 +248,7 @@ module SkillsContract
 
     # The normalized first blockquote in the spine's section 1, or nil.
     def spine_guard_quote(spine_path)
-      lines = File.read(spine_path).lines.map(&:chomp)
+      lines = File.read(spine_path, encoding: 'UTF-8').lines.map(&:chomp)
       start = lines.index { |l| l.start_with?('## 1. ') }
       return nil unless start
 
@@ -267,12 +272,12 @@ module SkillsContract
     end
 
     def says_no_llm?(path)
-      File.read(path).match?(/no LLM/i)
+      File.read(path, encoding: 'UTF-8').match?(/no LLM/i)
     end
 
     # skill => agent flags of every scheduled job that runs it, aliases resolved.
     def job_agents(config_path, job_aliases = {})
-      cfg = YAML.safe_load(File.read(config_path)) || {}
+      cfg = YAML.safe_load(File.read(config_path, encoding: 'UTF-8')) || {}
       (cfg.dig('scheduled_jobs', 'jobs') || []).each_with_object(Hash.new { |h, k| h[k] = [] }) do |j, acc|
         acc[job_aliases[j['name']] || j['name']] << (j['agent'] == true)
       end

@@ -1,7 +1,7 @@
 ---
 name: guard-frontmatter-hash
-description: >
-  # not a heading
+# a YAML comment, not the title
+description: fixture
 ---
 
 # guard-frontmatter-hash

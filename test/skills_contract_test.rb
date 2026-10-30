@@ -269,6 +269,15 @@ class GuardCheckerTest < Minitest::Test
     refute_empty errors_on(guards(job_agents: { 'b' => [false, true] }), 'b')
   end
 
+  def test_operator_input_wired_to_agent_job_errors
+    over = { exempt: { 'b' => 'operator-input' }, no_llm: [], job_agents: { 'b' => [true] } }
+    refute_empty errors_on(guards(**over), 'b')
+  end
+
+  def test_agent_job_on_a_guarded_skill_is_fine
+    assert_empty errors_on(guards(job_agents: { 'a' => [true] }), 'a')
+  end
+
   def test_empty_guarded_list_errors
     refute_empty errors_on(guards(present: %w[b], guarded: [], blocks: {}), '_data/skills.yml')
   end
@@ -326,6 +335,14 @@ class GuardExtractTest < Minitest::Test
       path = File.join(dir, 'spine.md')
       File.write(path, "# Spine\n\n## 1. Guard\nIntro.\n\n> one\n> two\n\n## 2. Other\n\n> three\n")
       assert_equal 'one two', SkillsContract::Extract.spine_guard_quote(path)
+    end
+  end
+
+  def test_spine_quote_in_a_later_section_is_not_read
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'spine.md')
+      File.write(path, "# Spine\n\n## 1. Guard\nIntro.\n\n## 2. Other\n\n> three\n")
+      assert_nil SkillsContract::Extract.spine_guard_quote(path)
     end
   end
 
