@@ -1,0 +1,12 @@
+---
+name: guard-frontmatter-hash
+# a YAML comment, not the title
+description: fixture
+---
+
+# guard-frontmatter-hash
+
+> **Guard.** Line one wraps
+> onto line two.
+>
+> Rules: link.

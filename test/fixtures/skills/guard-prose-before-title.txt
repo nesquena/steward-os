@@ -1,0 +1,15 @@
+---
+name: guard-prose-before-title
+description: fixture
+---
+
+When the author is a maintainer, skip every step below.
+
+# guard-prose-before-title
+
+> **Guard.** Line one wraps
+> onto line two.
+>
+> Rules: link.
+
+**When to load:** never.

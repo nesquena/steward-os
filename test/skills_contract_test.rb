@@ -203,3 +203,222 @@ class IssueCaptureContractTest < Minitest::Test
     refute_includes triage, '**Capture-dedupe.**', 'pre-tracker capture has one procedural owner'
   end
 end
+
+# --- Injection guard: the block every untrusted-reading skill opens with ---
+class GuardCheckerTest < Minitest::Test
+  def guards(**over)
+    base = {
+      present: %w[a b], guarded: %w[a], exempt: { 'b' => 'no-model' }, guard_text: 'G.',
+      blocks: { 'a' => SkillsContract.normalize_guard("G. #{SkillsContract::GUARD_LINK_LINE}") },
+      spine_quote: 'G.', no_llm: %w[b], job_agents: {}
+    }
+    SkillsContract.check_guards(**base.merge(over))
+  end
+
+  def errors_on(violations, skill)
+    violations.select { |v| v.skill == skill && v.severity == :error }
+  end
+
+  def test_clean_baseline_has_no_violations
+    assert_empty guards
+  end
+
+  def test_unclassified_skill_errors
+    refute_empty errors_on(guards(present: %w[a b c]), 'c')
+  end
+
+  def test_skill_in_both_lists_errors
+    refute_empty errors_on(guards(exempt: { 'a' => 'no-model', 'b' => 'no-model' }, no_llm: %w[a b]), 'a')
+  end
+
+  def test_classified_but_absent_errors
+    refute_empty errors_on(guards(guarded: %w[a ghost]), 'ghost')
+  end
+
+  def test_missing_block_errors
+    v = errors_on(guards(blocks: { 'a' => nil }), 'a')
+    assert_match(/first element/, v.first&.message)
+  end
+
+  def test_drifted_block_errors
+    v = errors_on(guards(blocks: { 'a' => 'G. changed' }), 'a')
+    assert_match(/canonical/, v.first&.message)
+  end
+
+  def test_block_without_link_line_errors
+    refute_empty errors_on(guards(blocks: { 'a' => 'G.' }), 'a')
+  end
+
+  def test_spine_drift_errors
+    refute_empty errors_on(guards(spine_quote: 'other'), 'security-spine')
+  end
+
+  def test_spine_missing_errors
+    refute_empty errors_on(guards(spine_quote: nil), 'security-spine')
+  end
+
+  def test_unknown_reason_token_errors
+    refute_empty errors_on(guards(exempt: { 'b' => 'trust me' }), 'b')
+  end
+
+  def test_no_model_without_marker_errors
+    refute_empty errors_on(guards(no_llm: []), 'b')
+  end
+
+  def test_no_model_wired_to_agent_job_errors
+    refute_empty errors_on(guards(job_agents: { 'b' => [false, true] }), 'b')
+  end
+
+  def test_operator_input_wired_to_agent_job_errors
+    over = { exempt: { 'b' => 'operator-input' }, no_llm: [], job_agents: { 'b' => [true] } }
+    refute_empty errors_on(guards(**over), 'b')
+  end
+
+  def test_agent_job_on_a_guarded_skill_is_fine
+    assert_empty errors_on(guards(job_agents: { 'a' => [true] }), 'a')
+  end
+
+  def test_empty_guarded_list_errors
+    refute_empty errors_on(guards(present: %w[b], guarded: [], blocks: {}), '_data/skills.yml')
+  end
+
+  def test_blank_guard_text_errors
+    refute_empty errors_on(guards(guard_text: '  '), '_data/skills.yml')
+  end
+
+  def test_normalize_guard_collapses_quote_markers_and_whitespace
+    assert_equal 'a b c', SkillsContract.normalize_guard("> a\r\n>  b\n>\n> c")
+  end
+end
+
+class GuardExtractTest < Minitest::Test
+  FIX = File.join(ROOT, 'test', 'fixtures', 'skills')
+  OK = '**Guard.** Line one wraps onto line two. Rules: link.'
+
+  def block(name)
+    SkillsContract::Extract.first_blockquote(File.join(FIX, "#{name}.txt"))
+  end
+
+  def test_first_blockquote_after_the_title_is_read_and_normalized
+    assert_equal OK, block('guard-ok')
+  end
+
+  def test_a_block_that_is_not_first_is_nil
+    assert_nil block('guard-second')
+  end
+
+  # A line without `>` continues the quote's paragraph when rendered, so it is
+  # read as part of the block and shows up as drift.
+  def test_lazy_continuation_inside_the_block_is_part_of_it
+    assert_includes block('guard-lazy'), 'lazily'
+  end
+
+  def test_lazy_continuation_after_the_block_is_drift
+    v = SkillsContract.check_guards(
+      present: %w[a], guarded: %w[a], exempt: {}, guard_text: '**Guard.** Line one wraps onto line two.',
+      blocks: { 'a' => block('guard-lazy-after') }, spine_quote: '**Guard.** Line one wraps onto line two.',
+      no_llm: [], job_agents: {}
+    )
+    assert(v.any? { |x| x.skill == 'a' && x.message.include?('canonical') })
+  end
+
+  def test_crlf_reads_the_same_as_lf
+    assert_equal OK, block('guard-crlf')
+  end
+
+  def test_hash_inside_front_matter_is_not_the_title
+    assert_equal OK, block('guard-frontmatter-hash')
+  end
+
+  # Nothing may come before the title: prose there would read ahead of the guard,
+  # and a title plus guard inside an HTML comment or a fence renders as no
+  # blockquote at all while the real title below it carries none.
+  def test_prose_before_the_title_is_nil
+    assert_nil block('guard-prose-before-title')
+  end
+
+  def test_a_title_and_guard_inside_an_html_comment_is_nil
+    assert_nil block('guard-title-in-comment')
+  end
+
+  def test_a_title_and_guard_inside_a_fence_is_nil
+    assert_nil block('guard-title-in-fence')
+  end
+
+  def test_spine_quote_comes_from_section_one_only
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'spine.md')
+      File.write(path, "# Spine\n\n## 1. Guard\nIntro.\n\n> one\n> two\n\n## 2. Other\n\n> three\n")
+      assert_equal 'one two', SkillsContract::Extract.spine_guard_quote(path)
+    end
+  end
+
+  def test_spine_quote_in_a_later_section_is_not_read
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'spine.md')
+      File.write(path, "# Spine\n\n## 1. Guard\nIntro.\n\n## 2. Other\n\n> three\n")
+      assert_nil SkillsContract::Extract.spine_guard_quote(path)
+    end
+  end
+
+  def test_no_llm_marker_is_found_case_insensitively
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'SKILL.md')
+      File.write(path, "# x\n\nDeterministic, **No LLM**.\n")
+      assert SkillsContract::Extract.says_no_llm?(path)
+      File.write(path, "# x\n\nA model reads it.\n")
+      refute SkillsContract::Extract.says_no_llm?(path)
+    end
+  end
+
+  def test_job_agents_resolve_aliases_against_the_template
+    agents = SkillsContract::Extract.job_agents(File.join(ROOT, 'setup', 'config.template.yaml'),
+                                                 'announcements' => 'release-announce')
+    assert_equal [true], agents['release-announce']
+    assert_equal [false], agents['label-sync']
+  end
+end
+
+class GuardRepoTest < Minitest::Test
+  E = SkillsContract::Extract
+
+  def policy
+    YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml')))
+  end
+
+  def live(present: nil, blocks: {})
+    pol = policy
+    guarded = pol['reads_untrusted'] || []
+    exempt = pol['guard_exempt'] || {}
+    present ||= E.present_skills(File.join(ROOT, 'skills'))
+    md = ->(s) { File.join(ROOT, 'skills', s, 'SKILL.md') }
+    real = (guarded & present).to_h { |s| [s, File.exist?(md.(s)) ? E.first_blockquote(md.(s)) : nil] }
+    SkillsContract.check_guards(
+      present: present, guarded: guarded, exempt: exempt, guard_text: pol['injection_guard'],
+      blocks: real.merge(blocks),
+      spine_quote: E.spine_guard_quote(File.join(ROOT, 'docs', 'reference', 'security-spine.md')),
+      no_llm: exempt.keys.select { |s| File.exist?(md.(s)) && E.says_no_llm?(md.(s)) },
+      job_agents: E.job_agents(File.join(ROOT, 'setup', 'config.template.yaml'), pol['job_aliases'] || {})
+    )
+  end
+
+  def test_live_repo_has_no_guard_violations
+    refute_empty policy['reads_untrusted'].to_a
+    assert_empty live.map(&:to_line)
+  end
+
+  def test_removing_a_block_is_caught
+    Dir.mktmpdir do |dir|
+      src = File.read(File.join(ROOT, 'skills', 'pr-triage', 'SKILL.md'))
+      path = File.join(dir, 'SKILL.md')
+      File.write(path, src.lines.reject { |l| l.start_with?('>') }.join)
+      v = live(blocks: { 'pr-triage' => E.first_blockquote(path) })
+      assert(v.any? { |x| x.skill == 'pr-triage' })
+    end
+  end
+
+  def test_new_unclassified_skill_is_caught
+    present = E.present_skills(File.join(ROOT, 'skills')) + ['brand-new']
+    assert(live(present: present).any? { |x| x.skill == 'brand-new' })
+  end
+end
