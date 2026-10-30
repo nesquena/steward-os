@@ -335,3 +335,47 @@ class GuardExtractTest < Minitest::Test
     assert_equal [false], agents['label-sync']
   end
 end
+
+class GuardRepoTest < Minitest::Test
+  E = SkillsContract::Extract
+
+  def policy
+    YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml')))
+  end
+
+  def live(present: nil, blocks: {})
+    pol = policy
+    guarded = pol['reads_untrusted'] || []
+    exempt = pol['guard_exempt'] || {}
+    present ||= E.present_skills(File.join(ROOT, 'skills'))
+    md = ->(s) { File.join(ROOT, 'skills', s, 'SKILL.md') }
+    real = (guarded & present).to_h { |s| [s, File.exist?(md.(s)) ? E.first_blockquote(md.(s)) : nil] }
+    SkillsContract.check_guards(
+      present: present, guarded: guarded, exempt: exempt, guard_text: pol['injection_guard'],
+      blocks: real.merge(blocks),
+      spine_quote: E.spine_guard_quote(File.join(ROOT, 'docs', 'reference', 'security-spine.md')),
+      no_llm: exempt.keys.select { |s| File.exist?(md.(s)) && E.says_no_llm?(md.(s)) },
+      job_agents: E.job_agents(File.join(ROOT, 'setup', 'config.template.yaml'), pol['job_aliases'] || {})
+    )
+  end
+
+  def test_live_repo_has_no_guard_violations
+    refute_empty policy['reads_untrusted'].to_a
+    assert_empty live.map(&:to_line)
+  end
+
+  def test_removing_a_block_is_caught
+    Dir.mktmpdir do |dir|
+      src = File.read(File.join(ROOT, 'skills', 'pr-triage', 'SKILL.md'))
+      path = File.join(dir, 'SKILL.md')
+      File.write(path, src.lines.reject { |l| l.start_with?('>') }.join)
+      v = live(blocks: { 'pr-triage' => E.first_blockquote(path) })
+      assert(v.any? { |x| x.skill == 'pr-triage' })
+    end
+  end
+
+  def test_new_unclassified_skill_is_caught
+    present = E.present_skills(File.join(ROOT, 'skills')) + ['brand-new']
+    assert(live(present: present).any? { |x| x.skill == 'brand-new' })
+  end
+end

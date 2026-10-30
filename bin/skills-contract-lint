@@ -13,6 +13,8 @@ policy = YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml'))) || {}
 planned = policy['planned'] || []
 job_aliases = policy['job_aliases'] || {}
 standalone = policy['standalone'] || []
+guarded = policy['reads_untrusted'] || []
+exempt = policy['guard_exempt'] || {}
 
 doc_paths = Dir.glob(File.join(ROOT, 'docs', '**', '*.md'))
 skills_dir = File.join(ROOT, 'skills')
@@ -29,11 +31,20 @@ violations = SkillsContract.check(
   planned: planned, standalone: standalone
 )
 
+skill_md = ->(s) { File.join(skills_dir, s, 'SKILL.md') }
+violations += SkillsContract.check_guards(
+  present: present, guarded: guarded, exempt: exempt, guard_text: policy['injection_guard'],
+  blocks: (guarded & present).to_h { |s| [s, SkillsContract::Extract.first_blockquote(skill_md.(s))] },
+  spine_quote: SkillsContract::Extract.spine_guard_quote(File.join(ROOT, 'docs', 'reference', 'security-spine.md')),
+  no_llm: (exempt.keys & present).select { |s| SkillsContract::Extract.says_no_llm?(skill_md.(s)) },
+  job_agents: SkillsContract::Extract.job_agents(config_path, job_aliases)
+)
+
 errors   = violations.select { |v| v.severity == :error }
 warnings = violations.select { |v| v.severity == :warning }
 infos    = violations.select { |v| v.severity == :info }
 
-puts "Skills-contract lint — #{present.size} skills present, #{referenced.size} referenced"
+puts "Skills-contract lint — #{present.size} skills present, #{referenced.size} referenced, #{guarded.size} guarded"
 
 unless errors.empty?
   puts "\nErrors (#{errors.size}):"
