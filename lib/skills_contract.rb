@@ -223,5 +223,59 @@ module SkillsContract
       end
       names.uniq.sort
     end
+
+    # The normalized blockquote that opens a skill: the first non-blank element
+    # after the `# name` title, past any front matter. nil when that element
+    # isn't a blockquote. A line without `>` ends the block, so a lazy
+    # continuation reads as drift instead of passing.
+    def first_blockquote(path)
+      lines = File.read(path).lines.map(&:chomp)
+      i = 0
+      if lines[0] == '---'
+        i = 1
+        i += 1 while i < lines.size && lines[i] != '---'
+        i += 1
+      end
+      i += 1 while i < lines.size && !lines[i].start_with?('# ')
+      i += 1
+      i += 1 while i < lines.size && lines[i].strip.empty?
+      quote_at(lines, i)
+    end
+
+    # The normalized first blockquote in the spine's section 1, or nil.
+    def spine_guard_quote(spine_path)
+      lines = File.read(spine_path).lines.map(&:chomp)
+      start = lines.index { |l| l.start_with?('## 1. ') }
+      return nil unless start
+
+      i = start + 1
+      until i >= lines.size || lines[i].start_with?('## ')
+        return quote_at(lines, i) if lines[i].start_with?('>')
+
+        i += 1
+      end
+      nil
+    end
+
+    def quote_at(lines, i)
+      return nil unless lines[i]&.start_with?('>')
+
+      block = lines[i..].take_while { |l| l.start_with?('>') }
+      SkillsContract.normalize_guard(block.join("\n"))
+    end
+
+    def says_no_llm?(path)
+      File.read(path).match?(/no LLM/i)
+    end
+
+    # skill => agent flags of every scheduled job that runs it, aliases resolved.
+    def job_agents(config_path, job_aliases = {})
+      cfg = YAML.safe_load(File.read(config_path)) || {}
+      (cfg.dig('scheduled_jobs', 'jobs') || []).each_with_object(Hash.new { |h, k| h[k] = [] }) do |j, acc|
+        acc[job_aliases[j['name']] || j['name']] << (j['agent'] == true)
+      end
+    rescue Psych::Exception => e
+      raise "could not parse #{config_path}: #{e.message}"
+    end
   end
 end

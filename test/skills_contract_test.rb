@@ -281,3 +281,57 @@ class GuardCheckerTest < Minitest::Test
     assert_equal 'a b c', SkillsContract.normalize_guard("> a\r\n>  b\n>\n> c")
   end
 end
+
+class GuardExtractTest < Minitest::Test
+  FIX = File.join(ROOT, 'test', 'fixtures', 'skills')
+  OK = '**Guard.** Line one wraps onto line two. Rules: link.'
+
+  def block(name)
+    SkillsContract::Extract.first_blockquote(File.join(FIX, "#{name}.md"))
+  end
+
+  def test_first_blockquote_after_the_title_is_read_and_normalized
+    assert_equal OK, block('guard-ok')
+  end
+
+  def test_a_block_that_is_not_first_is_nil
+    assert_nil block('guard-second')
+  end
+
+  def test_lazy_continuation_ends_the_block
+    refute_includes block('guard-lazy'), 'lazily'
+  end
+
+  def test_crlf_reads_the_same_as_lf
+    assert_equal OK, block('guard-crlf')
+  end
+
+  def test_hash_inside_front_matter_is_not_the_title
+    assert_equal OK, block('guard-frontmatter-hash')
+  end
+
+  def test_spine_quote_comes_from_section_one_only
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'spine.md')
+      File.write(path, "# Spine\n\n## 1. Guard\nIntro.\n\n> one\n> two\n\n## 2. Other\n\n> three\n")
+      assert_equal 'one two', SkillsContract::Extract.spine_guard_quote(path)
+    end
+  end
+
+  def test_no_llm_marker_is_found_case_insensitively
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'SKILL.md')
+      File.write(path, "# x\n\nDeterministic, **No LLM**.\n")
+      assert SkillsContract::Extract.says_no_llm?(path)
+      File.write(path, "# x\n\nA model reads it.\n")
+      refute SkillsContract::Extract.says_no_llm?(path)
+    end
+  end
+
+  def test_job_agents_resolve_aliases_against_the_template
+    agents = SkillsContract::Extract.job_agents(File.join(ROOT, 'setup', 'config.template.yaml'),
+                                                 'announcements' => 'release-announce')
+    assert_equal [true], agents['release-announce']
+    assert_equal [false], agents['label-sync']
+  end
+end
