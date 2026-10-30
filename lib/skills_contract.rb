@@ -226,8 +226,7 @@ module SkillsContract
 
     # The normalized blockquote that opens a skill: the first non-blank element
     # after the `# name` title, past any front matter. nil when that element
-    # isn't a blockquote. A line without `>` ends the block, so a lazy
-    # continuation reads as drift instead of passing.
+    # isn't a blockquote.
     def first_blockquote(path)
       lines = File.read(path).lines.map(&:chomp)
       i = 0
@@ -257,10 +256,13 @@ module SkillsContract
       nil
     end
 
+    # A blockquote runs to the first blank line. A line without `>` before then
+    # is a lazy continuation that renders inside the quote, so it counts as part
+    # of the block: text added that way reads as drift, never as a pass.
     def quote_at(lines, i)
       return nil unless lines[i]&.start_with?('>')
 
-      block = lines[i..].take_while { |l| l.start_with?('>') }
+      block = lines[i..].take_while { |l| !l.strip.empty? }
       SkillsContract.normalize_guard(block.join("\n"))
     end
 

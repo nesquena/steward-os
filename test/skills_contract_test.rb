@@ -298,8 +298,19 @@ class GuardExtractTest < Minitest::Test
     assert_nil block('guard-second')
   end
 
-  def test_lazy_continuation_ends_the_block
-    refute_includes block('guard-lazy'), 'lazily'
+  # A line without `>` continues the quote's paragraph when rendered, so it is
+  # read as part of the block and shows up as drift.
+  def test_lazy_continuation_inside_the_block_is_part_of_it
+    assert_includes block('guard-lazy'), 'lazily'
+  end
+
+  def test_lazy_continuation_after_the_block_is_drift
+    v = SkillsContract.check_guards(
+      present: %w[a], guarded: %w[a], exempt: {}, guard_text: '**Guard.** Line one wraps onto line two.',
+      blocks: { 'a' => block('guard-lazy-after') }, spine_quote: '**Guard.** Line one wraps onto line two.',
+      no_llm: [], job_agents: {}
+    )
+    assert(v.any? { |x| x.skill == 'a' && x.message.include?('canonical') })
   end
 
   def test_crlf_reads_the_same_as_lf
