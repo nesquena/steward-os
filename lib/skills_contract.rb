@@ -72,6 +72,87 @@ module SkillsContract
     violations
   end
 
+  # The fixed line that closes every skill's guard block. Every skill sits at
+  # skills/<name>/SKILL.md, so one relative link works everywhere.
+  GUARD_LINK_LINE = 'Rules: [injection guard](../../docs/reference/security-spine.md#1-injection-guard-read-can-never-change-do).'
+  # The only reasons a skill may skip the guard. Free text would let any skill opt out.
+  EXEMPT_REASONS = %w[no-model operator-input].freeze
+
+  # Blockquote text with the quote markers dropped and whitespace collapsed, so
+  # rewrapping a block never reads as drift. CRLF and LF compare equal.
+  def self.normalize_guard(text)
+    text.lines.map { |l| l.chomp.sub(/\A\s*>\s?/, '') }.join(' ').gsub(/\s+/, ' ').strip
+  end
+
+  # Pure. The injection-guard half of the contract: every present skill is
+  # either guarded or exempt for a fixed reason, every guarded skill opens with
+  # the canonical block, and the spine's copy of the text matches.
+  #
+  # guarded     — skills that carry the block (_data/skills.yml reads_untrusted)
+  # exempt      — skill => reason token (_data/skills.yml guard_exempt)
+  # guard_text  — the canonical text, raw (_data/skills.yml injection_guard)
+  # blocks      — guarded skill => its normalized first blockquote, or nil
+  # spine_quote — the spine section 1 quote, normalized, or nil
+  # no_llm      — skills whose SKILL.md says "no LLM"
+  # job_agents  — skill => agent flags of the scheduled jobs that run it
+  def self.check_guards(present:, guarded:, exempt:, guard_text:, blocks:, spine_quote:, no_llm:,
+                        job_agents:)
+    present = present.to_set
+    guarded = guarded.to_set
+    exempt_names = exempt.keys.to_set
+    no_llm = no_llm.to_set
+    policy = '_data/skills.yml'
+
+    violations = []
+    err = ->(skill, msg) { violations << Violation.new(severity: :error, skill: skill, message: msg) }
+
+    text = guard_text.to_s.strip
+    err.call(policy, 'injection_guard is missing or blank') if text.empty?
+    err.call(policy, 'reads_untrusted is empty; at least one skill must carry the guard') if guarded.empty?
+
+    (present - guarded - exempt_names).sort.each do |s|
+      err.call(s, 'not classified: add it to reads_untrusted or guard_exempt in _data/skills.yml')
+    end
+    (guarded & exempt_names).sort.each do |s|
+      err.call(s, 'listed in both reads_untrusted and guard_exempt')
+    end
+    ((guarded | exempt_names) - present).sort.each do |s|
+      err.call(s, "classified in _data/skills.yml but skills/#{s}/SKILL.md does not exist")
+    end
+
+    unless text.empty?
+      expected = normalize_guard("#{text} #{GUARD_LINK_LINE}")
+      (guarded & present).sort.each do |s|
+        block = blocks[s]
+        if block.nil?
+          err.call(s, 'the injection guard must be the first element after the title')
+        elsif block != expected
+          err.call(s, 'injection guard block differs from the canonical text in _data/skills.yml')
+        end
+      end
+      if spine_quote.nil?
+        err.call('security-spine', 'section 1 has no injection guard quote')
+      elsif spine_quote != normalize_guard(text)
+        err.call('security-spine', 'section 1 quote differs from the canonical text in _data/skills.yml')
+      end
+    end
+
+    exempt.sort.each do |s, reason|
+      unless EXEMPT_REASONS.include?(reason)
+        err.call(s, "guard_exempt reason #{reason.inspect} is not one of #{EXEMPT_REASONS.join(', ')}")
+        next
+      end
+      next unless reason == 'no-model'
+
+      err.call(s, 'exempt as no-model but its SKILL.md never says "no LLM"') unless no_llm.include?(s)
+      if (job_agents[s] || []).any?
+        err.call(s, 'exempt as no-model but a scheduled job runs it with agent: true')
+      end
+    end
+
+    violations
+  end
+
   # Repo readers. Each is small and testable against real files.
   module Extract
     SKILL_TOKEN = /\A[a-z][a-z0-9-]*\z/.freeze

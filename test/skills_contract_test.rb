@@ -203,3 +203,81 @@ class IssueCaptureContractTest < Minitest::Test
     refute_includes triage, '**Capture-dedupe.**', 'pre-tracker capture has one procedural owner'
   end
 end
+
+# --- Injection guard: the block every untrusted-reading skill opens with ---
+class GuardCheckerTest < Minitest::Test
+  def guards(**over)
+    base = {
+      present: %w[a b], guarded: %w[a], exempt: { 'b' => 'no-model' }, guard_text: 'G.',
+      blocks: { 'a' => SkillsContract.normalize_guard("G. #{SkillsContract::GUARD_LINK_LINE}") },
+      spine_quote: 'G.', no_llm: %w[b], job_agents: {}
+    }
+    SkillsContract.check_guards(**base.merge(over))
+  end
+
+  def errors_on(violations, skill)
+    violations.select { |v| v.skill == skill && v.severity == :error }
+  end
+
+  def test_clean_baseline_has_no_violations
+    assert_empty guards
+  end
+
+  def test_unclassified_skill_errors
+    refute_empty errors_on(guards(present: %w[a b c]), 'c')
+  end
+
+  def test_skill_in_both_lists_errors
+    refute_empty errors_on(guards(exempt: { 'a' => 'no-model', 'b' => 'no-model' }, no_llm: %w[a b]), 'a')
+  end
+
+  def test_classified_but_absent_errors
+    refute_empty errors_on(guards(guarded: %w[a ghost]), 'ghost')
+  end
+
+  def test_missing_block_errors
+    v = errors_on(guards(blocks: { 'a' => nil }), 'a')
+    assert_match(/first element/, v.first&.message)
+  end
+
+  def test_drifted_block_errors
+    v = errors_on(guards(blocks: { 'a' => 'G. changed' }), 'a')
+    assert_match(/canonical/, v.first&.message)
+  end
+
+  def test_block_without_link_line_errors
+    refute_empty errors_on(guards(blocks: { 'a' => 'G.' }), 'a')
+  end
+
+  def test_spine_drift_errors
+    refute_empty errors_on(guards(spine_quote: 'other'), 'security-spine')
+  end
+
+  def test_spine_missing_errors
+    refute_empty errors_on(guards(spine_quote: nil), 'security-spine')
+  end
+
+  def test_unknown_reason_token_errors
+    refute_empty errors_on(guards(exempt: { 'b' => 'trust me' }), 'b')
+  end
+
+  def test_no_model_without_marker_errors
+    refute_empty errors_on(guards(no_llm: []), 'b')
+  end
+
+  def test_no_model_wired_to_agent_job_errors
+    refute_empty errors_on(guards(job_agents: { 'b' => [false, true] }), 'b')
+  end
+
+  def test_empty_guarded_list_errors
+    refute_empty errors_on(guards(present: %w[b], guarded: [], blocks: {}), '_data/skills.yml')
+  end
+
+  def test_blank_guard_text_errors
+    refute_empty errors_on(guards(guard_text: '  '), '_data/skills.yml')
+  end
+
+  def test_normalize_guard_collapses_quote_markers_and_whitespace
+    assert_equal 'a b c', SkillsContract.normalize_guard("> a\r\n>  b\n>\n> c")
+  end
+end
