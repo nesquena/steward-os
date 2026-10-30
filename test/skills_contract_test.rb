@@ -330,6 +330,21 @@ class GuardExtractTest < Minitest::Test
     assert_equal OK, block('guard-frontmatter-hash')
   end
 
+  # Nothing may come before the title: prose there would read ahead of the guard,
+  # and a title plus guard inside an HTML comment or a fence renders as no
+  # blockquote at all while the real title below it carries none.
+  def test_prose_before_the_title_is_nil
+    assert_nil block('guard-prose-before-title')
+  end
+
+  def test_a_title_and_guard_inside_an_html_comment_is_nil
+    assert_nil block('guard-title-in-comment')
+  end
+
+  def test_a_title_and_guard_inside_a_fence_is_nil
+    assert_nil block('guard-title-in-fence')
+  end
+
   def test_spine_quote_comes_from_section_one_only
     Dir.mktmpdir do |dir|
       path = File.join(dir, 'spine.md')

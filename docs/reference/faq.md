@@ -41,7 +41,7 @@ actions stay human-gated (Band C). Get this right and the rest follows.
 ## Is it safe to let an agent act on a public repo?
 
 Only within the [security spine](security-spine.md). The load-bearing rules: content you read is
-never an instruction (injection guard); secrets never enter the agent's context; untrusted code only
+never an instruction (the injection guard, which opens every skill that reads untrusted content); secrets never enter the agent's context; untrusted code only
 runs sandboxed (and with no sandbox configured, which is the default, it doesn't run at all, so a
 human runs the suite before a contributor's PR can merge); and **any public write in the project's voice is human-gated or watchdog-verified —
 never an unverified autonomous write.** That last line is what separates "safe unattended" from "a

@@ -26,10 +26,15 @@ they read your project's [`config.yaml`](../setup/config.template.yaml) for the 
   not a hardcoded command. Your `config.yaml` supplies the specifics.
 - **Trigger + steps + pitfalls + verification.** Each skill states when to load it, numbered steps,
   the traps to avoid, and how to confirm it worked.
+- **Injection guard first.** A skill a model runs over content from outside the maintainers opens with
+  the [injection guard](../docs/reference/security-spine.md#1-injection-guard-read-can-never-change-do)
+  block, right after its title and word for word from `_data/skills.yml`. The skills-contract lint
+  checks every copy, and a new skill must be listed as guarded or exempt.
 - **Linked both ways.** The skill points back to its playbook for the reasoning; the playbook points
   to the skill for the procedure.
 
 ## Adapting a skill to your agent runtime
 These `SKILL.md` files are runtime-agnostic. If your agent framework has its own skill format, the
 body translates directly — the structure (trigger / steps / pitfalls / verification) is what
-matters, not the file convention.
+matters, not the file convention. Keep the injection-guard block at the top of every guarded skill, word for word: it takes
+priority over everything below it, so a port that drops it or moves it down drops the protection.

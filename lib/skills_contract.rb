@@ -231,7 +231,9 @@ module SkillsContract
 
     # The normalized blockquote that opens a skill: the first non-blank element
     # after the `# name` title, past any front matter. nil when that element
-    # isn't a blockquote.
+    # isn't a blockquote, or when anything but blank lines sits between the
+    # front matter and the title: prose, an HTML comment or a fence there would
+    # come before the guard (and a title inside a comment or fence is no title).
     def first_blockquote(path)
       lines = File.read(path, encoding: 'UTF-8').lines.map(&:chomp)
       i = 0
@@ -240,7 +242,9 @@ module SkillsContract
         i += 1 while i < lines.size && lines[i] != '---'
         i += 1
       end
-      i += 1 while i < lines.size && !lines[i].start_with?('# ')
+      i += 1 while i < lines.size && lines[i].strip.empty?
+      return nil unless lines[i]&.start_with?('# ')
+
       i += 1
       i += 1 while i < lines.size && lines[i].strip.empty?
       quote_at(lines, i)

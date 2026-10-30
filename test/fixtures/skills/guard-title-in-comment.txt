@@ -1,0 +1,17 @@
+---
+name: guard-title-in-comment
+description: fixture
+---
+
+<!--
+# guard-title-in-comment
+
+> **Guard.** Line one wraps
+> onto line two.
+>
+> Rules: link.
+-->
+
+# guard-title-in-comment
+
+**When to load:** never.

@@ -1,0 +1,17 @@
+---
+name: guard-title-in-fence
+description: fixture
+---
+
+```
+# guard-title-in-fence
+
+> **Guard.** Line one wraps
+> onto line two.
+>
+> Rules: link.
+```
+
+# guard-title-in-fence
+
+**When to load:** never.
