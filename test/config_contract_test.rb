@@ -417,6 +417,7 @@ class TypeTest < Minitest::Test
       },
       'security' => { 'security_contact' => '', 'security_sensitive_surfaces' => [] },
       'secrets' => { 'execute_contributor_code' => false, 'sandbox_available' => false },
+      'autonomy' => { 'announcements' => 'C' },
       'scheduled_jobs' => {
         'jobs' => [{ 'name' => 'action-watchdog', 'every' => '6h', 'enabled' => false, 'agent' => false }],
         'outputs' => { 'index_path' => '', 'digest_to' => '', 'alarms_to' => '' }
@@ -568,6 +569,7 @@ class SemanticTest < Minitest::Test
       'security' => { 'security_contact' => 'github-advisory',
                       'security_sensitive_surfaces' => ['auth'] },
       'secrets' => { 'execute_contributor_code' => false, 'sandbox_available' => false },
+      'autonomy' => { 'announcements' => 'C' },
       'scheduled_jobs' => {
         'jobs' => [{ 'name' => 'action-watchdog', 'every' => '6h', 'enabled' => true, 'agent' => false }],
         'outputs' => { 'index_path' => '/srv/steward/index.md', 'digest_to' => '',
@@ -598,6 +600,115 @@ class SemanticTest < Minitest::Test
     cfg = base
     cfg['scheduled_jobs']['jobs'] += jobs
     cfg
+  end
+
+  def announce_at(band)
+    cfg = base
+    cfg['autonomy']['announcements'] = band
+    cfg
+  end
+
+  def test_announcements_at_band_a_are_refused
+    assert_equal :error, rule(announce_at('A'), :announcements_band_c).severity
+  end
+
+  def test_announcements_near_misses_of_a_are_refused
+    ['a', 'A ', "\u200BA"].each { |band| assert rule(announce_at(band), :announcements_band_c), band.inspect }
+  end
+
+  def test_announcements_at_band_b_are_refused
+    assert rule(announce_at('B'), :announcements_band_c)
+  end
+
+  def test_a_near_miss_of_c_passes
+    assert_nil rule(announce_at('c '), :announcements_band_c)
+  end
+
+  def test_a_non_string_announcements_band_is_an_error_not_a_crash
+    [nil, 3, true].each { |band| assert rule(announce_at(band), :announcements_band_c), band.inspect }
+  end
+
+  def test_an_autonomy_list_is_an_error_not_a_crash
+    cfg = base
+    cfg['autonomy'] = []
+    assert rule(cfg, :announcements_band_c)
+  end
+
+  def test_the_announcements_band_holds_with_the_job_disabled
+    cfg = announce_at('A')
+    cfg['scheduled_jobs']['jobs'] << { 'name' => 'announcements', 'every' => '8h', 'enabled' => false, 'agent' => false }
+    assert rule(cfg, :announcements_band_c)
+  end
+
+  def model_job(name, enabled: true)
+    { 'name' => name, 'every' => '4h', 'enabled' => enabled, 'agent' => true }
+  end
+
+  def test_a_model_on_a_no_model_job_is_refused
+    %w[issue-autoclose label-sync announcements].each do |name|
+      assert_equal :error, rule(with_jobs(model_job(name)), :no_model_job).severity, name
+    end
+  end
+
+  def test_a_near_miss_of_a_no_model_job_name_is_refused
+    assert rule(with_jobs(model_job('Issue_Autoclose')), :no_model_job)
+  end
+
+  def test_a_disabled_no_model_job_with_a_model_flag_passes
+    assert_nil rule(with_jobs(model_job('announcements', enabled: false)), :no_model_job)
+  end
+
+  def test_issue_capture_and_the_watchdog_are_not_no_model_jobs
+    assert_nil rule(with_jobs(model_job('issue-capture')), :no_model_job)
+    cfg = base
+    cfg['scheduled_jobs']['jobs'][0]['agent'] = true
+    assert_nil rule(cfg, :no_model_job)
+  end
+
+  # Capture off, announcements job on: the only thing that needs the index.
+  def announcing_without_capture(index:, visibility: 'private')
+    cfg = with_jobs({ 'name' => 'announcements', 'every' => '8h', 'enabled' => true, 'agent' => false })
+    cfg['issue_capture']['enabled'] = false
+    cfg['community']['chat']['monitor'] = false
+    cfg['repositories'][0]['visibility'] = visibility
+    cfg['scheduled_jobs']['outputs']['index_path'] = index
+    cfg
+  end
+
+  def test_announcements_need_the_index_with_capture_off
+    assert rule(announcing_without_capture(index: ''), :pull_index_required)
+  end
+
+  def test_the_index_error_names_announcements_with_capture_off
+    message = rule(announcing_without_capture(index: ''), :pull_index_required).message
+    refute_includes message, 'issue_capture'
+    assert_includes message, 'announcements'
+  end
+
+  def test_the_announcements_index_must_not_be_public
+    cfg = announcing_without_capture(index: 'index.md', visibility: 'public')
+    assert rule(cfg, :index_not_public)
+  end
+
+  def test_capture_and_announcements_share_one_index_error
+    cfg = with_jobs({ 'name' => 'announcements', 'every' => '8h', 'enabled' => true, 'agent' => false })
+    cfg['scheduled_jobs']['outputs']['index_path'] = ''
+    assert_equal 1, check(cfg).count { |x| x.rule == :pull_index_required }
+  end
+
+  def test_an_outside_repo_announcements_index_warns
+    cfg = announcing_without_capture(index: '/srv/steward/index.md')
+    assert_nil rule(cfg, :index_not_public)
+    warnings = check(cfg).select { |x| x.severity == :warning }
+    assert(warnings.any? { |x| x.message.include?('/srv/steward/index.md') })
+  end
+
+  def test_no_index_rule_fires_with_capture_off_and_no_announcements_job
+    cfg = base
+    cfg['issue_capture']['enabled'] = false
+    cfg['community']['chat']['monitor'] = false
+    cfg['scheduled_jobs']['outputs']['index_path'] = ''
+    assert_nil rule(cfg, :pull_index_required)
   end
 
   def test_two_jobs_with_one_normalized_name_are_refused

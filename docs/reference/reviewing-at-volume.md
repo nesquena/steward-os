@@ -58,7 +58,7 @@ A corollary for anyone running *automated* triage: wrong-premise and "we don't w
 **taste calls that stay with a human.** Automation can *classify* a change (already-fixed-on-trunk,
 cannot-reproduce, incoherent), request more information, and *recommend* a close — but the autonomous
 *close* itself belongs only to the mechanically-provable gate this repo already defines: a fix proven
-shipped and fully resolved ([issue lifecycle](../lifecycle/issue-lifecycle.md#close-with-credit-careful--this-is-irreversible)),
+shipped and fully resolved ([issue lifecycle](../lifecycle/issue-lifecycle.md#close-with-credit-careful--this-is-public)),
 or the tightly-bounded reversible cases under [closing on taste autonomously](anti-patterns.md#scope--contributor-anti-patterns).
 Cannot-reproduce and incoherent both routinely turn out to be environment gaps or communication
 problems, so they warrant a needinfo or a recommendation, not an unattended close. The sweeper's job

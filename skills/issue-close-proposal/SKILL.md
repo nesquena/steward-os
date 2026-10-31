@@ -23,7 +23,7 @@ description: Prepare an evidence-backed issue close for a human to decide. Two c
 
 **When to load:** an open issue looks finished or filed twice, and the strict
 [`issue-autoclose`](../issue-autoclose/SKILL.md) gate can't reach it. Runs the human half of the
-[issue lifecycle](../../docs/lifecycle/issue-lifecycle.md#close-with-credit-careful--this-is-irreversible)
+[issue lifecycle](../../docs/lifecycle/issue-lifecycle.md#close-with-credit-careful--this-is-public)
 close: the agent prepares, a human decides. Steward role. **Band C, and it stays there.**
 
 > Precondition: **a human decides every close this skill proposes.** With no human present, it

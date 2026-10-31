@@ -57,7 +57,7 @@ single agent's say-so.
 ### 4. Steward — "keep the whole thing healthy and growing."
 The meta-role: triage prioritization, contributor relationships, community presence, release
 cadence, and — crucially — **watching the other three.** The Steward runs the digests, maintains
-the trust ledger, posts announcements, and operates the watchdogs that fact-check autonomous
+the trust ledger, prepares announcements, and operates the watchdogs that fact-check autonomous
 actions. It's the role that makes the system *sustainable* rather than just *functional*.
 
 > **Why four and not one blob?** Because the riskiest failures happen when the roles blur — when
@@ -100,8 +100,8 @@ What the human should be shown before taking that action is
 
 ### Moving an action between bands
 The natural maturation path is **C → B → A**: a capability starts human-gated, earns trust, and
-graduates to autonomous *once it's either provably mechanical or wrapped in an independent
-watchdog.* The [autonomy ladder playbook](../playbooks/autonomy-ladder.md) is the explicit recipe
+graduates to autonomous *once it's [reversible](../playbooks/autonomy-ladder.md#what-reversible-means)
+and either provably mechanical or wrapped in an independent watchdog.* The [autonomy ladder playbook](../playbooks/autonomy-ladder.md) is the explicit recipe
 for promoting an action safely — and the [watchdog pattern](../playbooks/watchdog-pattern.md) is
 what makes Band A trustworthy for actions that touch the public world.
 

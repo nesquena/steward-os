@@ -32,8 +32,34 @@ A capability may move up a rung only when it meets the bar for the higher rung:
 | **Band B** | well-understood, with clear decision points where the agent knows to stop and ask |
 | **Band A** | **reversible** AND **low-blast-radius** AND (**mechanical** OR **independently verified by a watchdog**) |
 
-If an action is irreversible *and* touches a public surface *and* can't be made mechanical, it does
-**not** belong in Band A — keep it at C, or keep a human on the final step in B.
+An irreversible action does **not** belong in Band A: keep it at C, or keep a human on the final
+step in B. Making it mechanical doesn't change that.
+
+### What reversible means
+
+> An action is **reversible** when its effect is state on one item: a later write on that item puts
+> the state back, and the item's followers see both.
+>
+> Text that only restates what the item already shows travels with the change.
+>
+> A message delivered beyond the item, or any new claim, is not reversible.
+
+Reopening a closed issue passes: the state comes back, on the same item, in front of the same
+followers. Deleting a posted announcement fails: the delete works, and every reader already has the
+post.
+
+Reversible doesn't mean free. A wrong close still costs a reporter's trust, which is why the close
+gate stays strict.
+
+### Open exceptions
+
+Two Band A placements fail this test today and are waiting on a ruling. Neither changes until then.
+
+- **Narrow mechanical merges** ([PR lifecycle](../lifecycle/pr-lifecycle.md)). A revert restores the
+  code, but anyone who pulled or deployed keeps the change.
+- **HIGH-confidence auto-file** ([community](../lifecycle/community.md#confidence-tiered-capture--action-the-safe-way-to-auto-file)).
+  A new public issue reaches the repository's watchers. It's off by default
+  (`issue_capture.max_public_files_per_run: 0`).
 
 ## The promotion recipe
 
@@ -51,8 +77,8 @@ If an action is irreversible *and* touches a public surface *and* can't be made 
    (some that should act, some that shouldn't), verify on the real surface, expand, then go full.
 5. **Make it idempotent and silent-on-no-op.** A good Band-A job does nothing visible when there's
    nothing to do, and re-running it changes nothing. (See [scheduled jobs](scheduled-jobs.md).)
-6. **Keep the kill switch.** Every autonomous action stays reversible and every cron stays
-   pausable. If the watchdog alarms, you can stop the action and undo its effects.
+6. **Keep the kill switch.** Every autonomous action stays reversible, the open exceptions aside,
+   and every cron stays pausable. If the watchdog alarms, you can stop the action and undo its effects.
 
 ## Worked example: autonomous PR labeling (C → A)
 - **C:** maintainer labels PRs by hand.

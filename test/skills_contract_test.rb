@@ -374,7 +374,7 @@ class GuardExtractTest < Minitest::Test
   def test_job_agents_resolve_aliases_against_the_template
     agents = SkillsContract::Extract.job_agents(File.join(ROOT, 'setup', 'config.template.yaml'),
                                                  'announcements' => 'release-announce')
-    assert_equal [true], agents['release-announce']
+    assert_equal [false], agents['release-announce']
     assert_equal [false], agents['label-sync']
   end
 end

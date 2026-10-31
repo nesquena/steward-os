@@ -67,7 +67,8 @@ The system can't screen PRs/issues for fit without knowing what "fits."
 ## Section 5 — Autonomy posture *(required)*
 16. **What's your starting autonomy band per area?** For each of {labeling, issue-triage replies,
     issue auto-close, announcements, PR merge}: start at C, B, or A? (Default conservative: most
-    start at B/C; only mechanical+reversible+watched actions start at A.) →
+    start at B/C; only mechanical+reversible+watched actions start at A. Announcements stay at C:
+    the config lint refuses anything else.) →
     [autonomy ladder](../docs/playbooks/autonomy-ladder.md).
 17. **Where is the human reachable** for Band-B decision points and Band-C approvals? (Which
     channel/DM.)
