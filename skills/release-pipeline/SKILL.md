@@ -24,7 +24,8 @@ description: Merge an all-clear PR and ship it — rebase, merge preserving attr
 **When to load:** a PR has passed the [authoritative gate](../../docs/lifecycle/quality-gates.md) and
 is cleared to ship. Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [5]–[6]. Band B
 — a human owns the final irreversible merge call on anything substantial; the narrowest mechanical
-merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-pattern.md).
+merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-pattern.md), an
+[open exception](../../docs/playbooks/autonomy-ladder.md#open-exceptions) to the Band A bar.
 
 > Precondition: **do not enter this skill on a self-report.** The gate must have been run fresh by
 > [`pr-deep-review`](../pr-deep-review/SKILL.md) and come back aggregate all-clear: **both independent

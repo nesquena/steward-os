@@ -11,7 +11,8 @@ Chat platforms, social mentions, announcements — the surfaces where the projec
 The governing line for this whole area:
 
 > **Reading, finding, and drafting are safe to automate. Writing publicly in the project's voice is
-> the irreversible act that stays human (Band C) or autonomous-with-a-watchdog (Band A).**
+> the irreversible act that stays human (Band C). Only a reversible, mechanical public write runs
+> autonomous with a watchdog (Band A).**
 
 A single misjudged public post can't be un-sent, and platforms ban bots that auto-reply. So the
 system does all the *upstream* work — monitor, classify, dedupe, draft, queue — and keeps a human at
@@ -54,7 +55,8 @@ uses the tier because *filing an issue to the public tracker from a chat report*
   present ("no clean, no file"); (2) label it for triage and enforce
   `issue_capture.max_public_files_per_run` so a busy day can't spray the tracker. A value of `0`
   disables auto-file. Every auto-file is logged and
-  [watchdog](../playbooks/watchdog-pattern.md)-verified.
+  [watchdog](../playbooks/watchdog-pattern.md)-verified. This tier is an
+  [open exception](../playbooks/autonomy-ladder.md#open-exceptions) to the Band A bar.
 - **MEDIUM** (actionable but vaguer, a feature request, or any doubt / scope call) → **draft it and
   surface to a human to approve** — don't file. The human's one-tap/one-word approval files it.
 - **LOW / noise** → capture-to-queue only (or skip); never file, never ping.
@@ -85,12 +87,14 @@ to the maintainer — **find and report, never auto-reply.**
   draft-reply queue — drafted by the agent, **sent by the human.** This converts passive monitoring
   into active support without any autonomous public posting.
 
-## Announcements (Band A — narrow, templated, gated)
-Release announcements are the one routine public write that's safe to automate, because the content
-already exists (the changelog) and the action is templated and diff-gated:
-- Compose from the changelog + release tags; post to a **fixed, hardcoded** channel via a
-  secret-isolating helper (the bot token never enters the agent's context).
-- Gate on a "last-announced" marker so it fires once per release, never re-posts.
+## Announcements (Band C — templated, human-keyed)
+A release announcement [can't be recalled](../playbooks/autonomy-ladder.md#what-reversible-means): it
+reaches readers beyond any one item. So the render is automatic and the post is human, and the
+render is safe because the content already exists (the changelog):
+- Render from the changelog + release tags into a decision row. The job proposes and never posts.
+- A human keys the post, which goes to a **fixed, hardcoded** channel via a secret-isolating helper
+  (the bot token never enters the agent's context).
+- Gate on a "last-announced" marker so each release posts once, never re-posts.
 - Anything beyond the templated announcement (general conversation, replies) stays human.
 
 ## The far horizon (deliberately staged)
@@ -106,7 +110,8 @@ replies in the project's voice** — keep it draft→approve. See
 - `chat-monitor` (no skill yet) — Watcher adapter: read channels, normalize, and invoke
   `issue-capture`.
 - `mentions-sweep` (no skill yet) — Watcher: web sweep, disambiguate, curate a digest.
-- `release-announce` — Steward: templated announcement via a secret-isolating helper.
+- `release-announce` — Steward: renders the templated announcement; a human keys the post through a
+  secret-isolating helper.
 
 _Related: [issue lifecycle](issue-lifecycle.md) · [contributor recognition](contributor-recognition.md)
 · [security spine](../reference/security-spine.md)._

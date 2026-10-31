@@ -87,9 +87,10 @@ The Steward keeps the tracker healthy:
 A serious issue that nobody is building becomes a Builder task → it enters the
 [PR lifecycle](pr-lifecycle.md). The fix, the regression test, and the release all happen there.
 
-## Close with credit (careful — this is irreversible)
+## Close with credit (careful — this is public)
 An issue closes without a human only when its fix is **provably shipped** and it's **fully
-resolved**, never partially.
+resolved**, never partially. A close is [reversible](../playbooks/autonomy-ladder.md#what-reversible-means)
+by reopening, but a wrong close still costs the reporter's trust.
 The safe autonomous gate (Band A *with watchdog*) is mechanically strict:
 - a merged PR explicitly links the issue as closing it, **and**
 - the merge commit is contained in a released tag (provably shipped, not just on the trunk), **and**
