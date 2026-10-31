@@ -88,6 +88,9 @@ scheduled_jobs:
   jobs:
     - { name: "issue-capture",   every: "1h", enabled: true,  agent: true  }
     - { name: "action-watchdog", every: "6h", enabled: true,  agent: false }
+    - { name: "announcements",   every: "8h", enabled: true,  agent: false }
+    - { name: "label-sync",      every: "4h", enabled: true,  agent: false }
+    - { name: "issue-autoclose", every: "4h", enabled: true,  agent: false }
   outputs:
     index_path: "/srv/steward/index.md"
     digest_to: ""

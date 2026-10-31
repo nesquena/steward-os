@@ -76,7 +76,14 @@ module ConfigContract
     job_name_unique
     enabled_job_needs_skill
     job_flag_agree
+    announcements_band_c
+    no_model_job
   ].freeze
+
+  # Jobs whose skill is a no-model procedure. `issue-capture` is absent on
+  # purpose: its job runs a model at Band A under its own rules. The watchdog is
+  # absent because it writes nothing public.
+  NO_MODEL_JOBS = %w[issue-autoclose label-sync announcements].freeze
 
   # Each template job and the skill that runs it, or nil where none ships yet.
   # JobSkillsMapTest keeps this in step with the template and skills/.
@@ -489,18 +496,9 @@ module ConfigContract
                           'trail and must not be a public surface (config.template.yaml:46-48). Use ' \
                           'an absolute path if it lives in a private repo')
       end
-
-      if blank?(index)
-        violations << err(:pull_index_required, 'scheduled_jobs.outputs.index_path',
-                          'issue_capture.enabled requires a pull index (issue-capture/SKILL.md:26-27)')
-      elsif repo_relative?(index) && public_repo?(config)
-        violations << err(:index_not_public, 'scheduled_jobs.outputs.index_path',
-                          "'#{index}' is repo-relative and this project lists a public repository. " \
-                          'An index that can hold a diverted vulnerability must not be a public ' \
-                          'surface (config.template.yaml:124-126). If it lives in a private repo, ' \
-                          'use an absolute path to say so')
-      end
     end
+
+    violations.concat(index_violations(config, index, capture))
 
     # Deliberately NOT gated on issue_capture.enabled: a stale non-blank marker
     # left over from a disabled capture config is still a public marker with
@@ -550,7 +548,57 @@ module ConfigContract
                         '(config.template.yaml:106)')
     end
 
-    violations + job_violations(config) + unverifiable_warning(config, outputs, index)
+    violations + band_violations(config) + job_violations(config) +
+      unverifiable_warning(config, outputs, index)
+  end
+
+  # Capture and the announcements job each write to the index, so either one
+  # needs it, and each needs it private. One violation either way.
+  def self.index_violations(config, index, capture)
+    return [] unless capture || announcements_enabled?(config)
+
+    if blank?(index)
+      need = if capture
+               'issue_capture.enabled requires a pull index (issue-capture/SKILL.md:26-27)'
+             else
+               'an enabled announcements job requires a pull index for its decision row ' \
+                 '(release-announce/SKILL.md)'
+             end
+      [err(:pull_index_required, 'scheduled_jobs.outputs.index_path', need)]
+    elsif repo_relative?(index) && public_repo?(config)
+      held = capture ? 'can hold a diverted vulnerability' : 'holds a draft awaiting a human decision'
+      [err(:index_not_public, 'scheduled_jobs.outputs.index_path',
+           "'#{index}' is repo-relative and this project lists a public repository. " \
+           "An index that #{held} must not be a public " \
+           'surface (config.template.yaml:124-126). If it lives in a private repo, ' \
+           'use an absolute path to say so')]
+    else
+      []
+    end
+  end
+
+  def self.announcements_enabled?(config)
+    jobs = config.dig('scheduled_jobs', 'jobs')
+    return false unless jobs.is_a?(Array)
+
+    jobs.any? do |j|
+      j.is_a?(Hash) && j['enabled'] == true && j['name'].is_a?(String) &&
+        normalize_job_name(j['name']) == 'announcements'
+    end
+  end
+
+  # An announcement can't be recalled, so it never runs at Band A, and B would
+  # be the same procedure as C. Read through fetch_path: `autonomy: []` passes
+  # the shape phase and `dig` raises on it. A non-string is an error, not a skip.
+  def self.band_violations(config)
+    return [] unless config.key?('autonomy')
+
+    band = fetch_path(config, 'autonomy.announcements')
+    return [] if band.is_a?(String) && normalize_job_name(band) == 'c'
+
+    [err(:announcements_band_c, 'autonomy.announcements',
+         "must be \"C\", got #{band.inspect}: an announcement can't be recalled, so a human " \
+         'keys every post (docs/playbooks/autonomy-ladder.md)')]
   end
 
   # Runtimes differ on whether `Issue_Capture ` is `issue-capture`, so the job
@@ -586,6 +634,10 @@ module ConfigContract
                    "job '#{job['name']}' has no skill in this repo yet, so nothing shipped " \
                    'bounds the model it runs')
     end
+    if job['agent'] == true && NO_MODEL_JOBS.include?(name)
+      found << err(:no_model_job, "scheduled_jobs.jobs[#{index}]",
+                   "job '#{job['name']}' runs a no-model procedure, so it must be agent: false")
+    end
     flag = JOB_FLAGS[name]
     if flag && fetch_path(config, flag) != true
       found << err(:job_flag_agree, "scheduled_jobs.jobs[#{index}]",
@@ -618,11 +670,27 @@ module ConfigContract
   # decided by index_not_public / state_paths_not_public; blanks by their
   # required-rules; the "github-advisory" sentinel is statically known-private.
   def self.unverifiable_warning(config, outputs, index)
-    return [] unless config.dig('issue_capture', 'enabled') == true
+    capture = config.dig('issue_capture', 'enabled') == true
+    return [] unless capture || announcements_enabled?(config)
 
-    undecidable = 'channel privacy not statically decidable'
     unverifiable = []
     unverifiable << "index_path '#{index}' (outside the repo)" if !blank?(index) && !repo_relative?(index)
+    unverifiable.concat(unverifiable_capture_destinations(config, outputs)) if capture
+    return [] if unverifiable.empty?
+
+    # The leading spaces below line the continuation up under Violation#to_line's
+    # own two-space "  x " prefix (see to_line above) so bin/config-lint's
+    # per-line output stays visually aligned. Re-indenting or wrapping this
+    # message breaks that alignment — Task 5 prints it verbatim.
+    [Violation.new(severity: :warning, rule: :destinations_unverifiable, key: 'scheduled_jobs.outputs',
+                   message: "#{unverifiable.size} destination(s) could not be verified as private:\n" \
+                            "#{unverifiable.map { |u| "      #{u}" }.join("\n")}\n" \
+                            "    Confirm each before enabling #{capture ? 'autonomous capture' : 'announcements'}.")]
+  end
+
+  def self.unverifiable_capture_destinations(config, outputs)
+    undecidable = 'channel privacy not statically decidable'
+    unverifiable = []
     unverifiable << "digest_to '#{outputs['digest_to']}' (#{undecidable})" unless blank?(outputs['digest_to'])
     unverifiable << "alarms_to '#{outputs['alarms_to']}' (#{undecidable})" unless blank?(outputs['alarms_to'])
 
@@ -637,16 +705,7 @@ module ConfigContract
 
       unverifiable << "issue_capture.#{k} '#{value}' (outside the repo)"
     end
-    return [] if unverifiable.empty?
-
-    # The leading spaces below line the continuation up under Violation#to_line's
-    # own two-space "  x " prefix (see to_line above) so bin/config-lint's
-    # per-line output stays visually aligned. Re-indenting or wrapping this
-    # message breaks that alignment — Task 5 prints it verbatim.
-    [Violation.new(severity: :warning, rule: :destinations_unverifiable, key: 'scheduled_jobs.outputs',
-                   message: "#{unverifiable.size} destination(s) could not be verified as private:\n" \
-                            "#{unverifiable.map { |u| "      #{u}" }.join("\n")}\n" \
-                            '    Confirm each before enabling autonomous capture.')]
+    unverifiable
   end
 
   # Rules that read the YAML stream before anything converts it. Each names a
