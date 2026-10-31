@@ -77,8 +77,8 @@ Two Band A placements fail this test today and are waiting on a ruling. Neither 
    (some that should act, some that shouldn't), verify on the real surface, expand, then go full.
 5. **Make it idempotent and silent-on-no-op.** A good Band-A job does nothing visible when there's
    nothing to do, and re-running it changes nothing. (See [scheduled jobs](scheduled-jobs.md).)
-6. **Keep the kill switch.** Every autonomous action stays reversible and every cron stays
-   pausable. If the watchdog alarms, you can stop the action and undo its effects.
+6. **Keep the kill switch.** Every autonomous action stays reversible, the open exceptions aside,
+   and every cron stays pausable. If the watchdog alarms, you can stop the action and undo its effects.
 
 ## Worked example: autonomous PR labeling (C → A)
 - **C:** maintainer labels PRs by hand.

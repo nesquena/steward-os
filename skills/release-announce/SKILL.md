@@ -47,7 +47,7 @@ The job runs steps 1-5 and never posts. It reads no mark from a row, so contribu
 can't forge an approval. A human runs steps 6 and 7, and step 6 is the only sender.
 
 1. **Reconcile first, matching records by stamp, not by release.** Close an open row whose stamp has
-   a decision record or is superseded, or whose release the marker covers. A post in the fixed
+   a rejection or a ledger entry or is superseded, or whose release the marker covers. A post in the fixed
    channel with no ledger entry, by a maintainer or the bot account and naming the tag, is recorded
    in the ledger and advances the marker, so a hand post can't lead to a repost. An accepted record
    with no ledger entry and no such post means a post failed or never ran: hold the row, raise an
@@ -62,7 +62,8 @@ can't forge an approval. A human runs steps 6 and 7, and step 6 is the only send
    no-op. A rejection holds only while its stamp is current
    ([decision record](../../docs/playbooks/output-loop.md#the-decision-record)), so a corrected
    changelog re-proposes.
-5. **Propose.** An open row with a matching stamp → no-op. Otherwise put a
+5. **Propose.** An open row with a matching stamp, or an accepted record at that stamp → no-op.
+   Otherwise put a
    [decision row](../../docs/playbooks/output-loop.md#the-decision-row) in the index, stamped on the
    tag and the rendered text, with the undo stated as "can't be recalled". The row takes no edits:
    to change the text, change the changelog, which changes the stamp and re-proposes.
