@@ -12,8 +12,7 @@ is the most safety-critical pipeline in the system — it's the one that mutates
 gates are strict and the merge is never on a single agent's say-so.
 
 > Roles: **Watcher** notices the PR · **Reviewer** evaluates it · **Builder** fixes/rebases it ·
-> **Steward** ranks it and runs the release. Merge is **Band B** (human owns the final call) or
-> Band A only for the narrowest mechanical cases with a watchdog.
+> **Steward** ranks it and runs the release. Merge is **Band B**: a human owns the final call.
 
 > Author-side counterpart: this page is how a change is *received and shipped*. For how a
 > contributor (human or agent) should *write and present* one so it lands in a single round, see
@@ -151,10 +150,9 @@ and the gate re-runs. Only an all-clear gate advances to merge.
   merge is real *and* (if you deploy) the running version serves it — never claim shipped from a
   passed gate alone.
 
-> Merge itself is **Band B**: the human owns the final irreversible call on anything substantial.
-> The narrowest mechanical merges can graduate to Band A — but only with the
-> [watchdog](../playbooks/watchdog-pattern.md) fact-checking each one. That's an
-> [open exception](../playbooks/autonomy-ladder.md#open-exceptions) to the Band A bar.
+> Merge itself is **Band B**, and it stays there: the human owns the final call. A revert restores
+> the code, but not for anyone who already pulled or deployed it, so a merge isn't
+> [reversible](../playbooks/autonomy-ladder.md#what-reversible-means) and can't reach Band A.
 
 ## [6] Close + credit
 

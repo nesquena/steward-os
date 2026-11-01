@@ -417,7 +417,7 @@ class TypeTest < Minitest::Test
       },
       'security' => { 'security_contact' => '', 'security_sensitive_surfaces' => [] },
       'secrets' => { 'execute_contributor_code' => false, 'sandbox_available' => false },
-      'autonomy' => { 'announcements' => 'C' },
+      'autonomy' => { 'announcements' => 'C', 'pr_merge' => 'B' },
       'scheduled_jobs' => {
         'jobs' => [{ 'name' => 'action-watchdog', 'every' => '6h', 'enabled' => false, 'agent' => false }],
         'outputs' => { 'index_path' => '', 'digest_to' => '', 'alarms_to' => '' }
@@ -569,7 +569,7 @@ class SemanticTest < Minitest::Test
       'security' => { 'security_contact' => 'github-advisory',
                       'security_sensitive_surfaces' => ['auth'] },
       'secrets' => { 'execute_contributor_code' => false, 'sandbox_available' => false },
-      'autonomy' => { 'announcements' => 'C' },
+      'autonomy' => { 'announcements' => 'C', 'pr_merge' => 'B' },
       'scheduled_jobs' => {
         'jobs' => [{ 'name' => 'action-watchdog', 'every' => '6h', 'enabled' => true, 'agent' => false }],
         'outputs' => { 'index_path' => '/srv/steward/index.md', 'digest_to' => '',
@@ -632,6 +632,28 @@ class SemanticTest < Minitest::Test
     cfg = base
     cfg['autonomy'] = []
     assert rule(cfg, :announcements_band_c)
+  end
+
+  def merge_at(band)
+    cfg = base
+    cfg['autonomy']['pr_merge'] = band
+    cfg
+  end
+
+  def test_merges_at_band_a_are_refused
+    assert_equal :error, rule(merge_at('A'), :pr_merge_band_b).severity
+  end
+
+  def test_merge_near_misses_of_a_are_refused
+    ['a', 'A ', "\u200BA"].each { |band| assert rule(merge_at(band), :pr_merge_band_b), band.inspect }
+  end
+
+  def test_merges_at_band_b_or_c_pass
+    ['B', 'b ', 'C', 'c'].each { |band| assert_nil rule(merge_at(band), :pr_merge_band_b), band.inspect }
+  end
+
+  def test_a_non_string_merge_band_is_an_error_not_a_crash
+    [nil, 3, true].each { |band| assert rule(merge_at(band), :pr_merge_band_b), band.inspect }
   end
 
   def test_the_announcements_band_holds_with_the_job_disabled
@@ -880,13 +902,25 @@ class SemanticTest < Minitest::Test
               'phase 3 ran and found this fault — it must not also claim it never ran'
   end
 
-  def test_public_filing_without_watchdog_is_an_error
+  def test_public_filing_is_an_error_even_with_an_enabled_watchdog
+    cfg = base
+    cfg['issue_capture']['max_public_files_per_run'] = 3
+    assert_equal :error, rule(cfg, :public_files_band_c).severity
+  end
+
+  def test_public_filing_without_a_watchdog_is_still_an_error
     cfg = base
     cfg['issue_capture']['capture_marker'] = ''
     cfg['community']['chat']['capture_reaction'] = ''
-    cfg['issue_capture']['max_public_files_per_run'] = 3
+    cfg['issue_capture']['max_public_files_per_run'] = 1
     cfg['scheduled_jobs']['jobs'][0]['enabled'] = false
-    assert_equal :error, rule(cfg, :public_files_need_watchdog).severity
+    assert_equal :error, rule(cfg, :public_files_band_c).severity
+  end
+
+  def test_zero_public_files_is_fine
+    cfg = base
+    cfg['issue_capture']['max_public_files_per_run'] = 0
+    assert_nil rule(cfg, :public_files_band_c)
   end
 
   def test_contributor_code_without_sandbox_is_an_error
@@ -1039,7 +1073,7 @@ class SemanticTest < Minitest::Test
 
   # --- Safe escape hatches ---
   #
-  # Four rules fire on `precondition && !remedy`. The reds prove they fire when
+  # Three rules fire on `precondition && !remedy`. The reds prove they fire when
   # the remedy is absent; the green never reaches the precondition at all. So
   # nothing otherwise pins the corner where the precondition IS met and the
   # adopter HAS applied the remedy the message tells them to apply.
@@ -1053,17 +1087,11 @@ class SemanticTest < Minitest::Test
   #
   # assert_nil passes trivially whenever the rule fails to fire for any
   # reason at all, so each assertion here is mutation-confirmed: drop any one
-  # of the four conjuncts across these rules and exactly one test below fails.
+  # of the conjuncts across these rules and exactly one test below fails.
   #
   # This is the fail-closed direction, so it leaks nothing. It blocks every
   # correctly-configured adopter instead, which is the failure this corpus is
   # supposed to make impossible to ship unnoticed.
-
-  def test_public_filing_with_an_enabled_watchdog_is_fine
-    cfg = base
-    cfg['issue_capture']['max_public_files_per_run'] = 3
-    assert_nil rule(cfg, :public_files_need_watchdog)
-  end
 
   def test_contributor_code_with_a_sandbox_is_fine
     cfg = base

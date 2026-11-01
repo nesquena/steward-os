@@ -46,12 +46,13 @@ The system can't screen PRs/issues for fit without knowing what "fits."
    carry bug reports vs. general chat, and the server/guild id.
 9. **Should the agent monitor chat?** (Recommended: read + normalize into the shared capture core,
    then leave a watched "captured" reaction; **no** autonomous text replies.) Confirm the chat marker.
-10. **How should shared issue capture run?** Configure it for chat and any support inboxes, web forms,
-    or direct-report feeds. List non-chat adapters; choose private queue/ledger/checkpoint paths and a
-    writable pull index; set capture and public-filing caps; name any non-chat marker; and choose an
-    independent `alarms_to` route. Chat monitoring also requires this core. Any marker requires the
-    action watchdog. Capture stays disabled until `alarms_to` is configured; `security_contact` is
-    the preferred first vulnerability destination when available.
+10. **How should shared issue capture run?** Configure it for chat and any support inboxes, web
+    forms, or direct-report feeds. List non-chat adapters; choose private queue/ledger/checkpoint
+    paths and a writable pull index; set the capture cap (`max_per_run`; `max_public_files_per_run`
+    stays `0`, a human files each draft); name any non-chat marker; and choose an independent
+    `alarms_to` route. Chat monitoring also requires this core. Any marker requires the action
+    watchdog. Capture stays disabled until `alarms_to` is configured; `security_contact` is the
+    preferred first vulnerability destination when available.
 11. **Mentions sweep?** Should the agent sweep the open web for mentions of the project? Any namesake
     to disambiguate against?
 
@@ -67,8 +68,8 @@ The system can't screen PRs/issues for fit without knowing what "fits."
 ## Section 5 — Autonomy posture *(required)*
 16. **What's your starting autonomy band per area?** For each of {labeling, issue-triage replies,
     issue auto-close, announcements, PR merge}: start at C, B, or A? (Default conservative: most
-    start at B/C; only mechanical+reversible+watched actions start at A. Announcements stay at C:
-    the config lint refuses anything else.) →
+    start at B/C; only mechanical+reversible+watched actions start at A. Announcements stay at C
+    and PR merge at B or C: the config lint refuses anything else.) →
     [autonomy ladder](../docs/playbooks/autonomy-ladder.md).
 17. **Where is the human reachable** for Band-B decision points and Band-C approvals? (Which
     channel/DM.)

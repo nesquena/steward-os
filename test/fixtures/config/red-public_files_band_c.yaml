@@ -1,9 +1,5 @@
-# Red fixture for public_files_need_watchdog.
-# NOTE: four edits, not one. marker_needs_watchdog fires on any non-blank
-# capture_marker with no enabled action-watchdog job, and reaction_needs_watchdog
-# fires on a non-blank capture_reaction under the same condition — both would
-# mask this rule, so capture_marker and capture_reaction are blanked here first
-# to isolate public_files_need_watchdog.
+# Red fixture for public_files_band_c.
+# One edit vs green-enabled.yaml: issue_capture.max_public_files_per_run set to 1.
 project:
   name: "fixture project"
   trunk_branch: "main"
@@ -35,7 +31,7 @@ community:
     server_id: "1234"
     bug_channels: ["bugs"]
     monitor: true
-    capture_reaction: ""
+    capture_reaction: "white_check_mark"
   mentions_sweep:
     enabled: false
     disambiguate_against: ""
@@ -47,8 +43,8 @@ issue_capture:
   ledger_path: "/srv/steward/ledger.md"
   checkpoint_path: "/srv/steward/checkpoint.md"
   max_per_run: 10
-  max_public_files_per_run: 3
-  capture_marker: ""
+  max_public_files_per_run: 1
+  capture_marker: "steward-captured"
 
 security:
   security_contact: "github-advisory"
@@ -91,7 +87,10 @@ secrets:
 scheduled_jobs:
   jobs:
     - { name: "issue-capture",   every: "1h", enabled: true,  agent: true  }
-    - { name: "action-watchdog", every: "6h", enabled: false, agent: false }
+    - { name: "action-watchdog", every: "6h", enabled: true,  agent: false }
+    - { name: "announcements",   every: "8h", enabled: true,  agent: false }
+    - { name: "label-sync",      every: "4h", enabled: true,  agent: false }
+    - { name: "issue-autoclose", every: "4h", enabled: true,  agent: false }
   outputs:
     index_path: "/srv/steward/index.md"
     digest_to: ""

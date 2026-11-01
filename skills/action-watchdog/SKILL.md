@@ -11,9 +11,9 @@ description: Independently fact-check the autonomous actions the system took (is
 
 ## Steps
 
-1. **Read the action ledgers** — the append-only records each autonomous action writes (what it
-   closed, labeled, filed, or marked). The ledger is the list of *what to check*, never the evidence of
-   correctness.
+1. **Read the action ledgers** — the append-only records each action the system executes writes:
+   what it closed, labeled or marked on its own, and the announcement posts a human keyed. The ledger
+   is the list of *what to check*, never the evidence of correctness.
 2. **Re-verify each action against LIVE ground truth, independently:**
    - **Autonomous closes** ([`issue-autoclose`](../issue-autoclose/SKILL.md)): is the issue still
      closed? Is the cited PR actually merged and does it still link the issue? Does the cited release
@@ -36,11 +36,6 @@ description: Independently fact-check the autonomous actions the system took (is
      marker? Did every vulnerability-diverted item receive **no** public mark? → a mark without a
      staged record, a missing/duplicate mark, or any public mark on a diverted item = 🔴; a stale
      nonterminal capture intent with no public action yet = 🟡.
-   - **Autonomous issue files** ([community capture](../../docs/lifecycle/community.md)):
-     is the source staged as a HIGH-confidence bug, did the privacy scrub and cross-surface dedupe
-     pass, was the per-run filing cap respected, and does exactly one public issue exist with no PII
-     or vulnerability content? → a file outside those gates, a duplicate, or a privacy/security leak
-     = 🔴; stale filing-ledger bookkeeping with the public issue otherwise correct = 🟡.
    - **(Add a check here for every new autonomous action — same change that adds the action.)**
 3. **Classify severities.** 🔴 = correctness failure (an action was *wrong* — act now). 🟡 = drift
    (stale, reconcile soon).

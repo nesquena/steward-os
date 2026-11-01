@@ -71,12 +71,13 @@ module ConfigContract
     reaction_needs_watchdog
     chat_needs_capture_core
     chat_needs_platform
-    public_files_need_watchdog
+    public_files_band_c
     sandbox_required
     job_name_unique
     enabled_job_needs_skill
     job_flag_agree
     announcements_band_c
+    pr_merge_band_b
     no_model_job
   ].freeze
 
@@ -530,15 +531,16 @@ module ConfigContract
                         '(config.template.yaml:32)')
     end
 
-    # Deliberately NOT gated on issue_capture.enabled either: a positive bound
-    # left set while capture is off still describes an autonomous-filing policy
-    # with no watchdog behind it once capture is re-enabled without review.
+    # Filing a capture is Band C: a new public issue reaches every watcher, so a
+    # human files each draft and the job never files. Any positive bound would
+    # describe autonomous filing, watchdog or not. Deliberately NOT gated on
+    # issue_capture.enabled: a bound left set while capture is off comes back
+    # the moment capture is re-enabled.
     files = config.dig('issue_capture', 'max_public_files_per_run')
-    if files.is_a?(Integer) && files.positive? && !watchdog
-      violations << err(:public_files_need_watchdog, 'issue_capture.max_public_files_per_run',
-                        'autonomous public filing requires an enabled action-watchdog ' \
-                        '(INFERRED from security-spine.md §5 and the self-test at :152, not a ' \
-                        'literal config line)')
+    if files.is_a?(Integer) && files.positive?
+      violations << err(:public_files_band_c, 'issue_capture.max_public_files_per_run',
+                        "must be 0, got #{files}: filing a capture is Band C, so a human files " \
+                        'each draft (docs/lifecycle/community.md)')
     end
 
     if config.dig('secrets', 'execute_contributor_code') == true &&
@@ -590,15 +592,29 @@ module ConfigContract
   # An announcement can't be recalled, so it never runs at Band A, and B would
   # be the same procedure as C. Read through fetch_path: `autonomy: []` passes
   # the shape phase and `dig` raises on it. A non-string is an error, not a skip.
+  #
+  # A merge tops out at Band B: a revert restores the code, but not for anyone
+  # who already pulled or deployed it. C (a human merges by hand) is stricter
+  # and allowed.
   def self.band_violations(config)
     return [] unless config.key?('autonomy')
 
+    violations = []
     band = fetch_path(config, 'autonomy.announcements')
-    return [] if band.is_a?(String) && normalize_job_name(band) == 'c'
+    unless band.is_a?(String) && normalize_job_name(band) == 'c'
+      violations << err(:announcements_band_c, 'autonomy.announcements',
+                        "must be \"C\", got #{band.inspect}: an announcement can't be recalled, " \
+                        'so a human keys every post (docs/playbooks/autonomy-ladder.md)')
+    end
 
-    [err(:announcements_band_c, 'autonomy.announcements',
-         "must be \"C\", got #{band.inspect}: an announcement can't be recalled, so a human " \
-         'keys every post (docs/playbooks/autonomy-ladder.md)')]
+    merge = fetch_path(config, 'autonomy.pr_merge')
+    unless merge.is_a?(String) && %w[b c].include?(normalize_job_name(merge))
+      violations << err(:pr_merge_band_b, 'autonomy.pr_merge',
+                        "must be \"B\" or \"C\", got #{merge.inspect}: a revert doesn't reach " \
+                        'anyone who already pulled or deployed, so a merge never runs at Band A ' \
+                        '(docs/playbooks/autonomy-ladder.md)')
+    end
+    violations
   end
 
   # Runtimes differ on whether `Issue_Capture ` is `issue-capture`, so the job

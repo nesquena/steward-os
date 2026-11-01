@@ -34,12 +34,12 @@ the recipes, and the questions it needs to ask you to wire itself up.
 
 ## The core idea
 
-> Reading is cheap and safe; **writing to a public surface in the project's voice is the
-> irreversible act that needs a human decision.** Everything upstream of that line — discover,
-> classify, dedupe, review, draft, rank, gate — an agent can do autonomously with the right
-> guardrails. The irreversible, reputational acts stay human-gated. A reversible, mechanical public
-> write can run unattended with a watchdog. That membrane isn't a limitation; it's what makes running
-> the whole thing unattended *safe*.
+> Reading is cheap and safe; **writing to a public surface in the project's voice needs a human
+> decision unless it is reversible, mechanical and watched.** Everything upstream of that line —
+> discover, classify, dedupe, review, draft, rank, gate — an agent can do autonomously with the right
+> guardrails. The irreversible, reputational acts stay human-gated, and a reversible, mechanical
+> public write runs unattended only with a watchdog. That membrane isn't a limitation; it's what
+> makes running the whole thing unattended *safe*.
 
 ## Find your way
 

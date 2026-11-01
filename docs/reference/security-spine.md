@@ -188,7 +188,7 @@ this system are deterministic (no-LLM), reversible, *and* watchdogged — and wh
 *replies* are deliberately not built (drafting is fine; sending stays human).
 
 **What a role's output may carry.** A role that reads untrusted content writes text, and some of
-that text ends up in a public write: a bounce comment, an auto-filed issue, the wording of a close.
+that text ends up in a public write: a bounce comment, a drafted issue, the wording of a close.
 Being allowed to read something doesn't make it publishable. A Watcher reads the reporter's name and
 exact words and may publish neither. So what the write may quote is a smaller set: what is already
 public on the project's surfaces, plus the gate's own record of a run or review-tool pass on this
@@ -217,9 +217,9 @@ post a role's words predate them, apart from `issue-close-proposal`, which has a
 scope. None runs this check yet.
 
 ## 6. The vulnerability divert
-The confidence-tiered capture path ([community](../lifecycle/community.md#confidence-tiered-capture--action-the-safe-way-to-auto-file),
-[issues](../lifecycle/issue-lifecycle.md)) can auto-file a concrete, reproducible bug to the
-**public** tracker. That is exactly the shape of a vulnerability report, so the security check runs
+The confidence-tiered capture path ([community](../lifecycle/community.md#confidence-tiered-capture--action),
+[issues](../lifecycle/issue-lifecycle.md)) drafts a concrete, reproducible bug for a human to file to
+the **public** tracker. That is exactly the shape of a vulnerability report, so the security check runs
 **before** confidence tiering and short-circuits it: a suspected vulnerability never enters the
 HIGH/MEDIUM/LOW tiers at all.
 
@@ -244,7 +244,7 @@ human's private glance; the cost of a false negative is a public exploit leak.
 
 **Three entry points, one gate.** The divert runs at *every* point where a vulnerability can reach
 the public tracker:
-- **Capture / auto-file** — before confidence tiering, as above, *and before any public "captured"
+- **Capture / filing** — before confidence tiering, as above, *and before any public "captured"
   reaction is left* (the reaction is itself a partial disclosure).
 - **A public issue opened directly** — a reporter who skips the private path and files on the tracker.
   Run the same detector at triage: on a hit, the agent posts **no** substantive public reply and no
@@ -266,7 +266,7 @@ the public tracker:
   itself a partial disclosure ("there's a live bug here").
 
 **Fail closed when unconfigured.** The divert must always have a *private* terminal destination. If
-`security_contact` is unset, suppress the auto-file and route the scrubbed summary to the human alarms
+`security_contact` is unset, suppress the draft and route the scrubbed summary to the human alarms
 channel; if that too is unset, hold it in the private pull index (which must never live on a public
 surface) and raise setup. The absence of configuration must **never** fall back to public-filing, and
 never to a silent "acknowledged" that reached no human — so an adopter enabling autonomous capture
