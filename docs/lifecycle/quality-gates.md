@@ -16,9 +16,9 @@ time it catches automatically what today still needs a judgment gate. The other 
 catch what the suite doesn't *yet* cover, and each thing they catch should become a new test.
 
 The gates are **layered and independent.** No single gate is trusted alone; they catch different
-classes of defect, and on a reproduced finding the stricter verdict wins. Every gate runs on one
-pinned commit, from its own copy, never a tree someone is still editing: a verdict on a moving tree
-belongs to no head.
+classes of defect, and on a reproduced finding the stricter verdict wins. Every gate runs on pinned
+commits (the head, plus trunk for the differential), each from its own copy, never a tree someone is
+still editing: a verdict on a moving tree belongs to no head.
 
 ---
 
@@ -92,9 +92,7 @@ workflows would start for this PR. A push run on an in-repo head counts; there a
 trunk's CI starts nothing for this PR, such as CI on pushes to trunk alone, or a path filter that
 skips these files. Some hosts don't run PR-triggered workflows while a branch can't merge cleanly,
 so a green tally on its head can be the push run alone. Confirm the branch merges cleanly and that
-those runs exist for that exact head; a missing or partial one leaves gate 5 not all-clear. A PR
-that changes the CI workflows themselves clears once the operator accepts its workflow as the gate
-configuration.
+those runs exist for that exact head; a missing or partial one leaves gate 5 not all-clear.
 
 ---
 
