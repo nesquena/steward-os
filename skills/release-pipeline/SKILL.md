@@ -72,13 +72,14 @@ pulled or deployed, so a merge isn't
    how the candidate is built, never whether this check runs. Or test a pre-release that the
    project's own release pipeline published from that commit (a staging channel or a registry
    pre-release tag), and promote that exact artifact unchanged. If the final release must be rebuilt
-   (its version string changes, say), that rebuild is the candidate. Use it the way a user would:
-   follow the project's documented install or quickstart, and exercise whatever the release notes
-   say changed. Where users upgrade from an earlier release, also upgrade from it, following the
-   release notes as written. Compare its contents and metadata with the previous release, if any,
-   for missing or stray files and unintended changes to requirements or dependencies. The release
-   commit carries every merged contributor's change, so building a candidate yourself, and using any
-   candidate, follows the [sandbox
+   (its version string changes, say), that rebuild is the candidate. Keep the candidate that passed,
+   and its digest, for this release commit where contributors can't write, like the sandbox rule's
+   receipt. Use it the way a user would: follow the project's documented install or quickstart, and
+   exercise whatever the release notes say changed. Where users upgrade from an earlier release,
+   also upgrade from it, following the release notes as written. Compare its contents and metadata
+   with the previous release, if any, for missing or stray files and unintended changes to
+   requirements or dependencies. The release commit carries every merged contributor's change, so
+   building a candidate yourself, and using any candidate, follows the [sandbox
    rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution) like step 1.
    Where that rule can't be met (signing needs a credential; fetching dependencies or installing
    from a registry needs the network, as most do), a human builds or runs it under the rule's
@@ -92,13 +93,16 @@ pulled or deployed, so a merge isn't
    Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
    real **and** (if you deploy) the running version serves the change. Re-derive the live version;
-   never claim shipped from a passed gate alone. For a published artifact, confirm it is the tested
-   candidate: if the tested file was uploaded as is, its checksum or digest matches. Otherwise
-   unpack both the way an install would and compare what the install keeps or runs, including file
-   contents, modes (such as the executable or setuid bit), file capabilities and ownership where the
-   install keeps them, install scripts, an image's whole config (such as user, entrypoint, command
-   and environment), requirements and dependencies. Only the signature, and what an install
-   discards, may differ. On a mismatch, stop: step 6 waits, and a human decides whether to yank the
+   never claim shipped from a passed gate alone. For a published artifact, confirm its digest
+   matches the tested candidate's from step 4, for this release commit and of the same kind (for an
+   image, the same manifest, or for a multi-platform image the same index). When it doesn't, a human
+   compares the published artifact with the kept tested candidate before step 6, from what each
+   records, nested archives and layers included, not from an unpack (its result depends on the
+   unpacker and who runs it), covering everything an install keeps or runs: contents, modes,
+   ownership, extended attributes, install scripts, an image's whole config, requirements and
+   dependencies. If the human finds only differences the release process explains (a signature added
+   at publish, say), step 6 goes ahead. Any other difference, or no kept candidate or digest for
+   this release commit, is a mismatch: stop, step 6 waits, and a human decides whether to yank the
    release or fix forward.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
@@ -131,7 +135,8 @@ trailer exists; it does **not** prove the *name* is right.
 ## Verification
 - The change is merged, tagged, and (if deployed) the live version serves it — all three re-derived,
   not assumed.
-- A published artifact is the candidate that was tested (step 4), when the project publishes one.
+- A published artifact is the candidate that was tested (step 4), or differs from it only as step 5
+  allows, when the project publishes one.
 - The author is credited identically on every surface, and the handle is the real author of the work.
 - The PR and its issues are closed with version + thanks; the trust ledger has one terminal event.
 - No branch/worktree left dangling.
