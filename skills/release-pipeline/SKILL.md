@@ -94,11 +94,12 @@ pulled or deployed, so a merge isn't
    real **and** (if you deploy) the running version serves the change. Re-derive the live version;
    never claim shipped from a passed gate alone. For a published artifact, confirm it is the tested
    candidate: if the tested file was uploaded as is, its checksum or digest matches. Otherwise
-   unpack both the way an install would and compare what the install keeps or runs: file contents,
-   modes (such as the executable or setuid bit), ownership where the install keeps it, install
-   scripts, an image's config (user, entrypoint, environment), requirements and dependencies. Only
-   the signature, and what an install discards, may differ. On a mismatch, stop: step 6 waits, and a
-   human decides whether to yank the release or fix forward.
+   unpack both the way an install would and compare what the install keeps or runs, including file
+   contents, modes (such as the executable or setuid bit), file capabilities and ownership where the
+   install keeps them, install scripts, an image's whole config (such as user, entrypoint, command
+   and environment), requirements and dependencies. Only the signature, and what an install
+   discards, may differ. On a mismatch, stop: step 6 waits, and a human decides whether to yank the
+   release or fix forward.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
