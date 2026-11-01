@@ -62,36 +62,37 @@ merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-patt
    **Ship the artifact you tested**, when the project publishes a versioned artifact for others to
    install or pull (a package, binary or image on a registry, store or download page), however often
    it releases. Whether it does, and how the artifact is built, come from the operator-accepted
-   configuration (`project.release_model`) and the operator-accepted trunk release tooling, never
-   from the release commit, which carries every merged contributor's change. A project that only
-   deploys its own service or site skips this, even when it builds an image to do so, since step 5
-   checks the live version. Before publishing the release, build the candidate that way, from the
-   release commit, or test a pre-release the tooling publishes from that commit (a staging channel
-   or a registry pre-release tag) and promote that exact artifact unchanged. If the final release
-   must be rebuilt (its version string changes, say), that rebuild is the candidate. Use it the way
-   a user would: follow the project's documented install or quickstart, and exercise whatever the
-   release notes say changed. Where users upgrade from an earlier release, also upgrade from it,
-   following the release notes as written. Compare its contents and metadata with the previous
-   release, if any, for missing or stray files and unintended changes to requirements or
-   dependencies. Building and running the candidate follows the [sandbox
+   configuration (`project.release_model`) and the release tooling as the operator accepted it,
+   never as this release's merged changes left it. If the configuration doesn't say, ask the
+   operator; don't skip. A project that only deploys its own service or site skips this, even when
+   it builds an image to do so, since step 5 checks the live version. Before publishing the release,
+   build the candidate that way, from the release commit, or test a pre-release published from that
+   commit (a staging channel or a registry pre-release tag) and promote that exact artifact
+   unchanged. A pre-release comes from the project's own release pipeline or a human, never from the
+   agent running the release commit's tooling with credentials. If the final release must be rebuilt
+   (its version string changes, say), that rebuild is the candidate. Use it the way a user would:
+   follow the project's documented install or quickstart, and exercise whatever the release notes
+   say changed. Where users upgrade from an earlier release, also upgrade from it, following the
+   release notes as written. Compare its contents and metadata with the previous release, if any,
+   for missing or stray files and unintended changes to requirements or dependencies. Building and
+   running the candidate, dependency resolution included, follows the [sandbox
    rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution) like step 1,
-   with the candidate, its dependencies and the previous release fetched (not installed) before
-   entering the sandbox. A build step that needs a credential, such as signing or a private
-   registry, doesn't run in the sandbox: take the pre-release path for that artifact. If the
-   candidate fails, stop: don't tag or publish the release, and step 6's closes wait too, where the
-   host hasn't already closed them at merge. The fix is a new change through
+   since the release commit carries every merged contributor's change; where it can't run there (it
+   needs a credential, such as signing, or the network), take the pre-release path or hand the
+   candidate to a human. If the candidate fails, stop: don't tag or publish the release, and step 6
+   waits, except for closes the host already made at merge. The fix is a new change through
    [`pr-deep-review`](../pr-deep-review/SKILL.md), and the candidate is built or pre-released again
    from the new release commit.
 
    Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
-   real **and** (if you deploy) the running version serves the change **and** (if you publish) the
-   published artifact is the tested candidate. Re-derive the live version; never claim shipped from
-   a passed gate alone. For a published artifact: if the tested file was uploaded as is, its
-   checksum or digest matches; otherwise compare contents and metadata, setting the signature and
-   archive metadata aside, since a rebuild or a signing step can change the checksum while every
-   file matches. A mismatch is not shipped: step 6 waits, and a human decides whether to yank the
-   release or fix forward.
+   real **and** (if you deploy) the running version serves the change. Re-derive the live version;
+   never claim shipped from a passed gate alone. For a published artifact, confirm it is the tested
+   candidate: if the tested file was uploaded as is, its checksum or digest matches; otherwise
+   compare contents and metadata, setting aside only the signature and archive-format details
+   (timestamps, file order, permissions), never requirements or dependencies, since a rebuild or a
+   signing step can change the checksum while every file matches. On a mismatch, stop: step 6
+   waits, and a human decides whether to yank the release or fix forward.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
