@@ -41,7 +41,8 @@ Quality starts before the fix, not after:
   the part you skipped.
 - **Judge the run by the runner's exit status and its own summary, not by a filter of its
   output.** Summary lines differ between test runners and their versions, so a filter can print
-  nothing for a failed run, and it can match a server's log lines in a passing one.
+  nothing for a failed run, and it can match a server's log lines in a passing one. A run that found
+  no tests is not a pass.
 - Every fix adds a regression test. The suite only grows; coverage is a ratchet.
 - A green suite is necessary but **not sufficient** — it only covers what's been written. That's why
   the other gates exist.
@@ -49,12 +50,14 @@ Quality starts before the fix, not after:
   actually exercises the changed lines, so it can't pass vacuously.
 - **Changes with a runtime effect get an old-against-new differential** where their inputs can be
   replayed: code changes, and config or docs changes that alter behaviour (a flipped default, say).
-  A change that claims no behaviour change still gets one, and every difference it shows is a
-  finding. Run the same broad inputs (the suite's fixtures plus realistic samples, not only the new
-  tests' cases) through trunk and the change, normalize nondeterministic output (times, ids,
-  ordering), and require every difference to map to an intent the change states. Both halves run the
-  PR's fixtures, so both run where the sandbox rule puts the suite. When a differential was not run,
-  the verdict says so and why. Targeted tests cover the cases the author thought of, and the
+  A claim of no behaviour change doesn't exempt such a change (a refactor, say): it still gets one,
+  and every difference it shows is a finding. Run the same broad inputs (the suite's fixtures plus
+  realistic samples, not only the new tests' cases) through trunk and the change, normalize
+  nondeterministic output (times, ids, ordering; a difference trunk also shows against itself is
+  noise to normalize, not a finding), and require every difference to map to an intent the change
+  states. Both halves run the PR's fixtures, so both run where the sandbox rule puts the suite. A
+  differential that applies but was not run leaves the gate not all-clear; when none applies, the
+  verdict says so and why. Targeted tests cover the cases the author thought of, and the
   differential finds the rest.
 
 ### 2. Automated code review
@@ -81,9 +84,10 @@ dossier. A prior "looks clean" may have verified only one code path or a stale b
 independent run is what actually authorizes the merge. A new head or a changed trunk voids the
 all-clear, even when the new head only takes an optional suggestion.
 
-Check that CI ran in full, too. Some hosts don't run PR-triggered workflows while a branch can't
-merge cleanly, so a green tally on its head can be the push run alone. Confirm the branch merges
-cleanly and that the PR-triggered runs exist for that exact head before trusting the tally.
+Where trunk's accepted configuration has CI, check that it ran in full, too. Some hosts don't run
+PR-triggered workflows while a branch can't merge cleanly, so a green tally on its head can be the
+push run alone. Confirm the branch merges cleanly and that the PR-triggered runs exist for that
+exact head before trusting the tally.
 
 ---
 
