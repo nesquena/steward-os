@@ -103,11 +103,11 @@ pulled or deployed, so a merge isn't
    each entry's type and link target, contents, modes, ownership, extended attributes and file
    capabilities where the format records them, install scripts, an image's whole config,
    requirements and dependencies. Step 6 goes ahead only if the human traces every difference to a
-   step of the release process and finds that none changes what the installed software does or may
-   do (a signature that only lets it be verified, or entry order and timestamps nothing reads, say;
-   not a repeated path, a format's required first entry or an mtime a build compares). Any other
-   difference, or no kept candidate or digest for this release commit, is a mismatch: stop, step 6
-   waits, and a human decides whether to yank the release or fix forward.
+   step of the release process and finds that none changes what installing it, or the installed
+   software, does or may do (a signature that only lets it be verified, or entry order and
+   timestamps nothing reads, say; not a repeated path, a format's required first entry or an mtime a
+   build compares). Any other difference, or no kept candidate or digest for this release commit, is
+   a mismatch: stop, step 6 waits, and a human decides whether to yank the release or fix forward.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
