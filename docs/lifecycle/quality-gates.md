@@ -52,16 +52,18 @@ Quality starts before the fix, not after:
   replayed: code changes, and config or docs changes that alter behaviour (a flipped default, say).
   A claim of no behaviour change doesn't exempt such a change (a refactor, say): it still gets one,
   and every difference it shows is a finding. Run the same broad inputs (the suite's fixtures plus
-  realistic samples, not only the new tests' cases) through trunk and the change, normalize
-  nondeterministic output (times, ids, ordering), and require every difference to map to an intent
-  the change states. Any other difference trunk shows against itself is a
-  [flake](#flakes-never-tolerate-one), to log and fix rather than normalize away; until it's fixed,
-  a difference on that input stays a finding. Both halves get trunk's fixtures plus the PR's,
-  including both versions of any fixture the PR edits, so a fixture the PR removes or changes still
-  counts. Replay each input on its own; an input only one side can load is a difference like any
-  other. Both halves run where the sandbox rule puts the suite. A differential that applies but was
-  not run leaves the gate not all-clear; when none applies, the verdict says so and why. Targeted
-  tests cover the cases the author thought of, and the differential finds the rest.
+  realistic samples, not only the new tests' cases) through trunk, the change, and trunk a second
+  time. Normalize only the nondeterministic output the second trunk run exposes (times, ids,
+  ordering); an order the change breaks that trunk kept is a difference, not noise. Any other
+  difference trunk shows against itself is a [flake](#flakes-never-tolerate-one), to log and fix
+  rather than normalize away; until it's fixed, a difference on that input stays a finding. Then
+  require every difference to map to an intent the change states. Both halves get trunk's fixtures
+  plus the PR's, including both versions of any fixture the PR edits, so a fixture the PR removes or
+  changes still counts. Replay each input on its own; an input only one side can load is a
+  difference like any other. Both halves run where the sandbox rule puts the suite. A differential
+  that applies but was not run leaves the gate not all-clear; when none applies, the verdict says so
+  and why. Targeted tests cover the cases the author thought of, and the differential finds the
+  rest.
 
 ### 2. Automated code review
 An independent reviewer pass over the diff (a code-review tool or a dedicated reviewer agent). It
