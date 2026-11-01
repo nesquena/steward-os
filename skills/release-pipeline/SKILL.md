@@ -58,9 +58,20 @@ merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-patt
    or "absorb" erase who wrote it. See [contributor recognition](../../docs/lifecycle/contributor-recognition.md).
 4. **Stamp the release.** Changelog entry naming the contributor; bump any in-product version marker
    so it matches the tag. Tag the release.
+
+   **Ship the artifact you tested** (only when the project publishes a versioned artifact, such as a
+   package, binary or image; a continuously deployed service skips this, since step 5 checks the
+   live version). Before you tag, or run whatever publishes, build the candidate the way the release
+   tooling will, from the release commit, and use it the way a user would: install it and run the
+   main flows. Where users upgrade from an earlier release, also upgrade from that release by
+   following the release notes as written. Compare its contents and metadata with the previous
+   release, looking for missing or stray files and unintended changes to requirements or
+   dependencies.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
    real **and** (if you deploy) the running version serves the change. Re-derive the live version;
-   never claim shipped from a passed gate alone.
+   never claim shipped from a passed gate alone. For a published artifact, confirm its contents
+   match the tested candidate's. Compare contents, not checksums: a build from another commit can
+   differ in checksum while every file matches.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
