@@ -78,6 +78,7 @@ module ConfigContract
     job_flag_agree
     announcements_band_c
     pr_merge_band_b
+    host_closing_off
     no_model_job
   ].freeze
 
@@ -329,13 +330,22 @@ module ConfigContract
     Violation.new(severity: :error, rule: rule, key: key, message: message)
   end
 
+  # Every repository says whether its host closes a linked issue at merge. The
+  # shape phase can't tell: it merges list entries, so a second entry missing the
+  # key would pass it. Absence is nil here and fails closed like a present null.
   def self.repository_violations(config)
     violations_for_each(config, 'repositories') do |repo, i|
+      found = []
       value = repo['visibility']
-      next [] if VISIBILITIES.include?(value)
-
-      [err(:type_enum, "repositories[#{i}].visibility",
-           "expected one of #{VISIBILITIES.join(', ')}, got #{value.inspect}")]
+      unless VISIBILITIES.include?(value)
+        found << err(:type_enum, "repositories[#{i}].visibility",
+                     "expected one of #{VISIBILITIES.join(', ')}, got #{value.inspect}")
+      end
+      closes = repo['host_closes_on_merge']
+      unless [true, false].include?(closes)
+        found << type_error(:type_boolean, "repositories[#{i}].host_closes_on_merge", closes, 'true or false')
+      end
+      found
     end
   end
 
@@ -550,7 +560,7 @@ module ConfigContract
                         '(config.template.yaml:106)')
     end
 
-    violations + band_violations(config) + job_violations(config) +
+    violations + band_violations(config) + host_closing_violations(config) + job_violations(config) +
       unverifiable_warning(config, outputs, index)
   end
 
@@ -615,6 +625,37 @@ module ConfigContract
                         '(docs/playbooks/autonomy-ladder.md)')
     end
     violations
+  end
+
+  # Hosts where closing a linked issue at merge is a per-repository setting an
+  # adopter can turn off (setup/setup-interview.md, question 2).
+  HOSTS_WITH_REPO_CLOSING_SWITCH = %w[github.com gitlab.com].freeze
+
+  # Unless every merge is the release, an issue stays open until the release that
+  # ships its fix (issue-autoclose, release-pipeline step 6), so a host that can
+  # turn closing at merge off per repository must have it off. Elsewhere `true`
+  # is the declared fallback: the release names the version on issues the host
+  # already closed. A release model that isn't a string reading "continuous"
+  # counts as tagged, so a typo can't switch the rule off.
+  def self.host_closing_violations(config)
+    style = fetch_path(config, 'project.release_model.style')
+    return [] if style.is_a?(String) && normalize_job_name(style) == 'continuous'
+
+    violations_for_each(config, 'repositories') do |repo, i|
+      host = repo['host']
+      next [] unless repo['host_closes_on_merge'] == true && host.is_a?(String) &&
+                     HOSTS_WITH_REPO_CLOSING_SWITCH.include?(normalize_host(host))
+
+      [err(:host_closing_off, "repositories[#{i}].host_closes_on_merge",
+           "must be false on #{normalize_host(host)}: an issue stays open until the release that " \
+           'ships its fix, and this host turns closing at merge off per repository ' \
+           '(setup/setup-interview.md, question 2)')]
+    end
+  end
+
+  # `https://www.GitHub.com/` is github.com.
+  def self.normalize_host(host)
+    normalize_job_name(host).sub(%r{\A[a-z][a-z0-9+.-]*://}, '').sub(/\Awww\./, '').sub(%r{[/.]+\z}, '')
   end
 
   # Runtimes differ on whether `Issue_Capture ` is `issue-capture`, so the job

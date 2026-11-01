@@ -58,7 +58,7 @@ correct. That independent check is the watchdog.
    corresponding fact-check.
 
 > **Scope — this verifies *actions*, not all stored state.** The watchdog re-checks what autonomous
-> actions did. Two sibling checks cover the other classes of stored state: the reconcile pattern
+> actions did, including a close the host makes at merge where the config says it doesn't. Two sibling checks cover the other classes of stored state: the reconcile pattern
 > keeps hand-maintained *ledgers* honest, and a freshness audit keeps *artifacts that cite code*
 > (notes, handoffs, docs) true as the code moves. They verify against different ground truth, so
 > don't stretch the watchdog to cover them — see

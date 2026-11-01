@@ -17,7 +17,12 @@ repositories:                   # list every repo the project spans
     name: ""
     role: "primary"             # primary | desktop | mobile | docs | site | ...
     visibility: "public"
-  # - { host: github.com, owner: "", name: "", role: "desktop", visibility: public }
+    host_closes_on_merge: false # does the host close a linked issue when its PR merges? Turn that off
+                                # per repository (setup-interview question 2): an issue stays open until
+                                # its fix is released. true only on a host that can't turn it off, or for
+                                # a continuous release model; config-lint refuses true on github.com and
+                                # gitlab.com otherwise
+  # - { host: github.com, owner: "", name: "", role: "desktop", visibility: public, host_closes_on_merge: false }
 
 scope:                          # the fit/scope screen — the most important section
   anchors:                      # a change must serve at least one of these to be in-scope; the scoreboard grades how directly (scope_fit)

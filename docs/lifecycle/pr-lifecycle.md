@@ -157,8 +157,10 @@ and the gate re-runs. Only an all-clear gate advances to merge.
 ## [6] Close + credit
 
 Close the PR and any issues it resolves with a comment naming the version, and **thank the author by
-handle.** Update the [contributor trust ledger](contributor-recognition.md) with the outcome. Clean
-up branches/worktrees. The loop is only closed when the contributor has been credited.
+handle.** Where the repository's host closed those issues at merge (`host_closes_on_merge: true`),
+comment on them, and don't reopen them. Update the
+[contributor trust ledger](contributor-recognition.md) with the outcome. Clean up
+branches/worktrees. The loop is only closed when the contributor has been credited.
 
 ---
 

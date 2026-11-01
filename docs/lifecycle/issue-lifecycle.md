@@ -92,11 +92,19 @@ An issue closes without a human only when its fix is **provably shipped** and it
 resolved**, never partially. A close is [reversible](../playbooks/autonomy-ladder.md#what-reversible-means)
 by reopening, but a wrong close still costs the reporter's trust.
 The safe autonomous gate (Band A *with watchdog*) is mechanically strict:
-- a merged PR explicitly links the issue as closing it, **and**
+- a merged PR explicitly links the issue as closing it (in the PR's description; a keyword only in
+  a commit message doesn't link the PR), **and**
 - the merge commit is contained in a released tag (provably shipped, not just on the trunk), **and**
 - the issue is **single-surface** — if it enumerates several distinct symptoms, it does *not*
   auto-close; it routes to a human for full-surface verification, **and**
 - no "still broken" pushback after the fix, and no hold.
+
+The gate needs the issue still open at release. GitHub and GitLab close a linked issue at merge
+unless that's turned off per repository, so unless every merge is the release, each repository turns
+it off and declares so (`host_closes_on_merge: false`,
+[setup interview](../../setup/setup-interview.md) question 2), and the watchdog flags a close the host
+made at merge. Where a host can't turn it off, the issue closes at merge and the release names the
+version on it.
 
 Anything short of that stays open and is surfaced to a human. **Under-close rather than mis-close** —
 a wrongly-closed issue erodes reporter trust. Every autonomous close is logged and

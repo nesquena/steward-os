@@ -36,6 +36,12 @@ description: Independently fact-check the autonomous actions the system took (is
      marker? Did every vulnerability-diverted item receive **no** public mark? → a mark without a
      staged record, a missing/duplicate mark, or any public mark on a diverted item = 🔴; a stale
      nonterminal capture intent with no public action yet = 🟡.
+   - **Host closes** (no ledger: the host acts on its own, and nothing in the system records it):
+     for each repository whose `host_closes_on_merge` is `false`, read what closed each issue closed
+     since the last run. On GitHub that's the `ClosedEvent`'s `closer`; on GitLab, the "closed via
+     merge request" or "closed via commit" system note. → an issue the host closed from a merge or a
+     commit = 🟡: closing at merge is on again against the config, so a human turns it off and decides
+     about the issues it closed early.
    - **(Add a check here for every new autonomous action — same change that adds the action.)**
 3. **Classify severities.** 🔴 = correctness failure (an action was *wrong* — act now). 🟡 = drift
    (stale, reconcile soon).
@@ -54,5 +60,7 @@ description: Independently fact-check the autonomous actions the system took (is
 
 ## Verification
 - Deliberately record a *wrong* action (in a test ledger) and confirm the watchdog flags it 🔴.
+- On a repository declared `host_closes_on_merge: false`, merge a PR that closes a test issue with
+  the host's closing on, and confirm the watchdog flags it 🟡.
 - On a clean state, the watchdog is silent.
 - Every autonomous public action in the system has a corresponding check here.

@@ -63,7 +63,8 @@ pulled or deployed, so a merge isn't
    real **and** (if you deploy) the running version serves the change. Re-derive the live version;
    never claim shipped from a passed gate alone.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
-   version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
+   version and **thanking the author by handle.** On a repository whose `host_closes_on_merge` is
+   `true`, the host closed those issues at merge: comment on them, and don't reopen them. Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
    Clean up the branch/worktree.
 

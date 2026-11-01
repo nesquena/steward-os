@@ -408,7 +408,7 @@ end
 class TypeTest < Minitest::Test
   def base
     {
-      'repositories' => [{ 'visibility' => 'public' }],
+      'repositories' => [{ 'visibility' => 'public', 'host_closes_on_merge' => false }],
       'community' => { 'chat' => { 'monitor' => false, 'platform' => '', 'capture_reaction' => '' } },
       'issue_capture' => {
         'enabled' => false, 'capture_marker' => '', 'queue_path' => '',
@@ -468,6 +468,24 @@ class TypeTest < Minitest::Test
     v = find(cfg, :type_enum)
     assert_equal 'repositories[0].visibility', v.key
     assert_match(/public/, v.message)
+  end
+
+  def test_host_closes_on_merge_must_be_a_boolean
+    ['false', nil, 0].each do |value|
+      cfg = base
+      cfg['repositories'][0]['host_closes_on_merge'] = value
+      v = find(cfg, :type_boolean)
+      assert v, value.inspect
+      assert_equal 'repositories[0].host_closes_on_merge', v.key
+    end
+  end
+
+  # The shape phase merges list entries, so only this rule sees a second
+  # repository that leaves the key out.
+  def test_every_repository_declares_host_closing
+    cfg = base
+    cfg['repositories'] << { 'visibility' => 'public' }
+    assert_equal 'repositories[1].host_closes_on_merge', find(cfg, :type_boolean)&.key
   end
 
   def test_non_boolean_job_enabled_is_an_error
@@ -557,7 +575,7 @@ class SemanticTest < Minitest::Test
   # is satisfied here, so each test below breaks exactly one thing.
   def base
     {
-      'repositories' => [{ 'visibility' => 'private' }],
+      'repositories' => [{ 'visibility' => 'private', 'host_closes_on_merge' => false }],
       'community' => { 'chat' => { 'monitor' => true, 'platform' => 'discord',
                                    'capture_reaction' => 'white_check_mark' } },
       'issue_capture' => {
@@ -687,6 +705,58 @@ class SemanticTest < Minitest::Test
     assert_nil rule(cfg, :no_model_job)
   end
 
+  # base plus a release model and repositories on `hosts`. The config is its own
+  # template here: base declares neither project nor host.
+  def closing(closes, hosts: ['github.com'], style: 'tag-per-release')
+    cfg = base
+    cfg['project'] = { 'release_model' => { 'style' => style } }
+    cfg['repositories'] = hosts.map do |h|
+      { 'host' => h, 'visibility' => 'private', 'host_closes_on_merge' => closes }
+    end
+    ConfigContract.check(config: cfg, template: cfg).select { |x| x.rule == :host_closing_off }
+  end
+
+  def test_host_closing_on_at_github_is_refused_for_a_tagged_release
+    v = closing(true).first
+    assert_equal :error, v.severity
+    assert_equal 'repositories[0].host_closes_on_merge', v.key
+  end
+
+  def test_gitlab_and_spellings_of_a_switch_host_are_refused
+    ['gitlab.com', 'GitHub.com', ' github.com ', "\u200Bgithub.com", 'https://www.github.com/',
+     'github.com.'].each { |h| refute_empty closing(true, hosts: [h]), h.inspect }
+  end
+
+  def test_host_closing_off_passes
+    assert_empty closing(false)
+  end
+
+  def test_a_continuous_release_may_leave_host_closing_on
+    ['continuous', ' Continuous'].each { |s| assert_empty closing(true, style: s), s.inspect }
+  end
+
+  def test_any_release_model_but_continuous_counts_as_tagged
+    ['other', '', 'tag_per_release', nil, 3].each { |s| refute_empty closing(true, style: s), s.inspect }
+  end
+
+  def test_a_host_without_a_per_repository_switch_may_declare_closing_on
+    ['codeberg.org', 'git.example.com', 'github.company.com'].each do |h|
+      assert_empty closing(true, hosts: [h]), h.inspect
+    end
+  end
+
+  def test_each_repository_is_checked
+    v = closing(true, hosts: ['codeberg.org', 'gitlab.com'])
+    assert_equal ['repositories[1].host_closes_on_merge'], v.map(&:key)
+  end
+
+  def test_a_project_list_is_an_error_not_a_crash
+    cfg = base
+    cfg['project'] = []
+    cfg['repositories'] = [{ 'host' => 'github.com', 'visibility' => 'private', 'host_closes_on_merge' => true }]
+    refute_empty ConfigContract.check(config: cfg, template: cfg).select { |x| x.rule == :host_closing_off }
+  end
+
   # Capture off, announcements job on: the only thing that needs the index.
   def announcing_without_capture(index:, visibility: 'private')
     cfg = with_jobs({ 'name' => 'announcements', 'every' => '8h', 'enabled' => true, 'agent' => false })
@@ -813,7 +883,7 @@ class SemanticTest < Minitest::Test
 
   def test_repo_relative_state_path_in_a_public_repo_is_an_error
     cfg = base
-    cfg['repositories'] = [{ 'visibility' => 'public' }]
+    cfg['repositories'] = [{ 'visibility' => 'public', 'host_closes_on_merge' => false }]
     cfg['issue_capture']['ledger_path'] = 'state/ledger.md'
     v = rule(cfg, :state_paths_not_public)
     assert_equal :error, v.severity
@@ -828,14 +898,14 @@ class SemanticTest < Minitest::Test
 
   def test_repo_relative_index_in_a_public_repo_is_an_error
     cfg = base
-    cfg['repositories'] = [{ 'visibility' => 'public' }]
+    cfg['repositories'] = [{ 'visibility' => 'public', 'host_closes_on_merge' => false }]
     cfg['scheduled_jobs']['outputs']['index_path'] = 'state/index.md'
     assert_equal :error, rule(cfg, :index_not_public).severity
   end
 
   def test_mixed_visibility_still_errors_fail_closed
     cfg = base
-    cfg['repositories'] = [{ 'visibility' => 'private' }, { 'visibility' => 'public' }]
+    cfg['repositories'] = [{ 'visibility' => 'private', 'host_closes_on_merge' => false }, { 'visibility' => 'public', 'host_closes_on_merge' => false }]
     cfg['scheduled_jobs']['outputs']['index_path'] = 'state/index.md'
     assert_equal :error, rule(cfg, :index_not_public).severity
   end
@@ -861,7 +931,7 @@ class SemanticTest < Minitest::Test
 
   def test_public_repo_index_with_capture_disabled_is_fine
     cfg = base
-    cfg['repositories'] = [{ 'visibility' => 'public' }]
+    cfg['repositories'] = [{ 'visibility' => 'public', 'host_closes_on_merge' => false }]
     cfg['issue_capture']['enabled'] = false
     cfg['community']['chat']['monitor'] = false
     cfg['issue_capture']['capture_marker'] = ''
@@ -963,7 +1033,7 @@ class SemanticTest < Minitest::Test
 
   def test_dotdot_escaped_index_in_a_public_repo_still_does_not_false_error
     cfg = base
-    cfg['repositories'] = [{ 'visibility' => 'public' }]
+    cfg['repositories'] = [{ 'visibility' => 'public', 'host_closes_on_merge' => false }]
     cfg['scheduled_jobs']['outputs']['index_path'] = '../elsewhere/index.md'
     # Outside the repo → undecidable, handled by the warning, not index_not_public.
     assert_nil rule(cfg, :index_not_public)
@@ -971,7 +1041,7 @@ class SemanticTest < Minitest::Test
 
   def test_plain_repo_relative_index_is_still_repo_relative
     cfg = base
-    cfg['repositories'] = [{ 'visibility' => 'public' }]
+    cfg['repositories'] = [{ 'visibility' => 'public', 'host_closes_on_merge' => false }]
     cfg['scheduled_jobs']['outputs']['index_path'] = 'state/index.md'
     assert_equal :error, rule(cfg, :index_not_public).severity
   end
@@ -1061,7 +1131,7 @@ class SemanticTest < Minitest::Test
   # rule the type error masked.
   def test_a_type_error_suppresses_a_semantic_rule_that_would_otherwise_fire
     cfg = base
-    cfg['repositories'] = [{ 'visibility' => 'public' }]
+    cfg['repositories'] = [{ 'visibility' => 'public', 'host_closes_on_merge' => false }]
     cfg['scheduled_jobs']['outputs']['index_path'] = 'state/index.md'
     cfg['secrets']['execute_contributor_code'] = 'yes'
 
