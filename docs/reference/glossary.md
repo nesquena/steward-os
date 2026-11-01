@@ -129,9 +129,9 @@ stored artifacts (handoff notes, design docs, "it lives at X" memories) against 
 flags the stale ones. A stale artifact is *active misinformation*, not just missing data — worse than
 none.
 
-**Confidence-tiered capture→action** — gating an autonomous public write (e.g. filing an issue from
-a chat report) by confidence: HIGH auto-acts (privacy-scrubbed), MEDIUM drafts-for-human-approval,
-LOW captures only.
+**Confidence-tiered capture→action** — gating a public write (e.g. filing an issue from a chat
+report) by confidence: HIGH and MEDIUM draft for a human to file (HIGH privacy-scrubbed, fail
+closed), LOW captures only. Nothing files autonomously.
 
 **Notify-from-job, act-on-reply** — the pattern for human-in-the-loop confirmation over chat: a
 scheduled job can SEND a prompt but can't RECEIVE the answer (it's detached from the live

@@ -197,6 +197,7 @@ class IssueCaptureContractTest < Minitest::Test
     assert_operator capture.index('Append `indexed`'), :<, capture.index('terminal `captured` event')
     assert_includes watchdog, '[`issue-capture`](../issue-capture/SKILL.md)'
     refute_includes watchdog, '**Autonomous issue files**', 'filing a capture is Band C: nothing files autonomously'
+    assert_includes watchdog, '**Filed captures**'
     assert_includes community, 'surface it to a human, who files it (Band C)'
     assert_includes community, '`chat-monitor` only reads'
     assert_includes community, '`issue-capture` owns the untrusted-data guard'

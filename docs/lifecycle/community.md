@@ -38,14 +38,15 @@ dedupe, queue, ledger, reaction, and checkpoint. Chat must not implement a secon
   a product you don't own.
 
 ## Confidence-tiered capture → action
-`issue-capture` assigns the tier and stages the record; it never files. A downstream filing action
-uses the tier because *filing an issue to the public tracker from a chat report* is a public write:
+`issue-capture` assigns the tier and stages the record; it never files. The tier decides what is
+drafted and surfaced for the human who files, because *filing an issue to the public tracker from a
+chat report* is a public write:
 - **SECURITY** (checked first, before the tiers) → **never filed, never drafted publicly.** A
   report that looks like a vulnerability — unauthorized access, data exposure, tampering, code
   execution, or attacker-triggerable service loss, by wording or by shape — diverts to the [private disclosure path](../reference/security-spine.md#6-the-vulnerability-divert):
   a PII-scrubbed summary through its complete fail-closed destination chain, a neutral private
   acknowledgement to the reporter, and **no public "captured" reaction**. Missing configuration
-  suppresses the file and raises setup privately — it never falls back to the public tracker or a
+  suppresses the draft and raises setup privately — it never falls back to the public tracker or a
   silent drop. Detection is high-recall on purpose: a false positive is a private glance, a false
   negative is an irreversible public leak.
 - **HIGH** (a concrete, reproducible bug naming a specific surface, that passed dedup) → **draft** a
@@ -68,9 +69,9 @@ concrete, reproducible reports — the ones the HIGH tier would draft first — 
 checked for a vulnerability first: a live exploit is the one public write you can never take back.
 
 ### Human-in-the-loop approval over chat
-For the MEDIUM/LOW tiers, the confirmation channel has one non-obvious constraint worth knowing: a
-**scheduled job can send a prompt but can't receive the answer** — it's detached from the live chat
-connection. So wire approval as *notify-from-the-job, act-on-the-reply*: the job posts "Bug X queued
+For the HIGH and MEDIUM tiers, the confirmation channel has one non-obvious constraint worth
+knowing: a **scheduled job can send a prompt but can't receive the answer** — it's detached from the
+live chat connection. So wire approval as *notify-from-the-job, act-on-the-reply*: the job posts "Bug X queued
 — reply to approve," and the human's **reply (a fresh live agent turn) does the filing.** Don't build
 a job that waits for a response. Rich widgets like inline buttons can be nice, but a tap only acts if
 the platform integration already handles it — a typed reply is the build-nothing path that always
