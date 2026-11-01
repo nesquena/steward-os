@@ -82,9 +82,10 @@ merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-patt
    Where that rule can't be met (signing needs a credential; fetching dependencies or installing
    from a registry needs the network, as most do), a human builds or runs it under the rule's
    human-run receipt, naming the release commit and the artifact's digest, checked fresh before
-   tagging. If the candidate fails, stop: don't tag or publish the release, and step 6 waits, except
-   for closes the host already made at merge. The fix is a new change through `pr-deep-review`, and
-   the candidate is built or pre-released again from the new release commit.
+   tagging. No receipt, or an old or incomplete one, means the candidate is untested: stop as below.
+   If the candidate fails, stop: don't tag or publish the release, and step 6 waits, except for
+   closes the host already made at merge. The fix is a new change through `pr-deep-review`, and the
+   candidate is built or pre-released again from the new release commit.
 
    Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
@@ -92,9 +93,10 @@ merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-patt
    never claim shipped from a passed gate alone. For a published artifact, confirm it is the tested
    candidate: if the tested file was uploaded as is, its checksum or digest matches; otherwise
    compare contents and metadata, setting aside only the signature and archive-format details
-   (timestamps, file order, permissions), never requirements or dependencies, since a rebuild or a
-   signing step can change the checksum while every file matches. On a mismatch, stop: step 6
-   waits, and a human decides whether to yank the release or fix forward.
+   (timestamps, entry order, owner and group), never file modes such as the executable bit,
+   requirements or dependencies, since a rebuild or a signing step can change the checksum while
+   every file matches. On a mismatch, stop: step 6 waits, and a human decides whether to yank the
+   release or fix forward.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
