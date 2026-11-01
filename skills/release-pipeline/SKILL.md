@@ -65,17 +65,16 @@ merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-patt
    an image to do so, since step 5 checks the live version. Before publishing the release, build the
    candidate the way the release tooling will, from the release commit, or test a pre-release the
    tooling publishes from that commit (a staging channel or a registry pre-release tag) and promote
-   that exact file unchanged. If the final release must be rebuilt (its version string changes, say),
-   that rebuild is the candidate. Use it the way a
-   user would: install it and run the main flows. Where users upgrade from an earlier release, also
-   upgrade from it, following the release notes as written. Compare its contents and metadata with
-   the previous release, if any, for missing or stray files and unintended changes to requirements
-   or dependencies. The release commit carries every merged contributor's code, so building and
-   running it follows the
-   [sandbox rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)
-   like step 1. If the candidate fails, stop: don't tag or publish the release, and step 6's closes
-   wait too. The fix is a new change through [`pr-deep-review`](../pr-deep-review/SKILL.md), and the
-   candidate is built or pre-released again from the new release commit.
+   that exact file unchanged. If the final release must be rebuilt (its version string changes,
+   say), that rebuild is the candidate. Use it the way a user would: install it and run the main
+   flows. Where users upgrade from an earlier release, also upgrade from it, following the release
+   notes as written. Compare its contents and metadata with the previous release, if any, for
+   missing or stray files and unintended changes to requirements or dependencies. The release commit
+   carries every merged contributor's code, so building and running it follows the [sandbox
+   rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution) like step 1.
+   If the candidate fails, stop: don't tag or publish the release, and step 6's closes wait too. The
+   fix is a new change through [`pr-deep-review`](../pr-deep-review/SKILL.md), and the candidate is
+   built or pre-released again from the new release commit.
 
    Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
