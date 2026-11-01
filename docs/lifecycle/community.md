@@ -59,7 +59,8 @@ chat report* is a public write:
   `issue_capture.max_public_files_per_run` stays `0`, and the config lint refuses anything else: the
   job never files, and `max_per_run` already bounds the drafts.
 - **MEDIUM** (actionable but vaguer, a feature request, or any doubt / scope call) → **draft it and
-  surface to a human to approve** — don't file. The human's one-tap/one-word approval files it.
+  surface to a human to approve** — don't file. The same privacy scrub gates this draft. The human's
+  one-tap/one-word approval files it.
 - **LOW / noise** → capture-to-queue only (or skip); never file, never ping.
 
 The tiering is what lets you get the latency win (real bugs drafted promptly, one human action from filed) without the risk
@@ -75,8 +76,11 @@ live chat connection. So wire approval as *notify-from-the-job, act-on-the-reply
 — reply to approve," and the human's **reply (a fresh live agent turn) does the filing.** Don't build
 a job that waits for a response. Rich widgets like inline buttons can be nice, but a tap only acts if
 the platform integration already handles it — a typed reply is the build-nothing path that always
-works. Keep the durable audit trail of what got filed in an append-only log the
-[watchdog](../playbooks/watchdog-pattern.md) re-verifies, not in a mutable state file.
+works. Keep the durable audit trail of what got filed in an append-only log, not in a mutable state
+file, and let the next run reconcile it against the live tracker
+([rule 3 of the output loop](../playbooks/output-loop.md#3-keep-the-state-honest)). A watchdog check
+for filed captures waits on a defined filing record
+([steward-os#41](https://github.com/nesquena/steward-os/issues/41)).
 
 
 

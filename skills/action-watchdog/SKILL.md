@@ -11,9 +11,9 @@ description: Independently fact-check the autonomous actions the system took (is
 
 ## Steps
 
-1. **Read the action ledgers** — the append-only records each autonomous action writes (what it
-   closed, labeled, filed, or marked). The ledger is the list of *what to check*, never the evidence of
-   correctness.
+1. **Read the action ledgers** — the append-only records each action the system executes writes:
+   what it closed, labeled or marked on its own, and the announcement posts a human keyed. The ledger
+   is the list of *what to check*, never the evidence of correctness.
 2. **Re-verify each action against LIVE ground truth, independently:**
    - **Autonomous closes** ([`issue-autoclose`](../issue-autoclose/SKILL.md)): is the issue still
      closed? Is the cited PR actually merged and does it still link the issue? Does the cited release
@@ -36,13 +36,6 @@ description: Independently fact-check the autonomous actions the system took (is
      marker? Did every vulnerability-diverted item receive **no** public mark? → a mark without a
      staged record, a missing/duplicate mark, or any public mark on a diverted item = 🔴; a stale
      nonterminal capture intent with no public action yet = 🟡.
-   - **Filed captures** ([community capture](../../docs/lifecycle/community.md)): a human keys each
-     filing (Band C), but the agent's reply turn executes it, the way the announcements post step does.
-     For each ledger'd filing: does it trace to a staged HIGH or MEDIUM record with an accepted
-     decision record, is the public issue's body the approved draft, does exactly one public issue
-     exist, and is it free of PII and vulnerability content? → a filing with no accepted decision
-     record, a body that differs from the approved draft, a duplicate, or a privacy/security leak =
-     🔴; stale filing-ledger bookkeeping with the public issue otherwise correct = 🟡.
    - **(Add a check here for every new autonomous action — same change that adds the action.)**
 3. **Classify severities.** 🔴 = correctness failure (an action was *wrong* — act now). 🟡 = drift
    (stale, reconcile soon).
