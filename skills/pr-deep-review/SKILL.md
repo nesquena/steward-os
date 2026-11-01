@@ -75,9 +75,11 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      from step 2's accepted configuration) — never sample — and **visual verification** for any
      visible surface (screenshots at its accepted viewports; *drive* interactions, don't just
      screenshot them).
-   - The suite's own checks from [quality gates](../../docs/lifecycle/quality-gates.md#1-the-test-suite--the-primary-line)
-     gate 1 (judge by exit status, the old-against-new differential for behaviour changes, a
-     configured consumer's suite), and gate 5's check that PR-triggered CI ran on this exact head.
+   - Unless the outcome is **no run**: the suite's checks from
+     [quality gates](../../docs/lifecycle/quality-gates.md#1-the-test-suite--the-primary-line) gate 1.
+     Judge the run by exit status, run the old-against-new differential for behaviour changes, and
+     run a configured consumer's suite, sandboxed unless both the PR and that consumer are trusted.
+   - Always: gate 5's check that PR-triggered CI ran on this exact head.
 6. **If the outcome is no run, stop without an all-clear unless verified human evidence supplies
    the missing execution legs.** Review findings still go to the author; there is no release
    hand-off while any required leg/finding is missing or unresolved. Tell the human which runs

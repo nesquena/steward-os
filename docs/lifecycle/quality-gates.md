@@ -55,11 +55,13 @@ Quality starts before the fix, not after:
 - **A change to something consumers rely on also runs a known consumer's suite.** That covers return
   shapes, defaults and formats, and lifecycle behaviour such as close, shutdown, fork and signal
   handling. A one-line change there can pass the project's own suite on every runtime and still
-  break a downstream project (see [bug-shape #2](../reference/bug-shapes.md#2-producer-changed-consumer-didnt)).
-  The consumer and its suite command come from the operator's accepted gate configuration, never
-  from the PR. The consumer's code isn't the project's, so its suite runs in the sandbox unless the
-  operator has accepted that consumer as trusted. If it can't run, the leg is missing, and a missing
-  leg is not all-clear.
+  break a downstream project
+  (see [bug-shape #2](../reference/bug-shapes.md#2-producer-changed-consumer-didnt)). The consumer
+  and its suite command come from the operator's accepted gate configuration, never from the PR. The suite loads
+  the PR's code and runs the consumer's, so it runs in the sandbox unless both the PR (by the
+  sandbox rule) and that consumer (by the operator's acceptance) are trusted. When no consumer is
+  configured, the leg doesn't apply; say so in the verdict. When one is configured and its suite
+  can't run, the leg is missing, and a missing leg is not all-clear.
 
 ### 2. Automated code review
 An independent reviewer pass over the diff (a code-review tool or a dedicated reviewer agent). It
@@ -104,12 +106,12 @@ or ordering bug wearing a costume.
 
 ## Untrusted-code execution
 
-Gates 1, 4, and 5 all *run* the PR's code: the suite (with any differential or consumer suite),
-the driven interaction, the re-run before merge. When the PR is untrusted, treat that code as
-adversarial. **Never run it unsandboxed.** Run inside a locked-down sandbox with no network and no credential access that fails closed if it can't
-be built. If contributor-code execution is switched off or the sandbox can't be built, the run does
-not happen and the gate is not all-clear; a skipped suite is never a passed one. Inert reading of
-the diff needs no sandbox; *execution* is gated. The
+Gates 1, 4, and 5 all *run* the PR's code: the suite (with any differential or consumer suite), the
+driven interaction, the re-run before merge. When the PR is untrusted, treat that code as
+adversarial. **Never run it unsandboxed.** Run inside a locked-down sandbox with no network and no
+credential access that fails closed if it can't be built. If contributor-code execution is switched
+off or the sandbox can't be built, the run does not happen and the gate is not all-clear; a skipped
+suite is never a passed one. Inert reading of the diff needs no sandbox; *execution* is gated. The
 [security spine](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution) says which
 PRs count as untrusted and what to do when the run can't happen.
 
