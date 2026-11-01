@@ -87,19 +87,27 @@ pulled or deployed, so a merge isn't
    publish, step 6 waits as below, and ask the human for a fresh run on this release commit. If the
    candidate fails, stop: don't tag or publish the release, and step 6 waits, except for closes the
    host already made at merge. The fix is a new change through `pr-deep-review`, and the candidate
-   is built or pre-released again from the new release commit.
+   is built or pre-released again from the new release commit. Keep the candidate that passed and
+   its digest, naming this release commit, where contributors can't write, like the sandbox rule's
+   receipt.
 
    Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
    real **and** (if you deploy) the running version serves the change. Re-derive the live version;
-   never claim shipped from a passed gate alone. For a published artifact, confirm it is the tested
-   candidate: if the tested file was uploaded as is, its checksum or digest matches. Otherwise
-   unpack both the way an install would and compare what the install keeps or runs, including file
-   contents, modes (such as the executable or setuid bit), file capabilities and ownership where the
-   install keeps them, install scripts, an image's whole config (such as user, entrypoint, command
-   and environment), requirements and dependencies. Only the signature, and what an install
-   discards, may differ. On a mismatch, stop: step 6 waits, and a human decides whether to yank the
-   release or fix forward.
+   never claim shipped from a passed gate alone. For a published artifact, confirm its digest
+   matches the tested candidate's from step 4, for this release commit and of the same kind (for an
+   image, the same manifest, or for a multi-platform image the same index). When it doesn't, a human
+   compares the published artifact with the kept tested candidate before step 6, from what each
+   records, nested archives and layers included, not from an unpack (its result depends on the
+   unpacker and who runs it). The comparison covers everything an install keeps or runs, including
+   each entry's type and link target, contents, modes, ownership, extended attributes and file
+   capabilities where the format records them, install scripts, an image's whole config,
+   requirements and dependencies. Step 6 goes ahead only if the human traces every difference to a
+   step of the release process and finds that none changes what installing it, or the installed
+   software, does or may do (a signature that only lets it be verified, or entry order and
+   timestamps nothing reads, say; not a repeated path, a format's required first entry or an mtime a
+   build compares). Any other difference, or no kept candidate or digest for this release commit, is
+   a mismatch: stop, step 6 waits, and a human decides whether to yank the release or fix forward.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
@@ -131,7 +139,8 @@ trailer exists; it does **not** prove the *name* is right.
 ## Verification
 - The change is merged, tagged, and (if deployed) the live version serves it — all three re-derived,
   not assumed.
-- A published artifact is the candidate that was tested (step 4), when the project publishes one.
+- A published artifact is the candidate that was tested (step 4), or differs from it only as step 5
+  allows, when the project publishes one.
 - The author is credited identically on every surface, and the handle is the real author of the work.
 - The PR and its issues are closed with version + thanks; the trust ledger has one terminal event.
 - No branch/worktree left dangling.
