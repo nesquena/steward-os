@@ -60,19 +60,25 @@ merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-patt
    so it matches the tag.
 
    **Ship the artifact you tested**, when the project publishes a versioned artifact (a package,
-   binary or image; `release_model.style: continuous` skips this, since step 5 checks the live
-   version). Before tagging or publishing, build the candidate the way the release tooling will, from
-   the release commit, and use it the way a user would: install it and run the main flows. Where
-   users upgrade from an earlier release, also upgrade from it, following the release notes as
-   written. Compare its contents and metadata with the previous release for missing or stray files
-   and unintended changes to requirements or dependencies.
+   binary or image), however often it releases. A project that only deploys a service or site skips
+   this, since step 5 checks the live version. Before tagging or publishing, build the candidate the
+   way the release tooling will, from the release commit, and use it the way a user would: install it
+   and run the main flows. Where users upgrade from an earlier release, also upgrade from it,
+   following the release notes as written. Compare its contents and metadata with the previous
+   release for missing or stray files and unintended changes to requirements or dependencies. The
+   release commit carries every merged contributor's code, so building and running it follows the
+   [sandbox rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)
+   like step 1. If the candidate fails, stop: don't tag or publish. The fix is a new change through
+   [`pr-deep-review`](../pr-deep-review/SKILL.md), and the candidate is built again from the new
+   release commit.
 
    Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
    real **and** (if you deploy) the running version serves the change. Re-derive the live version;
    never claim shipped from a passed gate alone. For a published artifact, confirm it is the tested
    candidate: if that file was uploaded as is, its checksum or digest matches; if the publisher
-   rebuilt it, compare contents, since a rebuild can change the checksum while every file matches.
+   rebuilt it, compare contents and metadata, since a rebuild can change the checksum while every
+   file matches.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
