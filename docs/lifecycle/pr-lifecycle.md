@@ -150,7 +150,7 @@ and the gate re-runs. Only an all-clear gate advances to merge.
 - **Test the artifact before you publish it** when the project publishes one for others to install
   or pull (a package, binary or image); a project that only deploys its own service or site skips
   this. The gate ran on the source tree, and packaging can still drop or add files. Build it the way
-  the release tooling will and use it as a user would, under the
+  the project's release tooling will and use it as a user would, under the
   [sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution), since the
   release commit carries every merged contributor's code. The
   [release pipeline](https://github.com/nesquena/steward-os/blob/main/skills/release-pipeline/SKILL.md) has the steps.
