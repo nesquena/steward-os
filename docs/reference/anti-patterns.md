@@ -58,6 +58,10 @@ cause it. (See [quality gates](../lifecycle/quality-gates.md#flakes-never-tolera
 **Fixing the instance, not the class.** Patch the reported site and miss the three sibling call
 paths with the same bug. When you find a defect, grep for its class.
 
+**Fixing a refusal rule one hole at a time.** Each round's test covers the hole it found, and the
+next round's fix refuses something legitimate or misses a variant. Test both sides of the rule.
+(See [bug-shape #13](bug-shapes.md#13-the-refusal-rule-fixed-one-hole-at-a-time).)
+
 **The change-detector test.** A test that fails whenever data *expected to change* is updated — a
 catalog count, a version literal, an enumeration size, a hardcoded list — *and that data isn't itself
 the contract.* `assert len(providers) == 8` adds zero behavioral coverage and breaks CI on every
