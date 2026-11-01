@@ -57,9 +57,9 @@ Quality starts before the fix, not after:
   handling. A one-line change there can pass the project's own suite on every runtime and still
   break a downstream project
   (see [bug-shape #2](../reference/bug-shapes.md#2-producer-changed-consumer-didnt)). The consumer
-  and its suite command come from the operator's accepted gate configuration, never from the PR. The suite loads
-  the PR's code and runs the consumer's, so it runs in the sandbox unless both the PR (by the
-  sandbox rule) and that consumer (by the operator's acceptance) are trusted. When no consumer is
+  and its suite command come from the operator's accepted gate configuration, never from the PR.
+  The suite loads the PR's code and runs the consumer's, so it runs in the sandbox unless both the
+  PR (by the sandbox rule) and that consumer (by the operator's acceptance) are trusted. When no consumer is
   configured, the leg doesn't apply; say so in the verdict. When one is configured and its suite
   can't run, the leg is missing, and a missing leg is not all-clear.
 
