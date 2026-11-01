@@ -92,8 +92,8 @@ An issue closes without a human only when its fix is **provably shipped** and it
 resolved**, never partially. A close is [reversible](../playbooks/autonomy-ladder.md#what-reversible-means)
 by reopening, but a wrong close still costs the reporter's trust.
 The safe autonomous gate (Band A *with watchdog*) is mechanically strict:
-- a merged PR explicitly links the issue as closing it (in the PR's description; a keyword only in
-  a commit message doesn't link the PR), **and**
+- a merged PR explicitly links the issue as closing it (in the PR's description or sidebar; a
+  keyword only in a commit message doesn't link the PR), **and**
 - the merge commit is contained in a released tag (provably shipped, not just on the trunk), **and**
 - the issue is **single-surface** — if it enumerates several distinct symptoms, it does *not*
   auto-close; it routes to a human for full-surface verification, **and**

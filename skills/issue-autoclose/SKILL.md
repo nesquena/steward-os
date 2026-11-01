@@ -17,9 +17,9 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 > Precondition: **the fix has shipped.** This skill closes issues that a released PR resolved; it
 > never closes on taste, staleness, or a maintainer's judgment call — those stay human
 > ([`issue-close-proposal`](../issue-close-proposal/SKILL.md) prepares two kinds for that human:
-> done with no linking PR, and duplicate). If no open
-> issue has a merged, released, single-surface fix that passes every gate below, there is nothing to
-> close — stop.
+> done with no linking PR, and duplicate). If step 1
+> finds no candidate, there is nothing to do — stop. Otherwise every candidate goes through the
+> gates: it's closed, or it stays open and is routed to a human.
 
 > Config: read the repos from [`config.yaml`](../../setup/config.template.yaml) (`repositories:`,
 > each with `host_closes_on_merge`), the release model from `project.release_model` (what "released tag" means for this project), and
@@ -69,9 +69,9 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    watchdog re-verifies. The ledger is *what to check*, never the proof it was right, and step 1
    reads it to skip an issue already closed. Idempotent: a re-run re-checks the ledger and
    reopen-state and **never re-closes**.
-7. **Silent-on-no-op; loud on error.** Nothing to close → no output. A non-zero exit or timeout
-   **alarms** (never fails silently); silent-on-no-op is for success with nothing to do, never for
-   errors.
+7. **Silent-on-no-op; loud on error.** Nothing to close and nothing new to route → no output. A
+   non-zero exit or timeout **alarms** (never fails silently); silent-on-no-op is for success with
+   nothing to do, never for errors.
 
 ## Pitfalls
 - **Mis-closing — the costly one.** Closing on a merge that isn't in a release, or closing a
@@ -104,7 +104,8 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
   **not** auto-closed — they route to a human.
 - Re-running immediately is a **no-op** (ledger + reopen-state respected) — it never re-closes and
   never reopens.
-- On no shipped-and-resolved candidate, the job is **silent**; on error, it **alarms**.
+- With nothing to close and nothing new to route, the job is **silent**; on error, it **alarms**.
+- A candidate that fails a gate is routed to a human even when nothing else qualifies to close.
 - It skips a repository whose `host_closes_on_merge` is `true`.
 - [`action-watchdog`](../action-watchdog/SKILL.md) has a corresponding **"Autonomous closes"** check
   that independently re-verifies every close against live ground truth.

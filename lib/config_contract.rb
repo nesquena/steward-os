@@ -505,12 +505,14 @@ module ConfigContract
       if blank?(outputs['alarms_to'])
         violations << err(:alarms_to_required, 'scheduled_jobs.outputs.alarms_to',
                           'required when issue_capture.enabled — the divert needs an independent ' \
-                          'human route even when security_contact is set (config.template.yaml:130)')
+                          'human route even when security_contact is set ' \
+                          '(config.template.yaml, scheduled_jobs.outputs.alarms_to)')
       elsif alarms_to_aliased?(config, outputs)
         violations << err(:alarms_to_independent, 'scheduled_jobs.outputs.alarms_to',
                           'must be an independent human route — it duplicates security_contact, ' \
                           'index_path, or a capture-state path, so the divert has no fallback ' \
-                          'distinct from the destination it is meant to back up (config.template.yaml:130)')
+                          'distinct from the destination it is meant to back up ' \
+                          '(config.template.yaml, scheduled_jobs.outputs.alarms_to)')
       end
 
       missing = CAPTURE_STATE_PATHS.select { |k| blank?(config.dig('issue_capture', k)) }
@@ -525,7 +527,7 @@ module ConfigContract
         violations << err(:state_paths_not_public, 'issue_capture',
                           "#{public_state.join(', ')} are repo-relative and this project lists a " \
                           'public repository. Capture state holds the diverted-vulnerability audit ' \
-                          'trail and must not be a public surface (config.template.yaml:46-48). Use ' \
+                          'trail and must not be a public surface (config.template.yaml, issue_capture). Use ' \
                           'an absolute path if it lives in a private repo')
       end
     end
@@ -538,7 +540,7 @@ module ConfigContract
     unless blank?(marker) || watchdog
       violations << err(:marker_needs_watchdog, 'issue_capture.capture_marker',
                         'a public capture marker requires an enabled action-watchdog job ' \
-                        '(config.template.yaml:51)')
+                        '(config.template.yaml, issue_capture.capture_marker)')
     end
 
     # Gated on platform being set: with platform blank, chat_needs_platform already
@@ -553,13 +555,13 @@ module ConfigContract
     if monitor && !capture
       violations << err(:chat_needs_capture_core, 'community.chat.monitor',
                         'chat monitoring requires issue_capture.enabled — chat must not implement ' \
-                        'a second capture path (config.template.yaml:44)')
+                        'a second capture path (config.template.yaml, issue_capture.enabled)')
     end
 
     if monitor && blank?(platform)
       violations << err(:chat_needs_platform, 'community.chat.platform',
                         'a blank platform means chat monitoring is disabled, but monitor is true ' \
-                        '(config.template.yaml:32)')
+                        '(config.template.yaml, community.chat.platform)')
     end
 
     # Filing a capture is Band C: a new public issue reaches every watcher, so a
@@ -578,7 +580,7 @@ module ConfigContract
        config.dig('secrets', 'sandbox_available') != true
       violations << err(:sandbox_required, 'secrets.execute_contributor_code',
                         'running contributor code requires sandbox_available: true ' \
-                        '(config.template.yaml:106)')
+                        '(config.template.yaml, secrets.execute_contributor_code)')
     end
 
     violations + band_violations(config) + host_closing_violations(config) + job_violations(config) +
@@ -603,8 +605,8 @@ module ConfigContract
       [err(:index_not_public, 'scheduled_jobs.outputs.index_path',
            "'#{index}' is repo-relative and this project lists a public repository. " \
            "An index that #{held} must not be a public " \
-           'surface (config.template.yaml:124-126). If it lives in a private repo, ' \
-           'use an absolute path to say so')]
+           'surface (config.template.yaml, scheduled_jobs.outputs.index_path). If it lives in a ' \
+           'private repo, use an absolute path to say so')]
     else
       []
     end
