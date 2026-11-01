@@ -50,7 +50,8 @@ step 6 is the only sender.
 The **action ledger** is the record of what was posted, keyed by release: one entry per post, with
 the release, the stamp it was posted at (blank for a hand post), the sender (`bot` or `hand`), the
 channel, the time and the resulting message reference. The **last-announced marker** is a cache of
-it. A release is **announced** when the ledger has an entry for it or the marker covers it.
+it. A release is **announced** when the ledger has an entry for it or the marker covers it. Every
+decision row carries a key unique to it, and its decision record names that key.
 
 1. **Reconcile first.**
    - A ledger entry for a release the marker doesn't cover advances the marker.
@@ -63,10 +64,10 @@ it. A release is **announced** when the ledger has an entry for it or the marker
      announced, whose stamp has a rejection, or that is superseded: its release is no longer the
      newest tag, or the stamp steps 2-3 would produce for it now differs.
    - An accepted record older than the job's interval, for a release that isn't announced and has no
-     bot announcement, is a **failed post**: the post failed or never ran. Unless a row, open or
-     decided, already names that record as the one it retries, raise one alarm for it, to
-     `scheduled_jobs.outputs.alarms_to`, or as a line in the index when that's blank. Once step 5's
-     retry row names it, the alarm doesn't repeat, whatever the human decides on that row.
+     bot announcement, is a **failed post**: the post failed or never ran. Raise one alarm for it: a
+     line in the index naming the record, pushed to `scheduled_jobs.outputs.alarms_to` when that's
+     set. The job keeps that line, open or ticked, and a record whose alarm line is in the index
+     isn't alarmed again, whatever rows come and go.
 2. **Determine the release to announce.** Read the release model and changelog from config; find the
    newest release tag. If it's announced → **silent no-op; never re-post.**
 3. **Render from the changelog — don't write anew.** The announcement is a *templated render* of
@@ -83,8 +84,8 @@ it. A release is **announced** when the ledger has an entry for it or the marker
    Otherwise put a
    [decision row](../../docs/playbooks/output-loop.md#the-decision-row) in the index, stamped on the
    tag and the rendered text, with a new key and the undo stated as "can't be recalled". If the
-   release has a failed post (step 1) that no row names yet, the new row names that record as the one
-   it retries. The row takes no edits: to change the text, change the changelog, which changes the
+   release has a failed post (step 1), the new row names that record as the one it retries. The row
+   takes no edits: to change the text, change the changelog, which changes the
    stamp and re-proposes.
 6. **Approve: the post step.** The human runs it on an open row. It refuses on a closed row, or a row
    that already has a decision record: a row takes one decision. It re-renders and compares against
@@ -98,11 +99,12 @@ it. A release is **announced** when the ledger has an entry for it or the marker
    re-verifies); advance the last-announced marker. The record write is the lock: if a record for
    this row already exists when it's written, stop. The bot token lives only in the locked credentials
    file (`secrets.credentials_file`), read by the helper — it **never enters the agent's context.** If
-   the post fails or the step stops partway, the decision record stands and the row stays closed;
+   the post fails, or the step stops after the record is written, the decision record stands and the
+   row stays closed;
    step 1 raises the alarm, and the retry is a new row with a new key, never a second run on this one
    ([decision record](../../docs/playbooks/output-loop.md#the-decision-record)).
-7. **Reject.** Same step, no stamp comparison. Write the decision record and close the row. The
-   marker stays.
+7. **Reject.** Same step, no stamp comparison. Write the decision record, naming the row's key, and
+   close the row. The marker stays.
 8. **Record a hand post.** A human who announced the release by hand runs this with the message's
    reference. It checks the message is in the fixed channel and refuses a message by the bot account
    (step 1 records those). It appends a ledger entry as `hand`, advances the marker, and closes any
@@ -137,8 +139,9 @@ it. A release is **announced** when the ledger has an entry for it or the marker
 - Runs **once per release**: on an announced release (ledger or marker) it is a silent no-op, and a
   stale marker doesn't change that.
 - A hand post recorded with step 8 stops the release being proposed or posted again.
-- A failed post comes back as one alarm and a retry row, never as a second post on the old approval,
-  wherever step 6 stopped: its row is closed once the record is written.
+- A failed post raises one alarm, however its rows are later superseded or decided, and comes back
+  as a retry row, never as a second post on the old approval: its row is closed once the record is
+  written.
 - The job **never posts**: every post traces to a decision record a human keyed.
 - A rejected stamp doesn't re-propose; a corrected changelog does.
 - The bot token **never appears** in the agent transcript (helper-isolated).
