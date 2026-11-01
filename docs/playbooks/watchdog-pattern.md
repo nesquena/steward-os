@@ -74,7 +74,7 @@ correct. That independent check is the watchdog.
   error?
 
 ## The payoff
-With the watchdog in place, an action that was Band C (human-gated) can graduate to Band A
+With the watchdog in place, a reversible action that was Band C (human-gated) can graduate to Band A
 (autonomous) — *because the human's verification job has been replaced by an independent automated
 one, with escalation to a human only on a real mismatch.* That's the whole trade: the watchdog buys
 you autonomy you couldn't safely have otherwise.

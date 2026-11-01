@@ -73,7 +73,7 @@ ci_and_gates:
   visual_preview_tool: ""       # visual/screenshot preview, if any
   ui_viewports: []              # e.g. ["1280x800", "390x844"] — empty if no UI
 
-autonomy:                       # starting band per action: A | B | C
+autonomy:                       # starting band per action: A | B | C (announcements: always C)
   pr_labeling: "B"
   issue_triage_replies: "B"
   issue_autoclose: "C"
@@ -113,7 +113,7 @@ scheduled_jobs:                 # start with a few; add as you climb the autonom
     - { name: "chat-monitor",       every: "1h",  enabled: false, agent: true  }
     - { name: "issue-capture",      every: "1h",  enabled: false, agent: true  }
     - { name: "mentions-sweep",     every: "24h", enabled: false, agent: true  }
-    - { name: "announcements",      every: "8h",  enabled: false, agent: true  }
+    - { name: "announcements",      every: "8h",  enabled: false, agent: false }
     - { name: "label-sync",         every: "4h",  enabled: false, agent: false }
     - { name: "issue-autoclose",    every: "4h",  enabled: false, agent: false }
     - { name: "action-watchdog",    every: "6h",  enabled: false, agent: false }

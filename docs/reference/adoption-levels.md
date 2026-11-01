@@ -31,7 +31,7 @@ Band-B sessions are sharper. Cost: a few scheduled jobs. Value: nothing falls th
 
 ## Level 3 — Mechanical autonomous actions (Band A, watchdogged)
 Promote the safe, mechanical actions to autonomous, each with a [watchdog](../playbooks/watchdog-pattern.md):
-deterministic label-sync, the strict shipped-issue auto-close, templated release announcements.
+deterministic label-sync and the strict shipped-issue auto-close.
 Follow the [autonomy ladder](../playbooks/autonomy-ladder.md) — small batch, verify, expand, watch.
 Cost: building the deterministic scripts + the watchdog. Value: the routine maintenance runs itself,
 verifiably.

@@ -115,7 +115,7 @@ The output of deep review is *warm-up*, not the ship decision. The ship decision
 > current trunk plus a traced code path from symptom to cause, not a plausible rationale. On the
 > automation boundary, mirror the strict rule this repo already sets — automation may *classify* and
 > *recommend* a close (already-fixed, cannot-reproduce, incoherent) but the autonomous *close* stays
-> with the [mechanically-provable shipped-fix gate](issue-lifecycle.md#close-with-credit-careful--this-is-irreversible)
+> with the [mechanically-provable shipped-fix gate](issue-lifecycle.md#close-with-credit-careful--this-is-public)
 > or a human; wrong-premise and design-taste closes always stay with a human. Full version:
 > [reviewing at volume](../reference/reviewing-at-volume.md#wrong-premise-beats-bad-code).
 
@@ -153,7 +153,8 @@ and the gate re-runs. Only an all-clear gate advances to merge.
 
 > Merge itself is **Band B**: the human owns the final irreversible call on anything substantial.
 > The narrowest mechanical merges can graduate to Band A — but only with the
-> [watchdog](../playbooks/watchdog-pattern.md) fact-checking each one.
+> [watchdog](../playbooks/watchdog-pattern.md) fact-checking each one. That's an
+> [open exception](../playbooks/autonomy-ladder.md#open-exceptions) to the Band A bar.
 
 ## [6] Close + credit
 

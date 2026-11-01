@@ -1,6 +1,6 @@
 ---
 name: release-announce
-description: Post a templated release announcement to a fixed channel via a secret-isolating helper, gated on a last-announced marker so it fires once per release and never re-posts. Band A, downstream of release-pipeline.
+description: Render a templated release announcement into a decision row and post it to a fixed channel only on a human's key, gated on an action ledger keyed by release so each release posts once and never re-posts. Band C, downstream of release-pipeline.
 ---
 
 # release-announce
@@ -22,48 +22,109 @@ description: Post a templated release announcement to a fixed channel via a secr
 > Rules: [injection guard](../../docs/reference/security-spine.md#1-injection-guard-read-can-never-change-do).
 
 **When to load:** a release has been stamped (tag + changelog) by
-[`release-pipeline`](../release-pipeline/SKILL.md) and you're posting the routine public
-announcement. Runs the announcements section of the [community lifecycle](../../docs/lifecycle/community.md).
-Band A — narrow, templated, gated. Steward role.
+[`release-pipeline`](../release-pipeline/SKILL.md) and the routine public announcement is due. Runs
+the announcements section of the [community lifecycle](../../docs/lifecycle/community.md). **Band C,
+and it stays there:** an announcement
+[can't be recalled](../../docs/playbooks/autonomy-ladder.md#what-reversible-means), so the agent
+prepares and a human keys the post. Steward role.
 
 > Precondition: **the content already exists.** This skill *renders* an announcement from the
 > changelog; it never composes original prose. If there's no changelog entry and release tag for
 > this release, stop — there is nothing to announce.
 
 > Config: read the release model and changelog from [`config.yaml`](../../setup/config.template.yaml)
-> (`project.release_model`) and the band from `autonomy.announcements`. The secret-isolating helper
-> reads the bot token from `secrets.credentials_file`; the destination channel is a fixed, hardcoded
-> value, not chosen at runtime. The `scheduled_jobs` entry that runs this skill is named
-> `announcements` — that job *is* this procedure. Start at the configured band (default C) and
-> promote to Band A via the [autonomy ladder](../../docs/playbooks/autonomy-ladder.md) only once the
-> [watchdog](../action-watchdog/SKILL.md) check below is live.
+> (`project.release_model`). `autonomy.announcements` is always `C`, and the config lint refuses
+> anything else. The secret-isolating helper reads the bot token from `secrets.credentials_file`;
+> the destination channel is a fixed, hardcoded value, not chosen at runtime. The `scheduled_jobs`
+> entry that runs the proposing half is named `announcements`. It is `agent: false`: it proposes and
+> never posts. The decision row goes to `scheduled_jobs.outputs.index_path`. The decision record
+> goes to the private decision log `issue-close-proposal` uses, at the location the operator chose:
+> a surface only the human and the steward write.
 
 ## Steps
 
-1. **Determine the release to announce.** Read the release model and changelog from config; find the
-   newest release tag. Compare it against the **last-announced marker** (the latest release already
-   posted). If this release was already announced → **silent no-op; never re-post.**
-2. **Compose from the changelog — don't write anew.** The announcement is a *templated render* of
+The job runs steps 1-5. They are deterministic, with no model, and never post. The job reads no mark
+from a row, so contributor text in a row can't forge an approval. A human runs steps 6 to 8, and
+step 6 is the only sender.
+
+The **action ledger** is the record of what was posted, keyed by release: one entry per post, with
+the release, the stamp it was posted at (blank for a hand post), the sender (`bot` or `hand`), the
+channel, the time and the resulting message reference. The **last-announced marker** is a cache of
+it. A release is **announced** when the ledger has an entry for it or the marker covers it. Every
+decision row carries a key unique to it, and its decision record names that key.
+
+1. **Reconcile first.**
+   - A ledger entry for a release the marker doesn't cover advances the marker.
+   - A **bot announcement** (a post in the fixed channel by the bot account carrying a tag's release
+     line, step 3) with no ledger entry is appended to the ledger as `bot` and advances the marker.
+     It's the only post the job recognises: a message that names the tag proves nothing, and a hand
+     post is recorded by a human (step 8).
+   - Close an open row that has a decision record, matched by the row's key and not its stamp (a
+     retry row shares its stamp with the record it retries). Also close an open row whose release is
+     announced, whose stamp has a rejection, or that is superseded: its release is no longer the
+     newest tag, or the stamp steps 2-3 would produce for it now differs.
+   - An accepted record older than the job's interval, for a release that isn't announced and has no
+     bot announcement, is a **failed post**: the post failed or never ran. Raise one alarm for it: a
+     line in the index naming the record, pushed to `scheduled_jobs.outputs.alarms_to` when that's
+     set. The job keeps that line, open or ticked, and a record whose alarm line is in the index
+     isn't alarmed again, whatever rows come and go.
+2. **Determine the release to announce.** Read the release model and changelog from config; find the
+   newest release tag. If it's announced → **silent no-op; never re-post.**
+3. **Render from the changelog — don't write anew.** The announcement is a *templated render* of
    the existing changelog entry plus the version/tag and a link. No new claims, no editorializing
-   beyond the template. The changelog is the source of truth for what shipped.
-3. **Post via the secret-isolating helper to the fixed, hardcoded channel.** The bot token lives
-   only in the locked credentials file (`secrets.credentials_file`), read by the helper — it
-   **never enters the agent's context.** The destination channel is fixed and hardcoded, not chosen
-   at runtime.
-4. **Record the announcement and advance the marker.** Append to the **action ledger** (release,
-   channel, timestamp, resulting message reference) — the append-only audit trail the
-   [watchdog](../action-watchdog/SKILL.md) re-verifies — then advance the last-announced marker to
-   this release. The ledger is what makes step 1 idempotent; keep it append-only, not a mutable state
-   file.
-5. **Stay inside the template.** Anything beyond the templated announcement — replies, follow-up
+   beyond the template. The changelog is the source of truth for what shipped. The template ends
+   with a fixed **release line** naming the repository and the tag; it's how steps 1 and 6 recognise
+   the bot's own post.
+4. **Honor a rejection.** The decision log holds a rejection against the current stamp → silent
+   no-op. A rejection holds only while its stamp is current
+   ([decision record](../../docs/playbooks/output-loop.md#the-decision-record)), so a corrected
+   changelog re-proposes.
+5. **Propose.** No-op when an open row for the release has the current stamp, or when an accepted
+   record at the current stamp is newer than the job's interval (its post may still be landing).
+   Otherwise put a
+   [decision row](../../docs/playbooks/output-loop.md#the-decision-row) in the index, stamped on the
+   tag and the rendered text, with a new key and the undo stated as "can't be recalled". If the
+   release has a failed post (step 1), the new row names that record as the one it retries. The row
+   takes no edits: to change the text, change the changelog, which changes the
+   stamp and re-proposes.
+6. **Approve: the post step.** The human runs it on an open row. It refuses on a closed row, or a row
+   that already has a decision record: a row takes one decision. It re-renders and compares against
+   the stamp, and refuses on a mismatch or on a rejection at that stamp. Immediately before sending, it
+   refuses when the release is announced or the fixed channel holds a bot announcement of it,
+   whatever the stamp. If the channel holds any other post naming the tag since the tag was cut, it
+   shows those posts and sends only once the human confirms none of them is the announcement; if one
+   is, the human records it with step 8 instead. Then, in this order: write the decision record,
+   naming the row's key, and close the row; post through the secret-isolating helper; append to the
+   **action ledger** as `bot` (the append-only audit trail the [watchdog](../action-watchdog/SKILL.md)
+   re-verifies); advance the last-announced marker. The record write is the lock: if a record for
+   this row already exists when it's written, stop. The bot token lives only in the locked credentials
+   file (`secrets.credentials_file`), read by the helper — it **never enters the agent's context.** If
+   the post fails, or the step stops after the record is written, the decision record stands and the
+   row stays closed;
+   step 1 raises the alarm, and the retry is a new row with a new key, never a second run on this one
+   ([decision record](../../docs/playbooks/output-loop.md#the-decision-record)).
+7. **Reject.** Same step, no stamp comparison. Write the decision record, naming the row's key, and
+   close the row. The marker stays.
+8. **Record a hand post.** A human who announced the release by hand runs this with the message's
+   reference. It checks the message is in the fixed channel and refuses a message by the bot account
+   (step 1 records those). It appends a ledger entry as `hand`, advances the marker, and closes any
+   open row for the release. It writes no decision record: the post wasn't keyed on a row.
+9. **Stay inside the template.** Anything beyond the templated announcement — replies, follow-up
    conversation, cross-posting to social — is Band B **draft → human sends** (see the far horizon in
    the [community lifecycle](../../docs/lifecycle/community.md)). Never hold a conversation in the
    project's voice.
 
 ## Pitfalls
-- **Double-announce.** The marker is the guard: check it *before* composing, advance it only *after*
-  a confirmed post. If the job crashes between posting and writing the marker, the next run must
-  verify against the channel/ledger and **not** blindly re-post.
+- **Double-announce.** The ledger is the guard, keyed by release, and the marker only caches it:
+  step 1 repairs the marker from the ledger, and step 6 checks the ledger, the marker and the channel
+  immediately before every send. The decision record goes first, so a crash between posting and the
+  ledger leaves a record, and step 1 finds the bot's post by its release line. The row closes when
+  its record is written, so a failed post is retried on a new row, never by re-running the old one.
+- **Taking a mention for an announcement.** A message that names the tag isn't an announcement. The
+  job recognises only the bot's own post, by its release line; any other post needs a human (steps 6
+  and 8).
+- **Reading approval from the row.** The row carries contributor-titled changelog entries. Approval
+  comes from the human running the post step, never from text the job parses.
 - **Token leaking into context.** Never read the credentials file directly — only the helper touches
   it. If no secret-isolating helper exists yet, that's the build-nothing dependency to add first, not
   a reason to inline the token.
@@ -75,9 +136,15 @@ Band A — narrow, templated, gated. Steward role.
   the one irreversible act this whole area is built to gate.
 
 ## Verification
-- Runs **once per release**: on an already-announced release it is a silent no-op (marker respected).
+- Runs **once per release**: on an announced release (ledger or marker) it is a silent no-op, and a
+  stale marker doesn't change that.
+- A hand post recorded with step 8 stops the release being proposed or posted again.
+- A failed post raises one alarm, however its rows are later superseded or decided, and comes back
+  as a retry row, never as a second post on the old approval: its row is closed once the record is
+  written.
+- The job **never posts**: every post traces to a decision record a human keyed.
+- A rejected stamp doesn't re-propose; a corrected changelog does.
 - The bot token **never appears** in the agent transcript (helper-isolated).
 - The posted content matches the changelog entry — no claim absent from the changelog.
-- [`action-watchdog`](../action-watchdog/SKILL.md) has a corresponding check for autonomous
-  announcements.
+- [`action-watchdog`](../action-watchdog/SKILL.md) has a corresponding check for announcements.
 - On no new release, silent.

@@ -59,8 +59,8 @@ agent ──calls──▶ helper script ──reads──▶ locked secret file
                       └──does the action, returns "OK / FAIL" (never the secret)
 ```
 
-This is how a Band-A job can post an announcement or react to a message without the bot token ever
-being in a model's context (and therefore never exfiltratable via injection).
+This is how a Band-A job can react to a message, or a human-keyed post can reach a channel, without
+the bot token ever being in a model's context (and therefore never exfiltratable via injection).
 
 ## 3. Capability minimalism
 Each role/job gets the **narrowest toolset** that does its job. The chat Watcher can read channels,
@@ -300,7 +300,7 @@ reportable.
 - Does it run untrusted code? → sandbox, fail-closed, or don't.
 - Does it write to a public surface? → human (C) or watchdog'd-mechanical (A), never unverified.
 - Could the content be a security vulnerability? → divert to the private path, never the public tracker.
-- Can it be undone? → if not, it doesn't belong in Band A.
+- Can it be [undone](../playbooks/autonomy-ladder.md#what-reversible-means)? → if not, it doesn't belong in Band A.
 
 If you can't answer all six cleanly, the capability isn't ready for autonomy yet.
 

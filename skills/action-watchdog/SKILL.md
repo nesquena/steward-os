@@ -23,11 +23,13 @@ description: Independently fact-check the autonomous actions the system took (is
      *add-only* — i.e. did the job avoid removing, reassigning, or overriding a human-applied label?
      → a mislabel, an out-of-allowlist label, or an overridden human label = 🟡 (a human's label
      always wins).
-   - **Autonomous announcements** ([`release-announce`](../release-announce/SKILL.md)): does each
-     ledger'd announcement correspond to a real release tag with merged content? Was it posted to the
-     fixed channel **exactly once** (no duplicate for the same release)? Does the posted text match
-     the changelog entry it claims to render? → a duplicate, or an announcement of an absent/unshipped
-     release, or text that adds claims beyond the changelog = 🔴; a drifted last-announced marker = 🟡.
+   - **Announcements** ([`release-announce`](../release-announce/SKILL.md)): does each
+     ledger'd announcement correspond to a real release tag with merged content? Was each release
+     posted to the fixed channel **exactly once**, counting `bot` and `hand` entries? Does each `bot`
+     post match the changelog entry it claims to render? A `hand` entry is a post a human wrote and
+     recorded: check its release and its once-only, not its text. → a duplicate, or an announcement of
+     an absent/unshipped release, or bot text that adds claims beyond the changelog = 🔴; a drifted
+     last-announced marker = 🟡.
    - **Autonomous capture marks** ([`issue-capture`](../issue-capture/SKILL.md)): for each ledger'd
      mark, does exactly one durable staged record and terminal `captured` event exist for the same
      adapter + source item + target-repository key, and does the source carry exactly the configured

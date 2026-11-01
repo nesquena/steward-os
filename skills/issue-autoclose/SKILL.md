@@ -6,8 +6,10 @@ description: Close an issue only when its fix is provably shipped and fully reso
 # issue-autoclose
 
 **When to load:** closing an issue whose fix has **provably shipped**. Runs the "Close with credit"
-gate of the [issue lifecycle](../../docs/lifecycle/issue-lifecycle.md) — the one **irreversible**
-public write that lifecycle is built to gate. Band A **with watchdog** — deterministic, structured
+gate of the [issue lifecycle](../../docs/lifecycle/issue-lifecycle.md) — the one public write that
+lifecycle is built to gate. A close is
+[reversible](../../docs/playbooks/autonomy-ladder.md#what-reversible-means) by reopening, but a wrong
+one costs the reporter's trust. Band A **with watchdog** — deterministic, structured
 signals only, **no LLM**. Steward role. Designed as a
 [scheduled job](../../docs/playbooks/scheduled-jobs.md) (`issue-autoclose`, `agent: false`). This is
 the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage never auto-closes.
@@ -60,7 +62,7 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    errors.
 
 ## Pitfalls
-- **Mis-closing — the irreversible one.** Closing on a merge that isn't in a release, or closing a
+- **Mis-closing — the costly one.** Closing on a merge that isn't in a release, or closing a
   multi-surface issue because *one* symptom's fix shipped, gets the issue reopened with a complaint.
   This is exactly the failure the gate is built to prevent. When in doubt, leave it open.
 - **"Merged" ≠ "shipped."** A merge on the trunk that no release tag contains is not provably
@@ -73,7 +75,8 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
   and the marker guard this — never "correct" a human who reopened an issue.
 - **Holding a conversation in the project's voice.** The close carries a templated credit line and
   nothing more. Original prose is where a wrong or injected claim gets published under the project's
-  name — the one irreversible act, kept templated and Band-A-narrow. Anything richer is Band B human.
+  name, and a new claim isn't reversible, so the line stays templated and Band-A-narrow. Anything
+  richer is Band B human.
 
 ## Verification
 - Only closes issues whose fix is in a **released tag** — a merely-merged, unreleased fix is left

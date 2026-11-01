@@ -53,7 +53,7 @@ reads_untrusted:
   - issue-triage
   - pr-deep-review
   - pr-triage
-  - release-announce      # its job runs a model over contributor-titled changelog entries
+  - release-announce      # contributor-titled changelog entries reach the rendered draft
   - release-pipeline      # reads the PR, its handoff and linked issues
   - triage-scoreboard     # the curated short-list is model work over item text
 
