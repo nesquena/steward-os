@@ -39,19 +39,20 @@ Quality starts before the fix, not after:
 ### 1. The test suite — the primary line
 - Run it **to completion, never sampled.** A partial run that looks green hides the regression in
   the part you skipped.
-- **Judge the run by the runner's exit status and its own summary, not by a filter of its output.**
-  Summary lines differ between test runners and their versions, so a filter can print nothing for a
-  failed run, and it can match a server's log lines in a passing one.
+- **Judge the run by the runner's exit status and its own summary, not by a filter of its
+  output.** Summary lines differ between test runners and their versions, so a filter can print
+  nothing for a failed run, and it can match a server's log lines in a passing one.
 - Every fix adds a regression test. The suite only grows; coverage is a ratchet.
 - A green suite is necessary but **not sufficient** — it only covers what's been written. That's why
   the other gates exist.
 - **Coverage-delta check** (worth building as the system matures): confirm the new regression test
   actually exercises the changed lines, so it can't pass vacuously.
-- **Behaviour changes get an old-against-new differential.** Run the same broad inputs (the
-  suite's fixtures plus realistic samples, not only the new tests' cases) through trunk and the
-  change, normalize nondeterministic output (times, ids, ordering), and require every difference to
-  map to an intent the change states. Targeted tests cover the cases the author thought of, and the
-  differential finds the rest.
+- **Behaviour changes get an old-against-new differential** where their inputs can be replayed (a
+  docs-only or config-only change doesn't need one). Run the same broad inputs (the suite's fixtures
+  plus realistic samples, not only the new tests' cases) through trunk and the change, normalize
+  nondeterministic output (times, ids, ordering), and require every difference to map to an intent
+  the change states. Targeted tests cover the cases the author thought of, and the differential
+  finds the rest.
 
 ### 2. Automated code review
 An independent reviewer pass over the diff (a code-review tool or a dedicated reviewer agent). It
