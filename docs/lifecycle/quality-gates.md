@@ -47,13 +47,15 @@ Quality starts before the fix, not after:
   the other gates exist.
 - **Coverage-delta check** (worth building as the system matures): confirm the new regression test
   actually exercises the changed lines, so it can't pass vacuously.
-- **Behaviour changes get an old-against-new differential** where their inputs can be replayed. A
-  change with no runtime effect doesn't need one; a config or docs change that alters behaviour (a
-  flipped default, say) does. Run the same broad inputs (the suite's fixtures
-  plus realistic samples, not only the new tests' cases) through trunk and the change, normalize
-  nondeterministic output (times, ids, ordering), and require every difference to map to an intent
-  the change states. Targeted tests cover the cases the author thought of, and the differential
-  finds the rest.
+- **Changes with a runtime effect get an old-against-new differential** where their inputs can be
+  replayed: code changes, and config or docs changes that alter behaviour (a flipped default, say).
+  A change that claims no behaviour change still gets one, and every difference it shows is a
+  finding. Run the same broad inputs (the suite's fixtures plus realistic samples, not only the new
+  tests' cases) through trunk and the change, normalize nondeterministic output (times, ids,
+  ordering), and require every difference to map to an intent the change states. Both halves run the
+  PR's fixtures, so both run where the sandbox rule puts the suite. When a differential was not run,
+  the verdict says so and why. Targeted tests cover the cases the author thought of, and the
+  differential finds the rest.
 
 ### 2. Automated code review
 An independent reviewer pass over the diff (a code-review tool or a dedicated reviewer agent). It
