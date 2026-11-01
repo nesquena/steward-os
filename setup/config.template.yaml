@@ -47,12 +47,12 @@ issue_capture:                  # shared pre-tracker capture core for chat and n
   ledger_path: ""               # PRIVATE append-only transition + capture-marker audit
   checkpoint_path: ""           # PRIVATE per-source last-successful checkpoint
   max_per_run: 10               # deterministic bound; remainder continues next run
-  max_public_files_per_run: 0   # 0 disables downstream auto-file; human approval remains available
+  max_public_files_per_run: 0   # must stay 0: filing a capture is Band C (a human files each draft)
   capture_marker: ""            # non-chat mechanical marker; requires enabled action-watchdog
 
 security:                       # the vulnerability divert — how suspected vulns leave the public path
   # A capture that looks like a vulnerability (unauthorized access, data exposure, tampering, code
-  # execution, or attacker-triggerable service loss) is NEVER auto-filed or publicly drafted. It
+  # execution, or attacker-triggerable service loss) is NEVER filed or publicly drafted. It
   # diverts here. See docs/reference/security-spine.md #6.
   security_contact: ""          # private destination: a person/DM, a private channel, an email, or
                                 # "github-advisory" to use the repo's private security advisories.

@@ -100,8 +100,8 @@ by the watchdog.
 - **Keep traceability private.** Public drafts and indexes omit reporter identity and source links,
   but the private queue retains the minimum source reference needed to investigate, follow up,
   dedupe, and give credit.
-- **Staging only.** Confidence is metadata, not permission to file here. A downstream actor may file a
-  HIGH item only under the privacy scrub, dedupe, watchdog, and `max_public_files_per_run` cap.
+- **Staging only.** Confidence is metadata, not permission to file. A HIGH item is drafted for a
+  human to file (Band C), under the privacy scrub and dedupe; nothing files it autonomously.
   `issue-triage` begins after the issue exists.
 - **Chat is an adapter, not a duplicate owner.** It normalizes and routes; this procedure owns the
   security check, classification, dedupe, queue, ledger, marker, and checkpoint.

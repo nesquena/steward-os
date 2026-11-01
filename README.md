@@ -49,13 +49,13 @@ healthy and watches the others. The system is named for it.)
 
 ## The core idea in one paragraph
 
-Reading is cheap and safe; **writing to a public surface in the project's voice is the irreversible
-act that needs a human decision.** Everything upstream of that line — discover, classify, dedupe,
-review, draft, rank, gate — an agent can do autonomously with the right guardrails. The
-irreversible, reputational acts (merging code, closing on taste, posting publicly as the project)
-stay human-gated. A reversible, mechanical public write can run unattended with an independent
-watchdog. That membrane is not a limitation; it's what makes running the whole thing unattended
-*safe*.
+Reading is cheap and safe; **writing to a public surface in the project's voice needs a human
+decision unless it is reversible, mechanical and watched.** Everything upstream of that line —
+discover, classify, dedupe, review, draft, rank, gate — an agent can do autonomously with the right
+guardrails. The irreversible, reputational acts (merging code, closing on taste, posting publicly
+as the project) stay human-gated, and a reversible, mechanical public write runs unattended only
+with an independent watchdog. That membrane is not a limitation; it's what makes running the whole
+thing unattended *safe*.
 
 ---
 

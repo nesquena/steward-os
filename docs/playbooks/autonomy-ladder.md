@@ -51,15 +51,14 @@ post.
 Reversible doesn't mean free. A wrong close still costs a reporter's trust, which is why the close
 gate stays strict.
 
-### Open exceptions
+Two actions fail this test, so they stay out of Band A:
 
-Two Band A placements fail this test today and are waiting on a ruling. Neither changes until then.
-
-- **Narrow mechanical merges** ([PR lifecycle](../lifecycle/pr-lifecycle.md)). A revert restores the
-  code, but anyone who pulled or deployed keeps the change.
-- **HIGH-confidence auto-file** ([community](../lifecycle/community.md#confidence-tiered-capture--action-the-safe-way-to-auto-file)).
-  A new public issue reaches the repository's watchers. It's off by default
-  (`issue_capture.max_public_files_per_run: 0`).
+- **A merge** ([PR lifecycle](../lifecycle/pr-lifecycle.md)) tops out at Band B. A revert restores the
+  code, but not for anyone who already pulled or deployed it.
+- **Filing an issue from a capture**
+  ([community](../lifecycle/community.md#confidence-tiered-capture--action)) is Band C. A new public
+  issue reaches every watcher of the repository, a message beyond the item, so the job drafts it and
+  a human files it.
 
 ## The promotion recipe
 
@@ -77,7 +76,7 @@ Two Band A placements fail this test today and are waiting on a ruling. Neither 
    (some that should act, some that shouldn't), verify on the real surface, expand, then go full.
 5. **Make it idempotent and silent-on-no-op.** A good Band-A job does nothing visible when there's
    nothing to do, and re-running it changes nothing. (See [scheduled jobs](scheduled-jobs.md).)
-6. **Keep the kill switch.** Every autonomous action stays reversible, the open exceptions aside,
+6. **Keep the kill switch.** Every autonomous action stays reversible,
    and every cron stays pausable. If the watchdog alarms, you can stop the action and undo its effects.
 
 ## Worked example: autonomous PR labeling (C → A)

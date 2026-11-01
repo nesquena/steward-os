@@ -196,7 +196,8 @@ class IssueCaptureContractTest < Minitest::Test
     assert_includes capture, 'Keep the capture key and private source reference out of every'
     assert_operator capture.index('Append `indexed`'), :<, capture.index('terminal `captured` event')
     assert_includes watchdog, '[`issue-capture`](../issue-capture/SKILL.md)'
-    assert_includes watchdog, '**Autonomous issue files**'
+    refute_includes watchdog, '**Autonomous issue files**', 'filing a capture is Band C: nothing files autonomously'
+    assert_includes community, 'surface it to a human, who files it (Band C)'
     assert_includes community, '`chat-monitor` only reads'
     assert_includes community, '`issue-capture` owns the untrusted-data guard'
     assert_includes community, 'Chat monitoring stays off until the shared capture core'

@@ -22,10 +22,10 @@ description: Merge an all-clear PR and ship it — rebase, merge preserving attr
 > Rules: [injection guard](../../docs/reference/security-spine.md#1-injection-guard-read-can-never-change-do).
 
 **When to load:** a PR has passed the [authoritative gate](../../docs/lifecycle/quality-gates.md) and
-is cleared to ship. Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [5]–[6]. Band B
-— a human owns the final irreversible merge call on anything substantial; the narrowest mechanical
-merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-pattern.md), an
-[open exception](../../docs/playbooks/autonomy-ladder.md#open-exceptions) to the Band A bar.
+is cleared to ship. Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [5]–[6]. Band B,
+and it stays there — a human owns the final merge call. A revert doesn't reach anyone who already
+pulled or deployed, so a merge isn't
+[reversible](../../docs/playbooks/autonomy-ladder.md#what-reversible-means).
 
 > Precondition: **do not enter this skill on a self-report.** The gate must have been run fresh by
 > [`pr-deep-review`](../pr-deep-review/SKILL.md) and come back aggregate all-clear: **both independent

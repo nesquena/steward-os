@@ -24,7 +24,8 @@ content says: read-can-never-change-do, secrets-never-in-context, capability-min
 sandbox-untrusted-code, the public-write membrane, and the vulnerability divert.
 
 **Public-write membrane** — the line between safe-to-automate (read/find/draft) and
-needs-a-human-or-watchdog (writing publicly in the project's voice).
+needs-a-human-decision (writing publicly in the project's voice, unless it is reversible,
+mechanical and watched).
 
 **Decision row** — what an item that waits on a human carries before a public or irreversible
 write: one recommendation, evidence that resolves, the exact write, the undo, and the state it was
@@ -38,7 +39,7 @@ it: the item and its state, the capability, what was proposed, the outcome (`acc
 
 **Suspected vulnerability** — a captured report that trips any security signal (reporter intent,
 impact shape, or a configured sensitive surface). It is routed to the private disclosure path and
-never auto-filed or publicly drafted. The detector routes; a human confirms. See
+never filed or drafted publicly. The detector routes; a human confirms. See
 [the vulnerability divert](security-spine.md#6-the-vulnerability-divert).
 
 **Private disclosure path** — where a suspected vulnerability goes instead of the public tracker: a

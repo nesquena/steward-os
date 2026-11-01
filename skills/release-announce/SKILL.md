@@ -67,7 +67,8 @@ decision row carries a key unique to it, and its decision record names that key.
      bot announcement, is a **failed post**: the post failed or never ran. Raise one alarm for it: a
      line in the index naming the record, pushed to `scheduled_jobs.outputs.alarms_to` when that's
      set. The job keeps that line, open or ticked, and a record whose alarm line is in the index
-     isn't alarmed again, whatever rows come and go.
+     isn't alarmed again, whatever rows come and go. Tick the line rather than delete it: a record
+     with no alarm line in the index is alarmed again.
 2. **Determine the release to announce.** Read the release model and changelog from config; find the
    newest release tag. If it's announced → **silent no-op; never re-post.**
 3. **Render from the changelog — don't write anew.** The announcement is a *templated render* of
@@ -84,9 +85,8 @@ decision row carries a key unique to it, and its decision record names that key.
    Otherwise put a
    [decision row](../../docs/playbooks/output-loop.md#the-decision-row) in the index, stamped on the
    tag and the rendered text, with a new key and the undo stated as "can't be recalled". If the
-   release has a failed post (step 1), the new row names that record as the one it retries. The row
-   takes no edits: to change the text, change the changelog, which changes the
-   stamp and re-proposes.
+   release has failed posts (step 1), the new row names the failed records it retries. The row takes
+   no edits: to change the text, change the changelog, which changes the stamp and re-proposes.
 6. **Approve: the post step.** The human runs it on an open row. It refuses on a closed row, or a row
    that already has a decision record: a row takes one decision. It re-renders and compares against
    the stamp, and refuses on a mismatch or on a rejection at that stamp. Immediately before sending, it
@@ -100,8 +100,8 @@ decision row carries a key unique to it, and its decision record names that key.
    this row already exists when it's written, stop. The bot token lives only in the locked credentials
    file (`secrets.credentials_file`), read by the helper — it **never enters the agent's context.** If
    the post fails, or the step stops after the record is written, the decision record stands and the
-   row stays closed;
-   step 1 raises the alarm, and the retry is a new row with a new key, never a second run on this one
+   row stays closed; step 1 raises the alarm, and the retry is a new row with a new key, never a
+   second run on this one
    ([decision record](../../docs/playbooks/output-loop.md#the-decision-record)).
 7. **Reject.** Same step, no stamp comparison. Write the decision record, naming the row's key, and
    close the row. The marker stays.

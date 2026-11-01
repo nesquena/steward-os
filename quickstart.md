@@ -33,7 +33,8 @@ the equivalent in your own agent works the same way. See
 
 Skim the [architecture overview](docs/architecture/index.md) — the four roles, the autonomy bands,
 and the one idea everything rests on: *reading is cheap; writing to a public surface in the
-project's voice is the irreversible act that stays human-gated.* You don't need the whole site yet.
+project's voice needs a human decision unless it is reversible, mechanical and watched.* You don't need the whole site
+yet.
 
 ## 2. Get the skills into your repo
 

@@ -37,7 +37,7 @@ Cost: building the deterministic scripts + the watchdog. Value: the routine main
 verifiably.
 
 ## Level 4 — Full pipeline
-Deep PR review and builds run as Band-B sessions feeding a Band-A release pipeline; the contributor
+Deep PR review and builds run as Band-B sessions feeding a release pipeline whose merges stay Band B; the contributor
 trust ledger weights review; community monitoring and contributor recognition run continuously; a
 fleet heartbeat watches the whole thing. The maintainer's job becomes *decisions and taste*, not
 mechanics. Cost: the full build. Value: an agent co-maintainer.
