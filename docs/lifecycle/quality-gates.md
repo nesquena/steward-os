@@ -49,7 +49,7 @@ Quality starts before the fix, not after:
   actually exercises the changed lines, so it can't pass vacuously.
 - **Behaviour changes get an old-against-new differential** where their inputs can be replayed. A
   change with no runtime effect doesn't need one; a config or docs change that alters behaviour (a
-  flipped default, a prompt an agent runs) does. Run the same broad inputs (the suite's fixtures
+  flipped default, say) does. Run the same broad inputs (the suite's fixtures
   plus realistic samples, not only the new tests' cases) through trunk and the change, normalize
   nondeterministic output (times, ids, ordering), and require every difference to map to an intent
   the change states. Targeted tests cover the cases the author thought of, and the differential
