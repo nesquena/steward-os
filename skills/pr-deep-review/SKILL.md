@@ -65,7 +65,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
    - **Fix it yourself** (Builder) for mechanical blockers (rebase, a few failing tests, a small
      nit) — on the author's branch, preserving authorship. Outcome **no run**: bounce instead; a
      fix you can't run is a fix you can't verify.
-5. **Run the authoritative gate [4] — fresh, independent of any prior verdict:**
+5. **Run the authoritative gate [4] — fresh, independent of any prior verdict, on one pinned commit,
+   from its own copy:**
    - Always: the **automated code review** pass and the **adversarial review** pass (a second,
      differently-tuned reviewer; stricter wins on a reproduced finding). Both only read through
      inert tools: `code_review_tool` and `adversarial_review_tool` come from step 2's accepted
@@ -75,14 +76,15 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      from step 2's accepted configuration) — never sample — and **visual verification** for any
      visible surface (screenshots at its accepted viewports; *drive* interactions, don't just
      screenshot them).
-   - Unless the outcome is **no run**: the suite's checks from
-     [quality gates](../../docs/lifecycle/quality-gates.md#1-the-test-suite--the-primary-line) gate 1.
-     Judge the run by exit status and its summary (a run that found no tests is not a pass), and run
-     the old-against-new differential for changes with a runtime effect whose inputs can be
-     replayed. One that applies but wasn't run leaves the gate not all-clear; when none applies, the
+   - Unless the outcome is **no run**: the suite's checks from [quality
+     gates](../../docs/lifecycle/quality-gates.md#1-the-test-suite--the-primary-line) gate 1. Judge
+     the run by exit status and its summary (a run that found no tests is not a pass), and run the
+     old-against-new differential for changes with a runtime effect whose inputs can be replayed (a
+     claim of no behaviour change doesn't exempt a change, and every difference it shows is a
+     finding). One that applies but wasn't run leaves the gate not all-clear; when none applies, the
      verdict says so and why.
-   - Always, where trunk's accepted configuration has CI: gate 5's check that PR-triggered CI ran on
-     this exact head.
+   - Always, where trunk's accepted configuration has CI: gate 5's check that the PR-triggered runs
+     trunk's workflows would start for this diff exist for this exact head.
 6. **If the outcome is no run, stop without an all-clear unless verified human evidence supplies
    the missing execution legs.** Review findings still go to the author; there is no release
    hand-off while any required leg/finding is missing or unresolved. Tell the human which runs
@@ -94,7 +96,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
    - *sandbox build failed* → fix the sandbox.
 
    A human run counts only under the sandbox rule's receipt contract: successful complete skipped
-   scopes against step 2's accepted gate configuration on the exact head/trunk, fresh immediately
+   scopes (the suite with any differential, visual verification) against step 2's accepted gate
+   configuration on the exact head/trunk, fresh immediately
    before merge, from the authenticated direct
    channel. Keep its origin/time/scope/results and review evidence in an operator/reviewer-owned
    location outside the contributor-writable tree/thread; the PR's
@@ -136,5 +139,7 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
 - For an all-clear: the full suite passed to completion on the *current* code; any human-run
   replacement has verified trusted origin, fresh completion time, required scope and successful results.
 - Both independent review passes completed on the same current head; no required finding unresolved.
+- The differential ran, or the verdict says why none applied; where trunk's accepted configuration
+  has CI, the PR-triggered runs exist for this head.
 - Required visible surfaces inspected/driven; regression coverage for fixes present; authorship preserved.
 - If any required evidence is missing/stale/unverifiable, verdict remains not-all-clear; no release hand-off.

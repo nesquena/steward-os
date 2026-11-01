@@ -53,12 +53,13 @@ Quality starts before the fix, not after:
   A claim of no behaviour change doesn't exempt such a change (a refactor, say): it still gets one,
   and every difference it shows is a finding. Run the same broad inputs (the suite's fixtures plus
   realistic samples, not only the new tests' cases) through trunk and the change, normalize
-  nondeterministic output (times, ids, ordering; a difference trunk also shows against itself is
-  noise to normalize, not a finding), and require every difference to map to an intent the change
-  states. Both halves run the PR's fixtures, so both run where the sandbox rule puts the suite. A
-  differential that applies but was not run leaves the gate not all-clear; when none applies, the
-  verdict says so and why. Targeted tests cover the cases the author thought of, and the
-  differential finds the rest.
+  nondeterministic output (times, ids, ordering), and require every difference to map to an intent
+  the change states. Any other difference trunk shows against itself is a
+  [flake](#flakes-never-tolerate-one), to log and fix rather than normalize away. Both halves run
+  trunk's fixtures plus the PR's, so a fixture the PR removes still counts, and both run where the
+  sandbox rule puts the suite. A differential that applies but was not run leaves the gate not
+  all-clear; when none applies, the verdict says so and why. Targeted tests cover the cases the
+  author thought of, and the differential finds the rest.
 
 ### 2. Automated code review
 An independent reviewer pass over the diff (a code-review tool or a dedicated reviewer agent). It
@@ -84,10 +85,11 @@ dossier. A prior "looks clean" may have verified only one code path or a stale b
 independent run is what actually authorizes the merge. A new head or a changed trunk voids the
 all-clear, even when the new head only takes an optional suggestion.
 
-Where trunk's accepted configuration has CI, check that it ran in full, too. Some hosts don't run
-PR-triggered workflows while a branch can't merge cleanly, so a green tally on its head can be the
-push run alone. Confirm the branch merges cleanly and that the PR-triggered runs exist for that
-exact head before trusting the tally.
+Where trunk's accepted configuration has CI, check that it ran in full, too: the runs trunk's
+workflows would start for this diff (none, for push-only CI or a path filter that skips these
+files). Some hosts don't run PR-triggered workflows while a branch can't merge cleanly, so a green
+tally on its head can be the push run alone. Confirm the branch merges cleanly and that those runs
+exist for that exact head; a missing or partial one leaves gate 5 not all-clear.
 
 ---
 
