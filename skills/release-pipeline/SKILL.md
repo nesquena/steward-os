@@ -83,20 +83,21 @@ merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-patt
    from a registry needs the network, as most do), a human builds or runs it under the rule's
    human-run receipt, naming the release commit and the artifact's digest, checked fresh before
    tagging. No receipt, or an old or incomplete one, means the candidate is untested: don't tag or
-   publish, step 6 waits, and ask the human for a fresh run on this release commit. If the candidate
-   fails, stop: don't tag or publish the release, and step 6 waits, except for closes the host
-   already made at merge. The fix is a new change through `pr-deep-review`, and the candidate is
-   built or pre-released again from the new release commit.
+   publish, step 6 waits as below, and ask the human for a fresh run on this release commit. If the
+   candidate fails, stop: don't tag or publish the release, and step 6 waits, except for closes the
+   host already made at merge. The fix is a new change through `pr-deep-review`, and the candidate
+   is built or pre-released again from the new release commit.
 
    Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
    real **and** (if you deploy) the running version serves the change. Re-derive the live version;
    never claim shipped from a passed gate alone. For a published artifact, confirm it is the tested
    candidate: if the tested file was uploaded as is, its checksum or digest matches. Otherwise
-   extract both the way an install would and compare what the install keeps: file contents, modes
-   (such as the executable or setuid bit), ownership where the install keeps it (as in an image),
-   requirements and dependencies. Only the signature, and what an install discards, may differ. On a
-   mismatch, stop: step 6 waits, and a human decides whether to yank the release or fix forward.
+   unpack both the way an install would and compare what the install keeps or runs: file contents,
+   modes (such as the executable or setuid bit), ownership where the install keeps it, install
+   scripts, an image's config (user, entrypoint, environment), requirements and dependencies. Only
+   the signature, and what an install discards, may differ. On a mismatch, stop: step 6 waits, and a
+   human decides whether to yank the release or fix forward.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
