@@ -96,6 +96,8 @@ PRs count as untrusted and what to do when the run can't happen.
 
 A change is done when:
 - it's merged **and** tagged **and** (if you deploy) the running version serves it;
+- a published artifact, if the project publishes one for others to install or pull, is the
+  candidate that was tested;
 - a regression test covers the fix and is in the suite;
 - the visible surface (if any) was inspected;
 - the author is credited and the issue is closed.

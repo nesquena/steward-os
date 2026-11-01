@@ -146,6 +146,15 @@ and the gate re-runs. Only an all-clear gate advances to merge.
 - **Merge preserving attribution** — the original author's authorship survives the merge (a
   non-squash merge with co-author trailers, or a fix-on-their-branch). See
   [contributor recognition](contributor-recognition.md).
+- **Test the artifact before you publish it** when the project publishes one for others to install
+  or pull (a package, binary or image); a project that only deploys its own service or site skips
+  this. The gate ran on the source tree, and packaging can still drop or add files. Build it the way
+  the project's release tooling will (or test a pre-release its pipeline published) and use it as a
+  user would, under the
+  [sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution), since the
+  release commit carries every merged contributor's code; where the sandbox can't run it, a human
+  does, with a receipt. The
+  [release pipeline](https://github.com/nesquena/steward-os/blob/main/skills/release-pipeline/SKILL.md) has the steps.
 - **Tag → deploy → verify** the change is actually live. "Shipped" means the tag exists *and* the
   merge is real *and* (if you deploy) the running version serves it — never claim shipped from a
   passed gate alone.

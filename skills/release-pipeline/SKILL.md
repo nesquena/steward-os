@@ -58,10 +58,47 @@ pulled or deployed, so a merge isn't
    branch where possible, or a non-squash merge with co-author trailers when not. Never let a rebase
    or "absorb" erase who wrote it. See [contributor recognition](../../docs/lifecycle/contributor-recognition.md).
 4. **Stamp the release.** Changelog entry naming the contributor; bump any in-product version marker
-   so it matches the tag. Tag the release.
+   so it matches the tag.
+
+   **Ship the artifact you tested**, when the project publishes a versioned artifact for others to
+   install or pull (a package, binary or image on a registry, store or download page), however often
+   it releases. Whether it does comes from the operator-accepted configuration
+   (`project.release_model`); if it doesn't say, ask the operator, don't skip. A project that only
+   deploys its own service or site skips this, even when it builds an image to do so, since step 5
+   checks the live version. Build the candidate the way the project's release tooling will, from the
+   release commit. Where that tooling is on trunk, a merged change to it went through
+   [`pr-deep-review`](../pr-deep-review/SKILL.md) like any other; tooling kept elsewhere (another
+   repository, a hosted build service) is reviewed as part of this release. Either way it decides
+   how the candidate is built, never whether this check runs. Or test a pre-release that the
+   project's own release pipeline published from that commit (a staging channel or a registry
+   pre-release tag), and promote that exact artifact unchanged. If the final release must be rebuilt
+   (its version string changes, say), that rebuild is the candidate. Use it the way a user would:
+   follow the project's documented install or quickstart, and exercise whatever the release notes
+   say changed. Where users upgrade from an earlier release, also upgrade from it, following the
+   release notes as written. Compare its contents and metadata with the previous release, if any,
+   for missing or stray files and unintended changes to requirements or dependencies. The release
+   commit carries every merged contributor's change, so building a candidate yourself, and using any
+   candidate, follows the [sandbox
+   rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution) like step 1.
+   Where that rule can't be met (signing needs a credential; fetching dependencies or installing
+   from a registry needs the network, as most do), a human builds or runs it under the rule's
+   human-run receipt, naming the release commit and the artifact's digest, checked fresh before
+   tagging. No receipt, or an old or incomplete one, means the candidate is untested: don't tag or
+   publish, step 6 waits as below, and ask the human for a fresh run on this release commit. If the
+   candidate fails, stop: don't tag or publish the release, and step 6 waits, except for closes the
+   host already made at merge. The fix is a new change through `pr-deep-review`, and the candidate
+   is built or pre-released again from the new release commit.
+
+   Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
    real **and** (if you deploy) the running version serves the change. Re-derive the live version;
-   never claim shipped from a passed gate alone.
+   never claim shipped from a passed gate alone. For a published artifact, confirm it is the tested
+   candidate: if the tested file was uploaded as is, its checksum or digest matches. Otherwise
+   unpack both the way an install would and compare what the install keeps or runs: file contents,
+   modes (such as the executable or setuid bit), ownership where the install keeps it, install
+   scripts, an image's config (user, entrypoint, environment), requirements and dependencies. Only
+   the signature, and what an install discards, may differ. On a mismatch, stop: step 6 waits, and a
+   human decides whether to yank the release or fix forward.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
@@ -93,6 +130,7 @@ trailer exists; it does **not** prove the *name* is right.
 ## Verification
 - The change is merged, tagged, and (if deployed) the live version serves it — all three re-derived,
   not assumed.
+- A published artifact is the candidate that was tested (step 4), when the project publishes one.
 - The author is credited identically on every surface, and the handle is the real author of the work.
 - The PR and its issues are closed with version + thanks; the trust ledger has one terminal event.
 - No branch/worktree left dangling.
