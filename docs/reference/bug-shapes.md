@@ -250,7 +250,9 @@ other side of the rule, so a fix that over-refuses or under-refuses passes its o
 
 **Catch it:** Test both sides every round: what must be refused and what must keep working. Turn
 each variant a round finds into a test on its side, and send every round's head through adversarial
-review: it is done when that pass reproduces no new hole.
+review: it is done when that pass reproduces no new hole. After two or three rounds that each
+reproduce one, stop patching and change the rule's shape (an allowlist, or parsing the input's
+structure instead of matching patterns).
 
 ---
 

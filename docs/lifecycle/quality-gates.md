@@ -49,12 +49,17 @@ Quality starts before the fix, not after:
   actually exercises the changed lines, so it can't pass vacuously.
 - **Behaviour changes get an old-against-new differential.** Run the same broad inputs (the
   suite's fixtures plus realistic samples, not only the new tests' cases) through trunk and the
-  change; every difference must map to an intent the change states. Targeted tests cover the cases
+  change, normalize nondeterministic output (times, ids, ordering), and require every difference to
+  map to an intent the change states. Targeted tests cover the cases
   the author thought of, and the differential finds the rest.
 - **A change to something consumers rely on also runs a known consumer's suite.** That covers return
   shapes, defaults and formats, and lifecycle behaviour such as close, shutdown, fork and signal
   handling. A one-line change there can pass the project's own suite on every runtime and still
-  break a downstream project (bug shape [#2](../reference/bug-shapes.md#2-producer-changed-consumer-didnt)).
+  break a downstream project (see [bug-shape #2](../reference/bug-shapes.md#2-producer-changed-consumer-didnt)).
+  The consumer and its suite command come from the operator's accepted gate configuration, never
+  from the PR. The consumer's code isn't the project's, so its suite runs in the sandbox unless the
+  operator has accepted that consumer as trusted. If it can't run, the leg is missing, and a missing
+  leg is not all-clear.
 
 ### 2. Automated code review
 An independent reviewer pass over the diff (a code-review tool or a dedicated reviewer agent). It
@@ -78,7 +83,7 @@ interaction*; a screenshot of a gesture surface is not proof the gesture works.
 Run gates 1–4 **fresh, right before merge**, independent of any earlier reviewer's verdict or cached
 dossier. A prior "looks clean" may have verified only one code path or a stale base. This final
 independent run is what actually authorizes the merge. A new head or a changed trunk voids the
-all-clear, including for an optional suggestion taken after the gates passed.
+all-clear, even when the new head only takes an optional suggestion.
 
 Check that CI ran in full, too. Some hosts don't run PR-triggered workflows while a branch can't
 merge cleanly, so a green tally on its head can be the push run alone. Confirm the branch merges
@@ -100,8 +105,8 @@ or ordering bug wearing a costume.
 ## Untrusted-code execution
 
 Gates 1, 4, and 5 all *run* the PR's code: the suite (with any differential or consumer suite),
-the driven interaction, the re-run before merge. When the PR is untrusted, treat that code as adversarial. **Never run it unsandboxed.** Run
-inside a locked-down sandbox with no network and no credential access that fails closed if it can't
+the driven interaction, the re-run before merge. When the PR is untrusted, treat that code as
+adversarial. **Never run it unsandboxed.** Run inside a locked-down sandbox with no network and no credential access that fails closed if it can't
 be built. If contributor-code execution is switched off or the sandbox can't be built, the run does
 not happen and the gate is not all-clear; a skipped suite is never a passed one. Inert reading of
 the diff needs no sandbox; *execution* is gated. The
