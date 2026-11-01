@@ -94,7 +94,9 @@ render is safe because the content already exists (the changelog):
 - Render from the changelog + release tags into a decision row. The job proposes and never posts.
 - A human keys the post, which goes to a **fixed, hardcoded** channel via a secret-isolating helper
   (the bot token never enters the agent's context).
-- Gate on a "last-announced" marker so each release posts once, never re-posts.
+- Gate on an action ledger keyed by release (a "last-announced" marker caches it), so each release
+  posts once, never re-posts. Only the bot's own post is recognised automatically; a human records
+  a hand post.
 - Anything beyond the templated announcement (general conversation, replies) stays human.
 
 ## The far horizon (deliberately staged)

@@ -1,5 +1,5 @@
-# Fixture: fully enabled, correctly configured. The ONLY artifact in the repo
-# that reaches the true branch of the semantic rules. Must stay green.
+# Red fixture for announcements_band_c.
+# One edit vs green-enabled.yaml: autonomy.announcements set to A.
 project:
   name: "fixture project"
   trunk_branch: "main"

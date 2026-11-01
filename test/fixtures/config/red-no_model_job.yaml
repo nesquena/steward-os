@@ -1,5 +1,5 @@
-# Fixture: fully enabled, correctly configured. The ONLY artifact in the repo
-# that reaches the true branch of the semantic rules. Must stay green.
+# Red fixture for no_model_job.
+# One edit vs green-enabled.yaml: the label-sync job runs with agent: true.
 project:
   name: "fixture project"
   trunk_branch: "main"
