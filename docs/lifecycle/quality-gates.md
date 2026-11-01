@@ -16,7 +16,9 @@ time it catches automatically what today still needs a judgment gate. The other 
 catch what the suite doesn't *yet* cover, and each thing they catch should become a new test.
 
 The gates are **layered and independent.** No single gate is trusted alone; they catch different
-classes of defect, and on a reproduced finding the stricter verdict wins.
+classes of defect, and on a reproduced finding the stricter verdict wins. Every gate runs on one
+pinned commit, from its own copy, never a tree someone is still editing: a verdict on a moving tree
+belongs to no head.
 
 ---
 
@@ -37,11 +39,22 @@ Quality starts before the fix, not after:
 ### 1. The test suite — the primary line
 - Run it **to completion, never sampled.** A partial run that looks green hides the regression in
   the part you skipped.
+- **Judge the run by the runner's exit status and its own summary, not by a filter of its output.**
+  Summary lines differ between test runners and their versions, so a filter can print nothing for a
+  failed run, and it can match a server's log lines in a passing one.
 - Every fix adds a regression test. The suite only grows; coverage is a ratchet.
 - A green suite is necessary but **not sufficient** — it only covers what's been written. That's why
   the other gates exist.
 - **Coverage-delta check** (worth building as the system matures): confirm the new regression test
   actually exercises the changed lines, so it can't pass vacuously.
+- **Behaviour changes get an old-against-new differential.** Run the same broad inputs (the
+  suite's fixtures plus realistic samples, not only the new tests' cases) through trunk and the
+  change; every difference must map to an intent the change states. Targeted tests cover the cases
+  the author thought of, and the differential finds the rest.
+- **A change to something consumers rely on also runs a known consumer's suite.** That covers return
+  shapes, defaults and formats, and lifecycle behaviour such as close, shutdown, fork and signal
+  handling. A one-line change there can pass the project's own suite on every runtime and still
+  break a downstream project (bug shape [#2](../reference/bug-shapes.md#2-producer-changed-consumer-didnt)).
 
 ### 2. Automated code review
 An independent reviewer pass over the diff (a code-review tool or a dedicated reviewer agent). It
@@ -64,7 +77,12 @@ interaction*; a screenshot of a gesture surface is not proof the gesture works.
 ### 5. The authoritative re-run (immediately before merge)
 Run gates 1–4 **fresh, right before merge**, independent of any earlier reviewer's verdict or cached
 dossier. A prior "looks clean" may have verified only one code path or a stale base. This final
-independent run is what actually authorizes the merge.
+independent run is what actually authorizes the merge. A new head or a changed trunk voids the
+all-clear, including for an optional suggestion taken after the gates passed.
+
+Check that CI ran in full, too. Some hosts don't run PR-triggered workflows while a branch can't
+merge cleanly, so a green tally on its head can be the push run alone. Confirm the branch merges
+cleanly and that the PR-triggered runs exist for that exact head before trusting the tally.
 
 ---
 
@@ -81,8 +99,8 @@ or ordering bug wearing a costume.
 
 ## Untrusted-code execution
 
-Gates 1, 4, and 5 all *run* the PR's code: the suite, the driven interaction, the re-run before
-merge. When the PR is untrusted, treat that code as adversarial. **Never run it unsandboxed.** Run
+Gates 1, 4, and 5 all *run* the PR's code: the suite (with any differential or consumer suite),
+the driven interaction, the re-run before merge. When the PR is untrusted, treat that code as adversarial. **Never run it unsandboxed.** Run
 inside a locked-down sandbox with no network and no credential access that fails closed if it can't
 be built. If contributor-code execution is switched off or the sandbox can't be built, the run does
 not happen and the gate is not all-clear; a skipped suite is never a passed one. Inert reading of

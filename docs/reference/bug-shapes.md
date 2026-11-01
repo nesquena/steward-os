@@ -239,6 +239,21 @@ _Contributed by Teknium — see [reviewing at volume](reviewing-at-volume.md#inv
 
 ---
 
+## 13. The refusal rule fixed one hole at a time
+
+**Shape:** A denylist, permission check or input filter is fixed in rounds, and each round opens a
+new hole: it now refuses something legitimate that the rule didn't anticipate (generated code, a
+wrapper, an unnamed or nested type), or it still misses a variant of what it meant to stop.
+
+**Why checks miss it:** Each round's test covers the case that round found. Nothing checks the
+other side of the rule, so a fix that over-refuses or under-refuses passes its own test.
+
+**Catch it:** Test both sides every round: what must be refused and what must keep working. Turn
+each variant a round finds into a test on its side, and send every round's head through adversarial
+review: it is done when that pass reproduces no new hole.
+
+---
+
 _How to use this: skim it before a deep review so the shapes are fresh, and add to it when your
 project discovers a new recurring class. A catalog of the bugs that actually bite you is one of the
 highest-leverage documents a project keeps._
