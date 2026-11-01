@@ -59,18 +59,21 @@ merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-patt
 4. **Stamp the release.** Changelog entry naming the contributor; bump any in-product version marker
    so it matches the tag.
 
-   **Ship the artifact you tested**, when the project publishes a versioned artifact (a package,
-   binary or image), however often it releases. A project that only deploys a service or site skips
-   this, since step 5 checks the live version. Before tagging or publishing, build the candidate the
-   way the release tooling will, from the release commit, and use it the way a user would: install it
-   and run the main flows. Where users upgrade from an earlier release, also upgrade from it,
-   following the release notes as written. Compare its contents and metadata with the previous
-   release for missing or stray files and unintended changes to requirements or dependencies. The
-   release commit carries every merged contributor's code, so building and running it follows the
+   **Ship the artifact you tested**, when the project publishes a versioned artifact for others to
+   install or pull (a package, binary or image on a registry, store or download page), however often
+   it releases. A project that only deploys its own service or site skips this, even when it builds
+   an image to do so, since step 5 checks the live version. Before publishing the release, build the
+   candidate the way the release tooling will, from the release commit, or test the pre-release the
+   tooling publishes (an rc tag or staging channel) and promote that exact artifact. Use it the way a
+   user would: install it and run the main flows. Where users upgrade from an earlier release, also
+   upgrade from it, following the release notes as written. Compare its contents and metadata with
+   the previous release, if any, for missing or stray files and unintended changes to requirements
+   or dependencies. The release commit carries every merged contributor's code, so building and
+   running it follows the
    [sandbox rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)
-   like step 1. If the candidate fails, stop: don't tag or publish. The fix is a new change through
-   [`pr-deep-review`](../pr-deep-review/SKILL.md), and the candidate is built again from the new
-   release commit.
+   like step 1. If the candidate fails, stop: don't publish the release, and step 6's closes wait
+   too. The fix is a new change through [`pr-deep-review`](../pr-deep-review/SKILL.md), and the
+   candidate is built again from the new release commit.
 
    Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
