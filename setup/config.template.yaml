@@ -9,7 +9,9 @@ project:
   release_model:
     style: "tag-per-release"    # tag-per-release | continuous | other
     changelog_file: "CHANGELOG.md"
-    shipped_means: "tag-exists-and-deployed"   # how "shipped" is verified
+    shipped_means: "tag-exists-and-deployed"   # how "shipped" is verified, e.g. tag-exists-and-deployed,
+                                               # or tag-exists-and-artifact-published (a package, binary or
+                                               # image others install; see release-pipeline step 4)
 
 repositories:                   # list every repo the project spans
   - host: "github.com"

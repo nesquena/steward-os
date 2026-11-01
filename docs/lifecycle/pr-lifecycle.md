@@ -155,8 +155,8 @@ and the gate re-runs. Only an all-clear gate advances to merge.
   release commit carries every merged contributor's code. The
   [release pipeline](https://github.com/nesquena/steward-os/blob/main/skills/release-pipeline/SKILL.md) has the steps.
 - **Tag → deploy → verify** the change is actually live. "Shipped" means the tag exists *and* the
-  merge is real *and* (if you deploy) the running version serves it — never claim shipped from a
-  passed gate alone.
+  merge is real *and* (if you deploy) the running version serves it *and* (if you publish) the
+  published artifact is the tested candidate — never claim shipped from a passed gate alone.
 
 > Merge itself is **Band B**: the human owns the final irreversible call on anything substantial.
 > The narrowest mechanical merges can graduate to Band A — but only with the

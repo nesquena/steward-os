@@ -28,7 +28,8 @@ documented TODO, not an assumption.
    mobile, docs…), and visibility. Multi-repo projects route work to the right repo — list them all.
 3. **What's the default branch / trunk?** (e.g. `main`.)
 4. **What's the release model?** Tag-per-release? A changelog file? How does "shipped" get verified
-   (a tag, a deploy, a running version)? → feeds the [PR lifecycle](../docs/lifecycle/pr-lifecycle.md)
+   (a tag, a deploy, a running version)? Do you publish an artifact others install or pull (a
+   package, binary or image), and what builds it? → feeds the [PR lifecycle](../docs/lifecycle/pr-lifecycle.md)
    "done means shipped" rule.
 
 ## Section 2 — Scope anchors *(required — this is the most important section)*
