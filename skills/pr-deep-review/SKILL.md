@@ -77,7 +77,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      screenshot them).
    - Unless the outcome is **no run**: the suite's checks from
      [quality gates](../../docs/lifecycle/quality-gates.md#1-the-test-suite--the-primary-line) gate 1.
-     Judge the run by exit status, and run the old-against-new differential for behaviour changes.
+     Judge the run by exit status, and run the old-against-new differential for behaviour changes
+     whose inputs can be replayed.
    - Always: gate 5's check that PR-triggered CI ran on this exact head.
 6. **If the outcome is no run, stop without an all-clear unless verified human evidence supplies
    the missing execution legs.** Review findings still go to the author; there is no release
