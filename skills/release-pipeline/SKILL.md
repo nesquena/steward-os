@@ -65,18 +65,19 @@ merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-patt
    (`project.release_model`); if it doesn't say, ask the operator, don't skip. A project that only
    deploys its own service or site skips this, even when it builds an image to do so, since step 5
    checks the live version. Build the candidate the way the project's release tooling will, from the
-   release commit. That tooling is trunk: a merged change to it went through
-   [`pr-deep-review`](../pr-deep-review/SKILL.md) like any other, and it decides how the candidate
-   is built, never whether this check runs. Or test a pre-release that the project's own release
-   pipeline published from that commit (a staging channel or a registry pre-release tag), and
-   promote that exact artifact unchanged. If the final release must be rebuilt (its version string
-   changes, say), that rebuild is the candidate. Use it the way a user would: follow the project's
-   documented install or quickstart, and exercise whatever the release notes say changed. Where
-   users upgrade from an earlier release, also upgrade from it, following the release notes as
-   written. Compare its contents and metadata with the previous release, if any, for missing or
-   stray files and unintended changes to requirements or dependencies. The release commit carries
-   every merged contributor's change, so building a candidate yourself, and using any candidate,
-   follows the [sandbox
+   release commit. Where that tooling is on trunk, a merged change to it went through
+   [`pr-deep-review`](../pr-deep-review/SKILL.md) like any other; tooling kept elsewhere (another
+   repository, a hosted build service) is reviewed as part of this release. Either way it decides
+   how the candidate is built, never whether this check runs. Or test a pre-release that the
+   project's own release pipeline published from that commit (a staging channel or a registry
+   pre-release tag), and promote that exact artifact unchanged. If the final release must be rebuilt
+   (its version string changes, say), that rebuild is the candidate. Use it the way a user would:
+   follow the project's documented install or quickstart, and exercise whatever the release notes
+   say changed. Where users upgrade from an earlier release, also upgrade from it, following the
+   release notes as written. Compare its contents and metadata with the previous release, if any,
+   for missing or stray files and unintended changes to requirements or dependencies. The release
+   commit carries every merged contributor's change, so building a candidate yourself, and using any
+   candidate, follows the [sandbox
    rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution) like step 1.
    Where that rule can't be met (signing needs a credential; fetching dependencies or installing
    from a registry needs the network, as most do), a human builds or runs it under the rule's
