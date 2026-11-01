@@ -143,6 +143,10 @@ and the gate re-runs. Only an all-clear gate advances to merge.
 ## [5] Merge + release
 
 - **Rebase** onto the current trunk (the Builder does this itself if the only blocker is staleness).
+- **Closing links in the description.** Each issue the PR resolves is linked as closing in the PR's
+  description (`Closes #N`) or its sidebar. A keyword only in a commit message doesn't link the PR,
+  and the [issue lifecycle](issue-lifecycle.md#close-with-credit-careful--this-is-public)'s close
+  reads that link.
 - **Merge preserving attribution** — the original author's authorship survives the merge (a
   non-squash merge with co-author trailers, or a fix-on-their-branch). See
   [contributor recognition](contributor-recognition.md).

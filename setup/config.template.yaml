@@ -113,7 +113,7 @@ secrets:
 
 scheduled_jobs:                 # start with a few; add as you climb the autonomy ladder
   # chat-monitor and mentions-sweep ship no skill yet; the config lint refuses them enabled with agent: true.
-  # issue-autoclose needs action-watchdog enabled: its host-closes check is the only proof closing at merge stays off.
+  # issue-autoclose needs action-watchdog enabled: its host-closes check is what proves closing at merge stays off.
   jobs:
     - { name: "scoreboard-refresh", every: "2h",  enabled: true,  agent: false }
     - { name: "chat-monitor",       every: "1h",  enabled: false, agent: true  }

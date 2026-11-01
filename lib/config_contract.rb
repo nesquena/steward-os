@@ -331,23 +331,43 @@ module ConfigContract
     Violation.new(severity: :error, rule: rule, key: key, message: message)
   end
 
-  # Every repository says whether its host closes a linked issue at merge. The
-  # shape phase can't tell: it merges list entries, so a second entry missing the
-  # key would pass it. Absence is nil here and fails closed like a present null.
+  # A bare host name, optionally with a port: what host_closing_off compares.
+  # A URL, a path or user info is refused, so no spelling of github.com can
+  # slip past the rule.
+  HOST_FORMAT = /\A[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.?(?::\d{1,5})?\z/
+
+  # Every repository is a mapping that names its host and says whether that
+  # host closes a linked issue at merge. The shape phase can't tell: it merges
+  # list entries, so a second entry missing a key, or an entry that isn't a
+  # mapping, would pass it. Absence is nil here and fails closed like a present
+  # null. An empty list stays allowed, as before (see public_repo?).
   def self.repository_violations(config)
-    violations_for_each(config, 'repositories') do |repo, i|
-      found = []
-      value = repo['visibility']
-      unless VISIBILITIES.include?(value)
-        found << err(:type_enum, "repositories[#{i}].visibility",
-                     "expected one of #{VISIBILITIES.join(', ')}, got #{value.inspect}")
-      end
-      closes = repo['host_closes_on_merge']
-      unless [true, false].include?(closes)
-        found << type_error(:type_boolean, "repositories[#{i}].host_closes_on_merge", closes, 'true or false')
-      end
-      found
+    repos = config['repositories']
+    return [type_error(:type_list, 'repositories', repos, 'a list of repository mappings')] unless repos.is_a?(Array)
+
+    repos.each_with_index.flat_map do |repo, i|
+      next [type_error(:type_mapping, "repositories[#{i}]", repo, 'a repository mapping')] unless repo.is_a?(Hash)
+
+      repository_entry_violations(repo, i)
     end
+  end
+
+  def self.repository_entry_violations(repo, i)
+    found = []
+    value = repo['visibility']
+    unless VISIBILITIES.include?(value)
+      found << err(:type_enum, "repositories[#{i}].visibility",
+                   "expected one of #{VISIBILITIES.join(', ')}, got #{value.inspect}")
+    end
+    host = repo['host']
+    unless host.is_a?(String) && HOST_FORMAT.match?(normalize_job_name(host))
+      found << type_error(:type_host, "repositories[#{i}].host", host, 'a bare host name such as github.com')
+    end
+    closes = repo['host_closes_on_merge']
+    unless [true, false].include?(closes)
+      found << type_error(:type_boolean, "repositories[#{i}].host_closes_on_merge", closes, 'true or false')
+    end
+    found
   end
 
   def self.job_type_violations(config)
@@ -654,9 +674,10 @@ module ConfigContract
     end
   end
 
-  # `https://www.GitHub.com/` is github.com.
+  # ` WWW.GitHub.com.:443` is github.com. The type phase has already refused
+  # anything that isn't a bare host name with an optional port.
   def self.normalize_host(host)
-    normalize_job_name(host).sub(%r{\A[a-z][a-z0-9+.-]*://}, '').sub(/\Awww\./, '').sub(%r{[/.]+\z}, '')
+    normalize_job_name(host).sub(/:\d+\z/, '').sub(/\.\z/, '').sub(/\Awww\./, '')
   end
 
   # Runtimes differ on whether `Issue_Capture ` is `issue-capture`, so the job
@@ -696,13 +717,13 @@ module ConfigContract
       found << err(:no_model_job, "scheduled_jobs.jobs[#{index}]",
                    "job '#{job['name']}' runs a no-model procedure, so it must be agent: false")
     end
-    # No job can read the host's closing-at-merge setting, so the watchdog's
-    # host-closes check is the only proof it stays off; its autonomous-closes
-    # check re-verifies the job's own closes.
+    # GitHub's closing-at-merge setting can't be read through its API, so the
+    # watchdog's host-closes check is what proves it stays off; its
+    # autonomous-closes check re-verifies the job's own closes.
     if name == 'issue-autoclose' && !watchdog_enabled?(config)
       found << err(:autoclose_needs_watchdog, "scheduled_jobs.jobs[#{index}]",
                    "job '#{job['name']}' is enabled but action-watchdog is not: its host-closes " \
-                   'check is the only proof the host is not closing issues at merge ' \
+                   'check is what proves the host is not closing issues at merge ' \
                    '(skills/action-watchdog/SKILL.md)')
     end
     flag = JOB_FLAGS[name]

@@ -17,8 +17,9 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 > Precondition: **the fix has shipped.** This skill closes issues that a released PR resolved; it
 > never closes on taste, staleness, or a maintainer's judgment call — those stay human
 > ([`issue-close-proposal`](../issue-close-proposal/SKILL.md) prepares two kinds for that human:
-> done with no linking PR, and duplicate). If no issue
-> has a merged, released, single-surface fix since the last run, there is nothing to close — stop.
+> done with no linking PR, and duplicate). If no open
+> issue has a merged, released, single-surface fix that passes every gate below, there is nothing to
+> close — stop.
 
 > Config: read the repos from [`config.yaml`](../../setup/config.template.yaml) (`repositories:`,
 > each with `host_closes_on_merge`), the release model from `project.release_model` (what "released tag" means for this project), and
@@ -28,7 +29,7 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 > approve) and promote to Band A via the [autonomy ladder](../../docs/playbooks/autonomy-ladder.md)
 > **only once the [watchdog](../action-watchdog/SKILL.md) "Autonomous closes" check is live.** The
 > config lint refuses this job enabled without an enabled `action-watchdog`: its "Host closes" check
-> is the only proof the host isn't closing issues at merge.
+> is what proves the host isn't closing issues at merge.
 
 ## Steps
 
@@ -40,8 +41,10 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    link from its sidebar; a keyword only in a commit message doesn't link the PR), however long ago
    the PR merged: a merge no release contains yet stays a candidate until one does. Skip an issue
    this job's ledger shows it already closed: if it's open again, a human reopened it, and a reopen
-   is a hold. The set stays small, since an issue leaves it once it's closed. No candidate → silent
-   no-op.
+   is a hold. An issue that steps 2-5 leave open is checked again next run, so routing it to a human
+   is [reconciled](../../docs/playbooks/output-loop.md#3-keep-the-state-honest), not repeated: an
+   issue already routed isn't surfaced again until one of its signals changes. No candidate →
+   silent no-op.
 2. **Verify provably-shipped, not just merged.** For each candidate, the linking PR must be merged
    **and** its merge commit must be **contained in a released tag** — the same three-part "shipped"
    notion [`release-pipeline`](../release-pipeline/SKILL.md) enforces (tag exists **and** the merge

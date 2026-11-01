@@ -38,11 +38,14 @@ description: Independently fact-check the autonomous actions the system took (is
      nonterminal capture intent with no public action yet = 🟡.
    - **Host closes** (no ledger: the host acts on its own, and nothing in the system records it):
      for each repository whose `host_closes_on_merge` is `false`, read what closed each issue closed
-     since this check's last run (its first run starts then, so closes from before the setting went
-     off don't count). On GitHub that's the `ClosedEvent`'s `closer`; on GitLab, the "closed via
-     merge request" or "closed via commit" system note. → an issue the host closed from a merge or a
-     commit = 🟡: closing at merge is on again against the config, so a human turns it off and decides
-     about the issues it closed early.
+     since this check's last recorded run. Keep that time in the watchdog's own private state. The
+     first run starts the window, so closes from before the setting went off don't count; if the
+     record is ever lost, the next run starts a new window and reports it 🟡, since closes in the
+     gap went unchecked. On GitHub, read the `ClosedEvent`'s `closer`. On GitLab, read the issue's
+     resource state events (a `closed` event with a `source_merge_request_id` or a `source_commit`),
+     and the project's `autoclose_referenced_issues` setting, which its API reports. → an issue
+     the host closed from a merge or a commit, or a GitLab setting that's on = 🟡: a human checks
+     the repository's setting and decides about the issue.
    - **(Add a check here for every new autonomous action — same change that adds the action.)**
 3. **Classify severities.** 🔴 = correctness failure (an action was *wrong* — act now). 🟡 = drift
    (stale, reconcile soon).
