@@ -79,6 +79,7 @@ module ConfigContract
     announcements_band_c
     pr_merge_band_b
     host_closing_off
+    autoclose_needs_watchdog
     no_model_job
   ].freeze
 
@@ -694,6 +695,15 @@ module ConfigContract
     if job['agent'] == true && NO_MODEL_JOBS.include?(name)
       found << err(:no_model_job, "scheduled_jobs.jobs[#{index}]",
                    "job '#{job['name']}' runs a no-model procedure, so it must be agent: false")
+    end
+    # No job can read the host's closing-at-merge setting, so the watchdog's
+    # host-closes check is the only proof it stays off; its autonomous-closes
+    # check re-verifies the job's own closes.
+    if name == 'issue-autoclose' && !watchdog_enabled?(config)
+      found << err(:autoclose_needs_watchdog, "scheduled_jobs.jobs[#{index}]",
+                   "job '#{job['name']}' is enabled but action-watchdog is not: its host-closes " \
+                   'check is the only proof the host is not closing issues at merge ' \
+                   '(skills/action-watchdog/SKILL.md)')
     end
     flag = JOB_FLAGS[name]
     if flag && fetch_path(config, flag) != true

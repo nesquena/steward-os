@@ -26,17 +26,22 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 > `issue-autoclose`. It is `agent: false`: a plain deterministic script, no model in the loop, no
 > injection surface. Start at the configured band (default **C** — draft the close for a human to
 > approve) and promote to Band A via the [autonomy ladder](../../docs/playbooks/autonomy-ladder.md)
-> **only once the [watchdog](../action-watchdog/SKILL.md) "Autonomous closes" check is live.**
+> **only once the [watchdog](../action-watchdog/SKILL.md) "Autonomous closes" check is live.** The
+> config lint refuses this job enabled without an enabled `action-watchdog`: its "Host closes" check
+> is the only proof the host isn't closing issues at merge.
 
 ## Steps
 
-1. **Read `config.yaml` and select candidates (incremental).** Load `repositories:` and the release
-   model. Skip a repository whose `host_closes_on_merge` is `true`: its host closed the issue at
-   merge, so there's nothing to close, and the release names the version on it
-   ([`release-pipeline`](../release-pipeline/SKILL.md) step 6). Elsewhere, consider only **open**
-   issues with a **merged PR that links them as closing** (`Closes #N` in the PR's description, or a
-   link from its sidebar; a keyword only in a commit message doesn't link the PR) **new since the
-   last-closed marker** — not the whole back catalog. No candidate → silent no-op.
+1. **Read `config.yaml` and select candidates.** Load `repositories:` and the release model. Skip a
+   repository whose `host_closes_on_merge` is `true`: its host closed the issue at merge, so there's
+   nothing to close, and the release names the version on it
+   ([`release-pipeline`](../release-pipeline/SKILL.md) step 6). Elsewhere, consider every **open**
+   issue with a **merged PR that links it as closing** (`Closes #N` in the PR's description, or a
+   link from its sidebar; a keyword only in a commit message doesn't link the PR), however long ago
+   the PR merged: a merge no release contains yet stays a candidate until one does. Skip an issue
+   this job's ledger shows it already closed: if it's open again, a human reopened it, and a reopen
+   is a hold. The set stays small, since an issue leaves it once it's closed. No candidate → silent
+   no-op.
 2. **Verify provably-shipped, not just merged.** For each candidate, the linking PR must be merged
    **and** its merge commit must be **contained in a released tag** — the same three-part "shipped"
    notion [`release-pipeline`](../release-pipeline/SKILL.md) enforces (tag exists **and** the merge
@@ -54,13 +59,13 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 5. **Any signal missing or ambiguous → don't close.** Everything short of *all* gates stays open and
    is surfaced to a human. **Under-close rather than mis-close** — a wrongly-closed issue erodes
    reporter trust, and reopening is the loud failure this whole gate exists to avoid.
-6. **Close with credit, ledger, advance the marker.** Close the issue with a **templated** credit
-   line naming the resolving PR and release tag — no original prose, no conversation (public voice
-   stays human; anything beyond the template is Band B **draft → human**). Append the close — issue,
-   closing PR, release tag, timestamp — to the append-only
-   [action ledger](../action-watchdog/SKILL.md) the watchdog re-verifies, then advance the
-   last-closed marker. The ledger is *what to check*, never the proof it was right. Idempotent: a
-   re-run re-checks the marker and reopen-state and **never re-closes**.
+6. **Close with credit and ledger.** Close the issue with a **templated** credit line naming the
+   resolving PR and release tag — no original prose, no conversation (public voice stays human;
+   anything beyond the template is Band B **draft → human**). Append the close — issue, closing PR,
+   release tag, timestamp — to the append-only [action ledger](../action-watchdog/SKILL.md) the
+   watchdog re-verifies. The ledger is *what to check*, never the proof it was right, and step 1
+   reads it to skip an issue already closed. Idempotent: a re-run re-checks the ledger and
+   reopen-state and **never re-closes**.
 7. **Silent-on-no-op; loud on error.** Nothing to close → no output. A non-zero exit or timeout
    **alarms** (never fails silently); silent-on-no-op is for success with nothing to do, never for
    errors.
@@ -79,8 +84,11 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
   repository. Step 1 then finds no open candidate and the job stays silent, so its own output never
   shows the gap. That's why each repository declares `host_closes_on_merge`, and the
   [watchdog](../action-watchdog/SKILL.md) flags a close the host made at merge.
+- **Selecting by time.** A cutoff such as "merged since the last close" drops an issue whose PR
+  merged after one release's tag but before that close: by the time a release contains it, it's
+  behind the cutoff. Select by the issue being open (step 1), not by when its PR merged.
 - **Re-closing after a human reopened it.** A reopen is a hold. The live reopen-state check (step 4)
-  and the marker guard this — never "correct" a human who reopened an issue.
+  and the ledger skip (step 1) guard this — never "correct" a human who reopened an issue.
 - **Holding a conversation in the project's voice.** The close carries a templated credit line and
   nothing more. Original prose is where a wrong or injected claim gets published under the project's
   name, and a new claim isn't reversible, so the line stays templated and Band-A-narrow. Anything
@@ -91,7 +99,7 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
   open.
 - Multi-surface issues, reopened issues, and issues with post-merge "still broken" pushback are
   **not** auto-closed — they route to a human.
-- Re-running immediately is a **no-op** (marker + reopen-state respected) — it never re-closes and
+- Re-running immediately is a **no-op** (ledger + reopen-state respected) — it never re-closes and
   never reopens.
 - On no shipped-and-resolved candidate, the job is **silent**; on error, it **alarms**.
 - It skips a repository whose `host_closes_on_merge` is `true`.

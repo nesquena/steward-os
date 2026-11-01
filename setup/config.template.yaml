@@ -18,10 +18,10 @@ repositories:                   # list every repo the project spans
     role: "primary"             # primary | desktop | mobile | docs | site | ...
     visibility: "public"
     host_closes_on_merge: false # does the host close a linked issue when its PR merges? Turn that off
-                                # per repository (setup-interview question 2): an issue stays open until
-                                # its fix is released. true only on a host that can't turn it off, or for
-                                # a continuous release model; config-lint refuses true on github.com and
-                                # gitlab.com otherwise
+                                # per repository first (setup-interview question 2): an issue stays open
+                                # until its fix is released. true only on a host that can't turn it off,
+                                # or for a continuous release model; config-lint refuses true on
+                                # github.com and gitlab.com otherwise, and the watchdog flags a host close
   # - { host: github.com, owner: "", name: "", role: "desktop", visibility: public, host_closes_on_merge: false }
 
 scope:                          # the fit/scope screen — the most important section
@@ -113,6 +113,7 @@ secrets:
 
 scheduled_jobs:                 # start with a few; add as you climb the autonomy ladder
   # chat-monitor and mentions-sweep ship no skill yet; the config lint refuses them enabled with agent: true.
+  # issue-autoclose needs action-watchdog enabled: its host-closes check is the only proof closing at merge stays off.
   jobs:
     - { name: "scoreboard-refresh", every: "2h",  enabled: true,  agent: false }
     - { name: "chat-monitor",       every: "1h",  enabled: false, agent: true  }

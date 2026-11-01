@@ -38,7 +38,8 @@ description: Independently fact-check the autonomous actions the system took (is
      nonterminal capture intent with no public action yet = 🟡.
    - **Host closes** (no ledger: the host acts on its own, and nothing in the system records it):
      for each repository whose `host_closes_on_merge` is `false`, read what closed each issue closed
-     since the last run. On GitHub that's the `ClosedEvent`'s `closer`; on GitLab, the "closed via
+     since this check's last run (its first run starts then, so closes from before the setting went
+     off don't count). On GitHub that's the `ClosedEvent`'s `closer`; on GitLab, the "closed via
      merge request" or "closed via commit" system note. → an issue the host closed from a merge or a
      commit = 🟡: closing at merge is on again against the config, so a human turns it off and decides
      about the issues it closed early.

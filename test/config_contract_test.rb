@@ -757,6 +757,33 @@ class SemanticTest < Minitest::Test
     refute_empty ConfigContract.check(config: cfg, template: cfg).select { |x| x.rule == :host_closing_off }
   end
 
+  def autoclosing(watchdog_enabled: true, name: 'issue-autoclose', enabled: true)
+    cfg = with_jobs({ 'name' => name, 'every' => '4h', 'enabled' => enabled, 'agent' => false })
+    cfg['scheduled_jobs']['jobs'][0]['enabled'] = watchdog_enabled
+    cfg['issue_capture']['capture_marker'] = ''
+    cfg['community']['chat']['capture_reaction'] = ''
+    cfg['community']['chat']['monitor'] = false
+    rule(cfg, :autoclose_needs_watchdog)
+  end
+
+  def test_issue_autoclose_without_the_watchdog_is_refused
+    v = autoclosing(watchdog_enabled: false)
+    assert_equal :error, v.severity
+    assert_equal 'scheduled_jobs.jobs[1]', v.key
+  end
+
+  def test_issue_autoclose_with_the_watchdog_passes
+    assert_nil autoclosing
+  end
+
+  def test_a_near_miss_job_name_is_still_issue_autoclose
+    refute_nil autoclosing(watchdog_enabled: false, name: 'Issue_Autoclose ')
+  end
+
+  def test_a_disabled_issue_autoclose_needs_no_watchdog
+    assert_nil autoclosing(watchdog_enabled: false, enabled: false)
+  end
+
   # Capture off, announcements job on: the only thing that needs the index.
   def announcing_without_capture(index:, visibility: 'private')
     cfg = with_jobs({ 'name' => 'announcements', 'every' => '8h', 'enabled' => true, 'agent' => false })
