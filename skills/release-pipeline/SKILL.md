@@ -65,7 +65,7 @@ merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-patt
    an image to do so, since step 5 checks the live version. Before publishing the release, build the
    candidate the way the release tooling will, from the release commit, or test a pre-release the
    tooling publishes from that commit (a staging channel or a registry pre-release tag) and promote
-   that exact file unchanged. If the final release must be rebuilt (its version string changes,
+   that exact artifact unchanged. If the final release must be rebuilt (its version string changes,
    say), that rebuild is the candidate. Use it the way a user would: install it and run the main
    flows. Where users upgrade from an earlier release, also upgrade from it, following the release
    notes as written. Compare its contents and metadata with the previous release, if any, for
