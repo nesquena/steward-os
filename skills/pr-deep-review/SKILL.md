@@ -65,8 +65,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
    - **Fix it yourself** (Builder) for mechanical blockers (rebase, a few failing tests, a small
      nit) — on the author's branch, preserving authorship. Outcome **no run**: bounce instead; a
      fix you can't run is a fix you can't verify.
-5. **Run the authoritative gate [4] — fresh, independent of any prior verdict, on one pinned commit,
-   from its own copy:**
+5. **Run the authoritative gate [4] — fresh, independent of any prior verdict, on pinned head and
+   trunk commits, each from its own copy:**
    - Always: the **automated code review** pass and the **adversarial review** pass (a second,
      differently-tuned reviewer; stricter wins on a reproduced finding). Both only read through
      inert tools: `code_review_tool` and `adversarial_review_tool` come from step 2's accepted
@@ -83,8 +83,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      claim of no behaviour change doesn't exempt a change, and every difference it shows is a
      finding). One that applies but wasn't run leaves the gate not all-clear; when none applies, the
      verdict says so and why.
-   - Always, where trunk's accepted configuration has CI: gate 5's check that the PR-triggered runs
-     trunk's workflows would start for this diff exist for this exact head.
+   - Always, where trunk's accepted configuration has CI: gate 5's check that the runs trunk's
+     workflows would start for this PR exist and ran in full for this exact head.
 6. **If the outcome is no run, stop without an all-clear unless verified human evidence supplies
    the missing execution legs.** Review findings still go to the author; there is no release
    hand-off while any required leg/finding is missing or unresolved. Tell the human which runs
@@ -140,6 +140,6 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
   replacement has verified trusted origin, fresh completion time, required scope and successful results.
 - Both independent review passes completed on the same current head; no required finding unresolved.
 - The differential ran, or the verdict says why none applied; where trunk's accepted configuration
-  has CI, the PR-triggered runs exist for this head.
+  has CI, the runs it would start for this PR exist and ran in full for this head.
 - Required visible surfaces inspected/driven; regression coverage for fixes present; authorship preserved.
 - If any required evidence is missing/stale/unverifiable, verdict remains not-all-clear; no release hand-off.
