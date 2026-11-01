@@ -72,14 +72,13 @@ pulled or deployed, so a merge isn't
    how the candidate is built, never whether this check runs. Or test a pre-release that the
    project's own release pipeline published from that commit (a staging channel or a registry
    pre-release tag), and promote that exact artifact unchanged. If the final release must be rebuilt
-   (its version string changes, say), that rebuild is the candidate. Keep the candidate that passed,
-   and its digest, for this release commit where contributors can't write, like the sandbox rule's
-   receipt. Use it the way a user would: follow the project's documented install or quickstart, and
-   exercise whatever the release notes say changed. Where users upgrade from an earlier release,
-   also upgrade from it, following the release notes as written. Compare its contents and metadata
-   with the previous release, if any, for missing or stray files and unintended changes to
-   requirements or dependencies. The release commit carries every merged contributor's change, so
-   building a candidate yourself, and using any candidate, follows the [sandbox
+   (its version string changes, say), that rebuild is the candidate. Use it the way a user would:
+   follow the project's documented install or quickstart, and exercise whatever the release notes
+   say changed. Where users upgrade from an earlier release, also upgrade from it, following the
+   release notes as written. Compare its contents and metadata with the previous release, if any,
+   for missing or stray files and unintended changes to requirements or dependencies. The release
+   commit carries every merged contributor's change, so building a candidate yourself, and using any
+   candidate, follows the [sandbox
    rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution) like step 1.
    Where that rule can't be met (signing needs a credential; fetching dependencies or installing
    from a registry needs the network, as most do), a human builds or runs it under the rule's
@@ -88,7 +87,9 @@ pulled or deployed, so a merge isn't
    publish, step 6 waits as below, and ask the human for a fresh run on this release commit. If the
    candidate fails, stop: don't tag or publish the release, and step 6 waits, except for closes the
    host already made at merge. The fix is a new change through `pr-deep-review`, and the candidate
-   is built or pre-released again from the new release commit.
+   is built or pre-released again from the new release commit. Keep the candidate that passed and
+   its digest, naming this release commit, where contributors can't write, like the sandbox rule's
+   receipt.
 
    Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
@@ -98,12 +99,16 @@ pulled or deployed, so a merge isn't
    image, the same manifest, or for a multi-platform image the same index). When it doesn't, a human
    compares the published artifact with the kept tested candidate before step 6, from what each
    records, nested archives and layers included, not from an unpack (its result depends on the
-   unpacker and who runs it), covering everything an install keeps or runs: contents, modes,
-   ownership, extended attributes, install scripts, an image's whole config, requirements and
-   dependencies. If the human finds only differences the release process explains (a signature added
-   at publish, say), step 6 goes ahead. Any other difference, or no kept candidate or digest for
-   this release commit, is a mismatch: stop, step 6 waits, and a human decides whether to yank the
-   release or fix forward.
+   unpacker and who runs it). The comparison covers everything an install keeps or runs, including
+   each entry's type and link target, contents, modes, ownership, extended attributes and file
+   capabilities where the format records them, install scripts, an image's whole config,
+   requirements and dependencies. Step 6 goes ahead only if the human traces every difference to a
+   step of the release process and the differences touch nothing but a signature, entry order or
+   timestamps (a signature added at publish, or the `created` time of an image rebuilt without a
+   reproducible build, say). A known cause doesn't make any other difference acceptable: a changed
+   file, mode, owner, attribute, script, config or dependency needs a new candidate, tested under
+   step 4. Any other difference, or no kept candidate or digest for this release commit, is a
+   mismatch: stop, step 6 waits, and a human decides whether to yank the release or fix forward.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
