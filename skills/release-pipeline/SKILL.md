@@ -65,25 +65,25 @@ merges can be Band A only with the [watchdog](../../docs/playbooks/watchdog-patt
    (`project.release_model`); if it doesn't say, ask the operator, don't skip. A project that only
    deploys its own service or site skips this, even when it builds an image to do so, since step 5
    checks the live version. Build the candidate the way the project's release tooling will, from the
-   release commit; a merged change to that tooling is part of what this release's review covers. Or
-   test a pre-release published from that commit (a staging channel or a registry pre-release tag)
-   and promote that exact artifact unchanged. A pre-release comes from the project's own release
-   pipeline or a human, never from the agent running the release commit's tooling with credentials.
-   If the final release must be rebuilt (its version string changes, say), that rebuild is the
-   candidate. Use it the way a user would: follow the project's documented install or quickstart,
-   and exercise whatever the release notes say changed. Where users upgrade from an earlier release,
-   also upgrade from it, following the release notes as written. Compare its contents and metadata
-   with the previous release, if any, for missing or stray files and unintended changes to
-   requirements or dependencies. The release commit carries every merged contributor's change, so
-   building and using any candidate, a pre-release included, follows the [sandbox
-   rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution) like step 1,
-   dependency resolution included. A build step that needs a credential, such as signing, takes the
-   pre-release path. Where using the candidate needs the network (installing it or its dependencies
-   from a registry, as most do), a human runs it under that rule's human-run path, with the receipt
-   on that exact artifact. If the candidate fails, stop: don't tag or publish the release, and step
-   6 waits, except for closes the host already made at merge. The fix is a new change through
-   [`pr-deep-review`](../pr-deep-review/SKILL.md), and the candidate is built or pre-released again
-   from the new release commit.
+   release commit. That tooling is trunk: a merged change to it went through
+   [`pr-deep-review`](../pr-deep-review/SKILL.md) like any other, and it decides how the candidate
+   is built, never whether this check runs. Or test a pre-release that the project's own release
+   pipeline published from that commit (a staging channel or a registry pre-release tag), and
+   promote that exact artifact unchanged. If the final release must be rebuilt (its version string
+   changes, say), that rebuild is the candidate. Use it the way a user would: follow the project's
+   documented install or quickstart, and exercise whatever the release notes say changed. Where
+   users upgrade from an earlier release, also upgrade from it, following the release notes as
+   written. Compare its contents and metadata with the previous release, if any, for missing or
+   stray files and unintended changes to requirements or dependencies. The release commit carries
+   every merged contributor's change, so building a candidate yourself, and using any candidate,
+   follows the [sandbox
+   rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution) like step 1.
+   Where that rule can't be met (signing needs a credential; fetching dependencies or installing
+   from a registry needs the network, as most do), a human builds or runs it under the rule's
+   human-run receipt, naming the release commit and the artifact's digest, checked fresh before
+   tagging. If the candidate fails, stop: don't tag or publish the release, and step 6 waits, except
+   for closes the host already made at merge. The fix is a new change through `pr-deep-review`, and
+   the candidate is built or pre-released again from the new release commit.
 
    Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
