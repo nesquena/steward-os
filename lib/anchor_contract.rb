@@ -219,8 +219,9 @@ module AnchorContract
     end
     MARKDOWN_LINK_PATH_MESSAGE = 'a link to a Markdown page that the site\'s relative-links plugin can\'t always ' \
                                  'rewrite — a link it misses stays a .md link, which the site serves only for a ' \
-                                 'page without front matter; end the path in a literal .md, percent-encode any &, ' \
-                                 '+, <, > or " in it (%26, %2B), drop the query, and link a page, not an image'
+                                 'page without front matter; end the path in a literal .md, percent-encode any +, ' \
+                                 '<, > or " in it (%2B), drop the query, and link a page, not an image; a page ' \
+                                 'whose name holds & or ? needs renaming'
     INVALID_UTF8_MESSAGE = 'not valid UTF-8 — both renderers read the file as UTF-8, so its text and anchors ' \
                            'are not what was written; save it as UTF-8'
 
@@ -337,7 +338,9 @@ module AnchorContract
     # character reference, a bare `&` in a raw tag, an angle-bracket destination, a title, `+` read as a space, a
     # query, a path not ending in a literal `.md`, an image), so rather than model them the rule allows only the
     # form both always rewrite: a link, not an image, whose path ends in a literal `.md`, holds none of `& + < > "`
-    # and has no query. Other characters may be percent-encoded (`%26`, `%2B`, `%C3%A9`).
+    # and has no query. Other characters may be percent-encoded (`%2B`, `%C3%A9`). The plugin writes the page's
+    # decoded name into the built href, so a name holding `?` (read as a query) or `&` (which can spell a character
+    # reference) breaks whatever the spelling, and is rejected too: such a page needs renaming.
     def unmatchable_page_link?(element)
       href = link_target(element)
       return false if href.nil? || href.empty?
@@ -352,7 +355,8 @@ module AnchorContract
       return true if element.type == :img || (element.type == :html_element && element.value == 'img')
 
       path, query = href.split('#', 2).first.to_s.split('?', 2)
-      !query.nil? || path.match?(/[&+<>"]/) || !path.end_with?('.md')
+      !query.nil? || path.match?(/[&+<>"]/) || !path.end_with?('.md') ||
+        decode(path).scrub.match?(/[?&]/)
     end
 
     # A page the site's parser raises on. kramdown-parser-gfm cannot build a heading or definition term whose text

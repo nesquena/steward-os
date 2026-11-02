@@ -1044,8 +1044,8 @@ class UnportableTest < Minitest::Test
   # `&` in a raw tag, an angle-bracket destination, a title, `+`, a query, a path not ending in a literal `.md`, an
   # image), and a .md link it misses is broken on the site. So on a page the site builds, only a link whose path
   # ends in `.md` and holds none of `& + < > "` and no query is allowed, wherever the link is (a reference
-  # definition, a raw tag, a footnote). Percent-encoding elsewhere in the path, those characters in the fragment,
-  # and a non-Markdown or external target are fine.
+  # definition, a raw tag, a footnote). A page whose decoded name holds `?` or `&` can't be linked at all. Other
+  # percent-encoding, those characters in the fragment, and a non-Markdown or external target are fine.
   def test_a_markdown_page_link_the_plugin_cannot_always_match_is_rejected
     message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
     ['[x](&eacute;.md)', '[x](&#233;.md#real)', '[x](a&amp;b.md)', '[x](x.md&num;top)', '[x](a&b.md)',
@@ -1055,13 +1055,14 @@ class UnportableTest < Minitest::Test
      '<a href="a&b.md">x</a>', '<a href="a&amp;b.md#x">x</a>', '<a href="plain.md/">x</a>', '[x](<plain.md/>)',
      "[x](plain.md/ 't')", '<a href="plain.md/.">x</a>', '[x](<plain.md/?v=1>)', '<a href="plain.md%2F">x</a>',
      '<a href="plain.m%64">x</a>', '[x](<plain.m%64>)', '<a href="plain%2Emd">x</a>', '[x](plain.md/)',
-     '<img src="plain.md">', '![x](<plain.md>)', '![x](plain.md)'].each do |link|
+     '<img src="plain.md">', '![x](<plain.md>)', '![x](plain.md)', '[x](a%3Fb.md)', '[x](a%26eacute%3B.md)',
+     '[x](a%26b.md)', '<a href="a%26b.md">x</a>'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
       assert_equal [[3, message]], found.map { |r| [r.line, r.message] }, link
     end
-    ['[x](plain.md)', '[x](%C3%A9.md#real)', '[x](a%26b.md)', '[x](a%2Bb.md)', '[x](plain.md#r&eacute;al)',
+    ['[x](plain.md)', '[x](%C3%A9.md#real)', '[x](a%23b.md)', '[x](a%2Bb.md)', '[x](plain.md#r&eacute;al)',
      '[x](&eacute;.png)', '[x](a&b.png?v=1)', '[x](https://e.example/&eacute;.md)', '[x](#&eacute;)',
-     '[x](&sol;docs/x.md)', '<a href="plain.md#x">x</a>', '<a href="a%26b.md">x</a>',
+     '[x](&sol;docs/x.md)', '<a href="plain.md#x">x</a>', '[x](a%20b.md)', '[x](a%27b.md)',
      '<a href="&eacute;.png">x</a>', '[x](./plain.md)', '[x](sub/../plain.md)', '[x](sub%2Fplain.md)',
      '[x](%25.md)', '[x](%C3%A9.md)', '<a href="%C3%A9.md#x">x</a>', '![x](a.png)', '[x](a%00.md)'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
