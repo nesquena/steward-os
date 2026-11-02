@@ -904,6 +904,34 @@ class SemanticTest < Minitest::Test
     assert_nil autoclosing(watchdog_enabled: false, enabled: false)
   end
 
+  # issue-autoclose enabled (base's watchdog is on), with these repositories.
+  def inert(repos, enabled: true, style: 'tag-per-release')
+    cfg = with_jobs({ 'name' => 'Issue_Autoclose', 'every' => '4h', 'enabled' => enabled, 'agent' => false })
+    cfg['project'] = { 'release_model' => { 'style' => style } }
+    cfg['repositories'] = repos.map do |host, closes|
+      { 'host' => host, 'visibility' => 'private', 'host_closes_on_merge' => closes }
+    end
+    ConfigContract.check(config: cfg, template: cfg).select { |x| x.rule == :autoclose_inert }
+  end
+
+  def test_issue_autoclose_with_no_github_repository_warns
+    v = inert([['gitlab.com', false], ['codeberg.org', false]])
+    assert_equal 1, v.size
+    assert_equal :warning, v.first.severity
+  end
+
+  def test_issue_autoclose_with_a_github_repository_does_not_warn
+    assert_empty inert([['gitlab.com', false], ['WWW.GitHub.com:443', false]])
+  end
+
+  def test_a_disabled_issue_autoclose_does_not_warn
+    assert_empty inert([['gitlab.com', false]], enabled: false)
+  end
+
+  def test_issue_autoclose_whose_only_github_repository_closes_at_merge_warns
+    refute_empty inert([['github.com', true]], style: 'continuous')
+  end
+
   # Capture off, announcements job on: the only thing that needs the index.
   def announcing_without_capture(index:, visibility: 'private')
     cfg = with_jobs({ 'name' => 'announcements', 'every' => '8h', 'enabled' => true, 'agent' => false })

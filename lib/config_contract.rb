@@ -654,6 +654,18 @@ module ConfigContract
   # adopter can turn off (setup/setup-interview.md, question 2).
   HOSTS_WITH_REPO_CLOSING_SWITCH = %w[github.com gitlab.com].freeze
 
+  # Hosts issue-autoclose closes on (its step 1). A repository on one of them
+  # that the host doesn't close at merge is one the job acts on.
+  AUTOCLOSE_HOSTS = %w[github.com].freeze
+
+  def self.autoclose_acts_on_any?(config)
+    repos = config['repositories']
+    repos.is_a?(Array) && repos.any? do |r|
+      r.is_a?(Hash) && r['host'].is_a?(String) && AUTOCLOSE_HOSTS.include?(normalize_host(r['host'])) &&
+        r['host_closes_on_merge'] != true
+    end
+  end
+
   # Unless every merge is the release, an issue stays open until the release that
   # ships its fix (issue-autoclose, release-pipeline step 6), so a host that can
   # turn closing at merge off per repository must have it off. Elsewhere `true`
@@ -755,6 +767,12 @@ module ConfigContract
                    "job '#{job['name']}' is enabled but action-watchdog is not: its host-closes " \
                    'check is what proves the host is not closing issues at merge ' \
                    '(skills/action-watchdog/SKILL.md)')
+    end
+    if name == 'issue-autoclose' && !autoclose_acts_on_any?(config)
+      found << Violation.new(severity: :warning, rule: :autoclose_inert, key: "scheduled_jobs.jobs[#{index}]",
+                             message: "job '#{job['name']}' is enabled, but no repository is one it acts on " \
+                                      "(on #{AUTOCLOSE_HOSTS.join(', ')}, with host_closes_on_merge false), so " \
+                                      'it closes nothing (skills/issue-autoclose/SKILL.md, step 1)')
     end
     flag = JOB_FLAGS[name]
     if flag && fetch_path(config, flag) != true

@@ -38,6 +38,9 @@ documented TODO, not an assumption.
      instance-wide): ask the admin, or record `true`. The release then names the version on issues
      the host already closed.
 
+   `issue-autoclose` closes only on github.com; on any other host, an issue the host left open is
+   closed at release.
+
    GitHub's setting can't be read through its API, so an enabled
    [watchdog](https://github.com/nesquena/steward-os/blob/main/skills/action-watchdog/SKILL.md)
    checks that the host hasn't closed an issue at merge (on GitLab it also reads the setting). The
