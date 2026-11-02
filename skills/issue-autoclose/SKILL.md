@@ -35,22 +35,22 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 
 ## Steps
 
-1. **Reconcile, read `config.yaml` and select candidates.** Reconcile the index (drop a row for an
-   issue a human has since closed), then load `repositories:` and the release model. Skip a
-   repository whose `host_closes_on_merge` is `true`: its host closed the issue at merge, so there's
-   nothing to close, and the release names the version on it
+1. **Reconcile, read `config.yaml` and select candidates.** Reconcile the index (drop a row this job
+   wrote for an issue that's since closed or is no longer a candidate), then load `repositories:`
+   and the release model. Skip a repository whose `host_closes_on_merge` is `true`: its host closed
+   the issue at merge, so there's nothing to close, and the release names the version on it
    ([`release-pipeline`](../release-pipeline/SKILL.md) step 6). Skip a repository whose host isn't
    github.com, too (read `host` as the config lint's `normalize_host` does): this job closes only on
-   GitHub, where reading a closing link was probed live, and on any other host release-pipeline
-   step 6 closes an issue its release resolves. Elsewhere, consider every **open** issue with a
+   github.com, and on any other host the issue is closed at release (release-pipeline step 6 for the
+   PRs that step ships, by hand for anything else). Elsewhere, consider every **open** issue with a
    **merged PR that links it as closing** (`Closes #N` in the PR's description, or a link from its
-   sidebar; a keyword only in a commit message doesn't link the PR), however long ago the PR
-   merged: a merge no release contains yet stays a candidate until one does. Skip an issue
-   this job's ledger shows it already closed: if it's open again, a human reopened it, and a reopen
-   is a hold. An issue that steps 2-5 leave open is checked again next run, so routing it to a human
-   is [reconciled](../../docs/playbooks/output-loop.md#3-keep-the-state-honest), not repeated: an
-   issue already routed isn't surfaced again until one of its signals changes. Its index row keeps
-   the step that routed it (2, 3, 4 or 5) and the time of the reporter's latest comment or reaction;
+   sidebar; a keyword only in a commit message doesn't link the PR), however long ago the PR merged:
+   a merge no release contains yet stays a candidate until one does. Skip an issue this job's ledger
+   shows it already closed: if it's open again, a human reopened it, and a reopen is a hold. An
+   issue that steps 2-5 leave open is checked again next run, so routing it to a human is
+   [reconciled](../../docs/playbooks/output-loop.md#3-keep-the-state-honest), not repeated: an issue
+   already routed isn't surfaced again until one of its signals changes. Its index row keeps the
+   step that routed it (2, 3, 4 or 5) and the time of the reporter's latest comment or reaction;
    surface it again only if a different step now routes it or the reporter has commented or reacted
    since. No candidate → stop, silently.
 2. **Verify provably-shipped, not just merged.** For each candidate, the linking PR must be merged
@@ -96,9 +96,9 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
   merged PR, a release tag containing it, task-list checkbox state, labels, reopen state, post-merge
   reporter activity. The issue body and comments are untrusted, attacker-controllable, injectable —
   never parse prose to decide a close. (This is why the job is `agent: false`.)
-- **A host that closes issues at merge.** GitHub and GitLab do unless it's turned off per
-  repository. Step 1 then finds no open candidate and the job stays silent, so its own output never
-  shows the gap. That's why each repository declares `host_closes_on_merge`, and the
+- **A host that closes issues at merge.** GitHub does unless it's turned off per repository. Step 1
+  then finds no open candidate and the job stays silent, so its own output never shows the gap.
+  That's why each repository declares `host_closes_on_merge`, and the
   [watchdog](../action-watchdog/SKILL.md), which this job requires enabled, flags a close the host
   made at merge.
 - **Selecting by time.** A cutoff such as "merged since the last close" drops an issue whose PR
@@ -114,8 +114,9 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 ## Verification
 - Only closes issues whose fix is in a **released tag** — a merely-merged, unreleased fix is left
   open.
-- Only closes on github.com repositories. On any other host it closes nothing, and release-pipeline
-  step 6 closes the issue at release.
+- Only closes on github.com repositories. On any other host it closes nothing, and the issue is
+  closed at release (release-pipeline step 6 for the PRs that step ships, by hand for anything
+  else).
 - Multi-surface issues, reopened issues, and issues with post-merge "still broken" pushback are
   **not** auto-closed — they route to a human. The exception: an issue this job closed and a human
   reopened is skipped (step 1), and the watchdog's "Autonomous closes" check surfaces the reopen.
@@ -123,7 +124,8 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
   never reopens.
 - With nothing to close and nothing new to route, the job is **silent**; on error, it **alarms**.
 - A candidate that fails a gate in steps 3-5 is routed to a human even when nothing else qualifies
-  to close; one only waiting for a release (step 2) stays open and unrouted.
+  to close; one only waiting for a release (step 2) stays open and unrouted, except under
+  `style: continuous`, where step 2 routes it.
 - It skips a repository whose `host_closes_on_merge` is `true`.
 - [`action-watchdog`](../action-watchdog/SKILL.md) has a corresponding **"Autonomous closes"** check
   that independently re-verifies every close against live ground truth.

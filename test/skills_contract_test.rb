@@ -225,14 +225,17 @@ class HostClosingContractTest < Minitest::Test
     assert_includes autoclose, 'however long ago the PR merged'
     assert_includes autoclose, 'Its index row keeps the step that routed it (2, 3, 4 or 5) and the time of ' \
                                "the reporter's latest comment or reaction"
-    assert_includes autoclose, 'Reconcile the index (drop a row for an issue a human has since closed), then load'
+    assert_includes autoclose, "Reconcile the index (drop a row this job wrote for an issue that's since closed or is no longer a " \
+                               'candidate), then load'
     assert_includes autoclose, "Under `style: continuous` no release tag is coming, so there's nothing to " \
                                'wait for: route the candidate to a human'
     assert_includes autoclose, "Skip a repository whose host isn't github.com, too"
     assert_includes autoclose, 'Only closes on github.com repositories.'
+    assert_includes autoclose, 'on any other host the issue is closed at release'
     assert_includes autoclose, "Read `style` as the config lint's `normalize_job_name` does: drop invisible " \
                                'format characters, trim surrounding whitespace, and ignore case'
     assert_includes issue_lifecycle, 'stays unrouted until a release contains the merge'
+    assert_includes issue_lifecycle, 'on github.com repositories; elsewhere the issue is closed at release'
     assert_includes pr_lifecycle, "comment on them, and don't reopen them"
     assert_includes release, 'On a repository whose `host_closes_on_merge` is `true`, the host closed ' \
                              'those issues at merge: comment on them, close any it left open'
@@ -242,6 +245,8 @@ class HostClosingContractTest < Minitest::Test
     assert_includes watchdog, "While a repository is declared `true`, drop its start"
     assert_includes setup, 'untick **Auto-close issues with merged linked pull requests**'
     assert_includes setup, 'untick **Auto-close referenced issues on default branch**'
+    assert_includes setup, '`issue-autoclose` closes only on github.com; on any other host, an issue the host left open is ' \
+                          'closed at release'
   end
 end
 
