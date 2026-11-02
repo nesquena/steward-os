@@ -18,13 +18,14 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 > never closes on taste, staleness, or a maintainer's judgment call — those stay human
 > ([`issue-close-proposal`](../issue-close-proposal/SKILL.md) prepares two kinds for that human:
 > done with no linking PR, and duplicate). Every run
-> reconciles the index (dropping a row for an issue a human has since closed). If step 1 finds no
-> candidate, there is nothing else to do — stop. Otherwise every candidate goes through the gates:
+> reconciles the index first (step 1). If step 1 finds no candidate, there is nothing else to do —
+> stop. Otherwise every candidate goes through the gates:
 > it's closed, it waits for a release, or it stays open and is routed to a human.
 
 > Config: read the repos from [`config.yaml`](../../setup/config.template.yaml) (`repositories:`,
-> each with `host_closes_on_merge`), the release model from `project.release_model` (what "released tag" means for this project), and
-> the band from `autonomy.issue_autoclose`. The `scheduled_jobs` entry that runs this skill is named
+> each with `host_closes_on_merge`), the release model from `project.release_model` (what
+> "released tag" means for this project), and the band from `autonomy.issue_autoclose`. The
+> `scheduled_jobs` entry that runs this skill is named
 > `issue-autoclose`. It is `agent: false`: a plain deterministic script, no model in the loop, no
 > injection surface. Start at the configured band (default **C** — draft the close for a human to
 > approve) and promote to Band A via the [autonomy ladder](../../docs/playbooks/autonomy-ladder.md)
@@ -34,24 +35,29 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 
 ## Steps
 
-1. **Read `config.yaml` and select candidates.** Load `repositories:` and the release model. Skip a
+1. **Reconcile, read `config.yaml` and select candidates.** Reconcile the index (drop a row for an
+   issue a human has since closed), then load `repositories:` and the release model. Skip a
    repository whose `host_closes_on_merge` is `true`: its host closed the issue at merge, so there's
    nothing to close, and the release names the version on it
    ([`release-pipeline`](../release-pipeline/SKILL.md) step 6). Elsewhere, consider every **open**
    issue with a **merged PR that links it as closing** (`Closes #N` in the PR's description, or a
-   link from its sidebar; a keyword only in a commit message doesn't link the PR), however long ago
-   the PR merged: a merge no release contains yet stays a candidate until one does. Skip an issue
+   link from its sidebar; on GitHub a keyword only in a commit message doesn't link the PR, while on
+   GitLab a closing pattern in one of the merge request's commit messages does, and the merge
+   request lists that issue among those it closes), however long ago the PR merged: a merge no
+   release contains yet stays a candidate until one does. Skip an issue
    this job's ledger shows it already closed: if it's open again, a human reopened it, and a reopen
    is a hold. An issue that steps 2-5 leave open is checked again next run, so routing it to a human
    is [reconciled](../../docs/playbooks/output-loop.md#3-keep-the-state-honest), not repeated: an
    issue already routed isn't surfaced again until one of its signals changes. No candidate →
-   reconcile the index and stop, silently.
+   stop, silently.
 2. **Verify provably-shipped, not just merged.** For each candidate, the linking PR must be merged
    **and** its merge commit must be **contained in a released tag** — the same three-part "shipped"
    notion [`release-pipeline`](../release-pipeline/SKILL.md) enforces (tag exists **and** the merge
    is real **and** it's in a release, not merely on the trunk). A merge that no release tag contains
    is **not** shipped. That's a wait, not a hold: leave the issue open and unrouted, and it stays a
-   candidate until a release contains the merge.
+   candidate until a release contains the merge. Under `style: continuous` no release tag is coming,
+   so there's nothing to wait for: route the candidate to a human, who checks the deploy
+   (`shipped_means`).
 3. **Verify single-surface — structured signals only.** Auto-close only an issue that resolves as a
    single unit: **exactly one** linked closing PR, **zero open task-list checkboxes** in the body,
    and **no** `multi-surface`/`epic` label. If it enumerates several distinct symptoms (>1 linked PR,

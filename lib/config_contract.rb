@@ -670,15 +670,15 @@ module ConfigContract
                      HOSTS_WITH_REPO_CLOSING_SWITCH.include?(normalize_host(host))
 
       [err(:host_closing_off, "repositories[#{i}].host_closes_on_merge",
-           "must be false on #{normalize_host(host)}: an issue stays open until the release that " \
-           'ships its fix, and this host turns closing at merge off per repository ' \
-           '(setup/setup-interview.md, question 2)')]
+           "must be false on #{normalize_host(host)} unless project.release_model.style is " \
+           'continuous: an issue stays open until the release that ships its fix, and this host ' \
+           'turns closing at merge off per repository (setup/setup-interview.md, question 2)')]
     end
   end
 
   # `false` on a host with the switch is a claim nothing else checks: issue-autoclose
   # refuses to run without the watchdog, but release-pipeline alone doesn't need
-  # it. A warning, not an error, since the template ships with every job off and
+  # it. A warning, not an error, since the template ships with the watchdog off and
   # the lint checks the template itself. A continuous release closes at merge
   # anyway, so it needs no watch.
   def self.unwatched_closing_warning(config)

@@ -32,7 +32,8 @@ documented TODO, not an assumption.
    - **GitHub:** Settings → General → Issues → untick **Auto-close issues with merged linked pull
      requests**.
    - **GitLab:** Settings → Repository → Branch defaults → untick **Auto-close referenced issues on
-     default branch**.
+     default branch**. It covers only that project's issues: its merge requests and commits can
+     still close another project's, so turn it off in each project whose issues they reference.
    - **A host where only the instance admin can change it** (Gitea and Forgejo set closing keywords
      instance-wide): ask the admin, or record `true`. The release then names the version on issues
      the host already closed.

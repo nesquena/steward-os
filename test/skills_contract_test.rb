@@ -217,9 +217,18 @@ class HostClosingContractTest < Minitest::Test
     release = read.call('skills', 'release-pipeline', 'SKILL.md')
     watchdog = read.call('skills', 'action-watchdog', 'SKILL.md')
     setup = read.call('setup', 'setup-interview.md')
+    issue_lifecycle = read.call('docs', 'lifecycle', 'issue-lifecycle.md')
+    pr_lifecycle = read.call('docs', 'lifecycle', 'pr-lifecycle.md')
 
     assert_includes autoclose, 'Skip a repository whose `host_closes_on_merge` is `true`'
     assert_includes autoclose, "That's a wait, not a hold: leave the issue open and unrouted"
+    assert_includes autoclose, 'however long ago the PR merged'
+    assert_includes autoclose, 'Reconcile the index (drop a row for an issue a human has since closed), then load'
+    assert_includes autoclose, 'Under `style: continuous` no release tag is coming'
+    assert_includes autoclose, "on GitLab a closing pattern in one of the merge request's commit messages does, " \
+                               'and the merge request lists that issue'
+    assert_includes issue_lifecycle, 'stays unrouted until a release contains the merge'
+    assert_includes pr_lifecycle, "comment on them, and don't reopen them"
     assert_includes release, 'On a repository whose `host_closes_on_merge` is `true`, the host closed ' \
                              'those issues at merge: comment on them, close any it left open'
     assert_includes watchdog, 'for each repository whose `host_closes_on_merge` is `false`'
