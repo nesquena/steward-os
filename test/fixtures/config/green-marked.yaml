@@ -1,6 +1,7 @@
 # Fixture: green-enabled.yaml with community, issue_capture, labels and trust
 # deleted and listed in not_applicable, their jobs disabled, security_contact
-# filled. Must stay green.
+# filled. alarms_to is blank on purpose, to prove security_contact alone
+# satisfies not_applicable_divert. Must stay green.
 project:
   name: "fixture project"
   trunk_branch: "main"

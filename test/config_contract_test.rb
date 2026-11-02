@@ -1558,13 +1558,18 @@ class MarkerMapTest < Minitest::Test
     end
   end
 
+  def test_job_blocks_is_exactly_this_map
+    assert_equal({ 'chat-monitor' => 'community', 'mentions-sweep' => 'community',
+                   'issue-capture' => 'issue_capture', 'label-sync' => 'labels' },
+                 ConfigContract::JOB_BLOCKS)
+  end
+
   def test_every_markable_block_but_trust_has_a_job
     served = ConfigContract::JOB_BLOCKS.values.uniq
     # trust has no job, deliberately
     assert_equal (ConfigContract::MARKABLE_BLOCKS - ['trust']).sort, served.sort
   end
 end
-
 
 class MarkerTest < Minitest::Test
   TEMPLATE = ConfigContract::Extract.load(File.expand_path('../setup/config.template.yaml', __dir__)).freeze
@@ -1635,6 +1640,10 @@ class MarkerTest < Minitest::Test
       assert_includes r, :not_applicable_block, b
       assert_includes r, :missing_key, b
     end
+    c = cfg
+    c['security'] = {}
+    c['not_applicable'] = ['security']
+    assert_includes rules(c), :not_applicable_block
   end
 
   def test_non_list_marker_is_refused_and_exempts_nothing
@@ -1693,8 +1702,6 @@ class MarkerTest < Minitest::Test
 
   def test_exempt_block_is_skipped_by_type_phase
     c = cfg
-    c['issue_capture']['enabled'] = false
-    c['community']['chat']['monitor'] = false
     c['scheduled_jobs']['jobs'].each do |j|
       j['enabled'] = false if %w[issue-capture chat-monitor].include?(j['name'])
     end
@@ -1735,6 +1742,21 @@ class MarkerTest < Minitest::Test
     c['scheduled_jobs']['jobs'].each { |j| j['name'] = 'Label_Sync' if j['name'] == 'label-sync' }
     assert_includes rules(c), :not_applicable_job
     refute_includes rules(c), :phases_skipped
+  end
+
+  def test_every_mapped_job_is_refused_on_its_block
+    {
+      'chat-monitor' => 'community',
+      'mentions-sweep' => 'community',
+      'issue-capture' => 'issue_capture',
+      'label-sync' => 'labels'
+    }.each do |job, block|
+      c = marked(cfg, block)
+      c['scheduled_jobs']['jobs'] << { 'name' => job, 'every' => '1h', 'enabled' => true, 'agent' => false } \
+        unless c['scheduled_jobs']['jobs'].any? { |j| j['name'] == job }
+      set_job(c, job, true)
+      assert_includes rules(c), :not_applicable_job, job
+    end
   end
 
   def test_disabled_job_on_a_marked_block_is_fine

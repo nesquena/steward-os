@@ -110,7 +110,7 @@ module ConfigContract
     'chat-monitor' => 'community.chat.monitor'
   }.freeze
 
-  # The markable block each template job serves. A job on a marked block must
+  # The markable block served by each template job that serves one. A job on a marked block must
   # not be enabled. `trust` has no job, deliberately. MarkerMapTest keeps this
   # in step with the template.
   JOB_BLOCKS = {
@@ -261,15 +261,16 @@ module ConfigContract
   end
 
   def self.marker_violations(config)
-    marker = config['not_applicable']
     return [] unless config.key?('not_applicable')
+
+    marker = config['not_applicable']
 
     unless marker.is_a?(Array)
       return [err(:not_applicable_block, 'not_applicable',
                   "expected a list of block names, got #{marker.class}")]
     end
 
-    marker.flat_map do |b|
+    marker.uniq.flat_map do |b|
       unless MARKABLE_BLOCKS.include?(b)
         next [err(:not_applicable_block, 'not_applicable',
                   "#{b.inspect} is not a block that can be marked (one of: #{MARKABLE_BLOCKS.join(', ')})")]
@@ -277,7 +278,8 @@ module ConfigContract
       next [] unless config.key?(b) && config[b] != {}
 
       [err(:not_applicable_conflict, b,
-           "#{b} is listed in not_applicable but is configured - remove it from the list, or empty the block")]
+           "#{b} is listed in not_applicable but is configured - remove it from the list, or empty the block " \
+            "if it has no history; a block with history stays configured and disabled, so remove it from the list instead")]
     end
   end
   private_class_method :marker_violations
@@ -572,7 +574,7 @@ module ConfigContract
 
     violations = []
 
-    # A marked issue_capture drops the capture rules above, but a vulnerability
+    # A marked issue_capture drops the capture rules below, but a vulnerability
     # report can still arrive by other routes and the divert still needs a
     # destination (docs/reference/security-spine.md).
     if marked_blocks(config).include?('issue_capture') &&

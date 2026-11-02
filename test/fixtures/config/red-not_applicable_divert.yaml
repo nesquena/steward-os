@@ -34,7 +34,7 @@ community:
     server_id: "1234"
     bug_channels: ["bugs"]
     monitor: false
-    capture_reaction: ""
+    capture_reaction: "white_check_mark"
   mentions_sweep:
     enabled: false
     disambiguate_against: ""
