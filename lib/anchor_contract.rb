@@ -217,9 +217,10 @@ module AnchorContract
         nil
       end
     end
-    ENTITY_PATH_MESSAGE = 'a character reference in the path of a link to a Markdown page — the site\'s ' \
-                          'relative-links plugin rewrites the path as written, so the built page keeps an ' \
-                          '.md link the site does not serve; write the path plainly or percent-encoded'
+    MARKDOWN_LINK_PATH_MESSAGE = 'a link to a Markdown page whose path holds &, +, <, >, " or a query — the ' \
+                                 'site\'s relative-links plugin can\'t match every form of such a path, and a link ' \
+                                 'it misses stays a .md link, which the site serves only for a page without front ' \
+                                 'matter; percent-encode the path (%26, %2B, %C3%A9) and drop the query'
     INVALID_UTF8_MESSAGE = 'not valid UTF-8 — both renderers read the file as UTF-8, so its text and anchors ' \
                            'are not what was written; save it as UTF-8'
 
@@ -317,7 +318,9 @@ module AnchorContract
         line = el.options[:location] || line
         message = unportable_message(el)
         out << Rejection.new(source: source, line: line, message: message) if message
-        out << Rejection.new(source: source, line: line, message: ENTITY_PATH_MESSAGE) if entity_path?(el)
+        if unmatchable_page_link?(el)
+          out << Rejection.new(source: source, line: line, message: MARKDOWN_LINK_PATH_MESSAGE)
+        end
         next unless el.type == :text && el.value.match?(RAW_HTML_TAG)
 
         declined << Rejection.new(source: source, line: line, message: RAW_HTML_MESSAGE)
@@ -327,21 +330,23 @@ module AnchorContract
       out
     end
 
-    # jekyll-relative-links rewrites a link to a Markdown page by its path as written: a markdown link in the
-    # source before kramdown runs, and an `<a href="*.md">` in the rendered HTML, where the reference is still
-    # as written. A link it can't match is left as it is. So a path that names its page only once a character
-    # reference is resolved (`&eacute;.md`, `&#233;.md`, `a&amp;b.md`, `x.md&num;top`) stays a `.md` link on the
-    # built page, and the site publishes that page as `.html`, not `.md`. GitHub resolves the reference, so only
-    # the site's reader gets the broken link; site_href alone would pass it.
-    def entity_path?(element)
+    # jekyll-relative-links turns a link to a Markdown page into one to the built page, in two passes: one over the
+    # markdown source, keyed by the path as written, and one over the rendered HTML, keyed by the href as kramdown
+    # escapes it. A link either pass misses stays a .md link on the built page, which the site serves only for a
+    # page without front matter. Which forms each pass misses depends on its regex (a character reference, a bare
+    # `&` in a raw tag, an angle-bracket destination, a title, `+`, a query), so rather than model them the rule
+    # takes the one form both passes always match: a path with none of `& + < > "` and no query. A
+    # percent-encoded path (`%26`, `%2B`, `%C3%A9`) always matches.
+    def unmatchable_page_link?(element)
       href = link_target(element)
       return false if href.nil? || href.empty?
 
       rendered = site_href(href)
       return false if rendered.match?(EXTERNAL)
+      return false unless decode(rendered.split(/[?#]/, 2).first.to_s).scrub.match?(MARKDOWN_EXT)
 
-      path = rendered.split(/[?#]/, 2).first.to_s
-      path != href.split(/[?#]/, 2).first.to_s && decode(path).scrub.match?(MARKDOWN_EXT)
+      path, query = href.split('#', 2).first.to_s.split('?', 2)
+      !query.nil? || path.match?(/[&+<>"]/)
     end
 
     # A page the site's parser raises on. kramdown-parser-gfm cannot build a heading or definition term whose text
@@ -568,9 +573,15 @@ module AnchorContract
       node.each { |child| walk_cmark(child, &block) }
     end
 
-    def walk(element, &block)
+    # kramdown keeps a footnote's definition as the :footnote element's value, not as its children, and renders
+    # it once at the foot of the page, so it is walked once, however often it is referenced.
+    def walk(element, seen = {}, &block)
       yield element
-      element.children.each { |child| walk(child, &block) }
+      element.children.each { |child| walk(child, seen, &block) }
+      return unless element.type == :footnote && element.value && !seen.key?(element.value.object_id)
+
+      seen[element.value.object_id] = true
+      walk(element.value, seen, &block)
     end
 
     def link_target(element)

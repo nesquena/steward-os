@@ -984,7 +984,7 @@ class UnportableTest < Minitest::Test
   end
 
   def test_a_quoted_html_link_with_a_character_reference_is_not_rejected
-    # Only the raw-HTML rule: its .md path is a character-reference path, which entity_path? rejects.
+    # Only the raw-HTML rule: its .md path holds `&` and a query, which unmatchable_page_link? rejects.
     found = rejections(%(<a href="a&amp;b.md?x&sol;y">x</a>\n)).map(&:message)
     refute_includes found, AnchorContract::Extract::RAW_HTML_MESSAGE
   end
@@ -1040,24 +1040,38 @@ class UnportableTest < Minitest::Test
     assert_empty rejections(%(# Real\n\n```html\n<h2 id="phantom">x</h2>\n```\n))
   end
 
-  # The site's relative-links plugin rewrites a link to a Markdown page by the path as written, so a path that
-  # names its page only through a character reference is rejected on a page the site builds. A plain or
-  # percent-encoded path, a reference in the fragment or query (only the path is compared), and a non-Markdown
-  # target are not.
-  def test_a_character_reference_in_a_markdown_page_path_is_rejected
-    message = AnchorContract::Extract::ENTITY_PATH_MESSAGE
-    ['[x](&eacute;.md)', '[x](&#233;.md#real)', '[x](a&amp;b.md)', '[x](x.md&num;top)',
+  # The site's relative-links plugin misses some forms of a path holding `&`, `+`, `<`, `>`, `"` or a query (a
+  # character reference, a bare `&` in a raw tag, an angle-bracket destination, a title), and a .md link it misses
+  # is broken on the site. So a link to a Markdown page with any of them is rejected on a page the site builds,
+  # wherever the link is (a reference definition, a raw tag, a footnote). A plain or percent-encoded path, those
+  # characters in the fragment, and a non-Markdown or external target are not.
+  def test_a_markdown_page_link_the_plugin_cannot_always_match_is_rejected
+    message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
+    ['[x](&eacute;.md)', '[x](&#233;.md#real)', '[x](a&amp;b.md)', '[x](x.md&num;top)', '[x](a&b.md)',
      '[x](&period;&period;&sol;x.md)', '[x](&eacute;.MD)', '[x](&eacute;.markdown)', '[x](&eacute;%FF.md)',
-     "[x][r]\n\n[r]: &eacute;.md", '<a href="&eacute;.md">x</a>', '<a href="a&amp;b.md#x">x</a>'].each do |link|
+     '[x](a&amp;b/../x.md)', '[x](<a&b.md>)', "[x](a&b.md 't')", '[x](a+b.md)', '[x](plain.md?v=1)',
+     "[x][r]\n\n[r]:  a&b.md", "[x][r]\n\n[r]: &eacute;.md", '<a href="&eacute;.md">x</a>',
+     '<a href="a&b.md">x</a>', '<a href="a&amp;b.md#x">x</a>'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
       assert_equal [[3, message]], found.map { |r| [r.line, r.message] }, link
     end
-    ['[x](plain.md)', '[x](%C3%A9.md#real)', '[x](&eacute.md)', '[x](a&b.md)', '[x](plain.md#r&eacute;al)',
-     '[x](plain.md?q=&eacute;.md)', '[x](&eacute;.png)', '[x](https://e.example/&eacute;.md)', '[x](#&eacute;)',
-     '[x](&sol;docs/x.md)', '<a href="plain.md#x">x</a>', '<a href="&eacute;.png">x</a>'].each do |link|
+    ['[x](plain.md)', '[x](%C3%A9.md#real)', '[x](a%26b.md)', '[x](a%2Bb.md)', '[x](plain.md#r&eacute;al)',
+     '[x](&eacute;.png)', '[x](a&b.png?v=1)', '[x](https://e.example/&eacute;.md)', '[x](#&eacute;)',
+     '[x](&sol;docs/x.md)', '<a href="plain.md#x">x</a>', '<a href="a%26b.md">x</a>',
+     '<a href="&eacute;.png">x</a>'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
       assert_empty found.select { |r| r.message == message }, link
     end
+  end
+
+  # A footnote's definition is rendered once at the foot of the page, so a link in it is checked once.
+  def test_a_link_in_a_footnote_is_checked_once
+    message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
+    found = AnchorContract::Extract.unportable("# T\n\na[^1] b[^1]\n\n[^1]: see [x](&eacute;.md)\n",
+                                               source: 'docs/p.md')
+    assert_equal [message], found.map(&:message)
+    assert_empty AnchorContract::Extract.unportable(%(# T\n\na[^1]\n\n[^1]: see <a href="plain.md">x</a>\n),
+                                                    source: 'docs/p.md')
   end
 
   # kramdown-parser-gfm raises building a heading that holds a reference to a surrogate or past U+10FFFF, and
@@ -1387,7 +1401,7 @@ class DiscoveryTest < Minitest::Test
       add_all(dir)
       out = lint(dir)
       assert_equal 1, $?.exitstatus, out
-      assert_match(/docs\/index\.md:5 — a character reference in the path of a link to a Markdown page/, out)
+      assert_match(/docs\/index\.md:5 — a link to a Markdown page whose path holds/, out)
     end
   end
 
