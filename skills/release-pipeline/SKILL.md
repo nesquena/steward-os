@@ -94,20 +94,30 @@ pulled or deployed, so a merge isn't
    Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
    real **and** (if you deploy) the running version serves the change. Re-derive the live version;
-   never claim shipped from a passed gate alone. For a published artifact, confirm its digest
-   matches the tested candidate's from step 4, for this release commit and of the same kind (for an
-   image, the same manifest, or for a multi-platform image the same index). When it doesn't, a human
-   compares the published artifact with the kept tested candidate before step 6, from what each
-   records, nested archives and layers included, not from an unpack (its result depends on the
-   unpacker and who runs it). The comparison covers everything an install keeps or runs, including
-   each entry's type and link target, contents, modes, ownership, extended attributes and file
-   capabilities where the format records them, install scripts, an image's whole config,
+   never claim shipped from a passed gate alone. For an artifact of the kind step 4 covers, take its
+   digest from what users actually get: the digest the registry serves and clients verify, or else
+   one you compute over a fresh download (a checksum printed on a page, or the publish tooling's
+   output, isn't that digest). Confirm it matches the tested candidate's from step 4, for this
+   release commit and of the same kind and algorithm (for an image, the same manifest, or for a
+   multi-platform image the same index). When it doesn't, a human compares the published artifact
+   with the kept tested candidate before step 6, from what each records: any index, manifest and
+   config, the metadata the registry serves for it, and its entries and their bytes, nested archives
+   and layers included, all read as stored (decompressing as needed, and comparing both records
+   where a format keeps two), not from files extracted onto a disk (their modes and owners depend on
+   the unpacker and who runs it). The comparison covers everything an install keeps or runs,
+   including each entry's type and link target, contents, modes, ownership, extended attributes and
+   file capabilities where the format records them, install scripts, an image's whole config,
    requirements and dependencies. Step 6 goes ahead only if the human traces every difference to a
-   step of the release process and finds that none changes what installing it, or the installed
+   step of the release process, finds that none changes what installing it, or the installed
    software, does or may do (a signature that only lets it be verified, or entry order and
    timestamps nothing reads, say; not a repeated path, a format's required first entry or an mtime a
-   build compares). Any other difference, or no kept candidate or digest for this release commit, is
-   a mismatch: stop, step 6 waits, and a human decides whether to yank the release or fix forward.
+   build compares), and keeps a comparison receipt where step 4 keeps the digest, outside anything a
+   contributor can write. The receipt names who compared and when, the release commit, both digests,
+   and each difference with the step it traces to and why it changes nothing an install does. Step
+   6 reads it from there, not from a PR thread. For such an artifact, any other difference, or no
+   kept candidate or digest for this release commit, is a mismatch: stop, step 6 waits, and a human
+   decides whether to yank the release or fix forward. With no comparison receipt, the comparison
+   isn't finished: step 6 waits until it's kept.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
@@ -139,8 +149,8 @@ trailer exists; it does **not** prove the *name* is right.
 ## Verification
 - The change is merged, tagged, and (if deployed) the live version serves it — all three re-derived,
   not assumed.
-- A published artifact is the candidate that was tested (step 4), or differs from it only as step 5
-  allows, when the project publishes one.
+- A published artifact of the kind step 4 covers is the candidate that was tested, or differs from it
+  only as step 5 allows, with the comparison receipt kept.
 - The author is credited identically on every surface, and the handle is the real author of the work.
 - The PR and its issues are closed with version + thanks; the trust ledger has one terminal event.
 - No branch/worktree left dangling.
