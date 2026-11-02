@@ -217,10 +217,10 @@ module AnchorContract
         nil
       end
     end
-    MARKDOWN_LINK_PATH_MESSAGE = 'a link to a Markdown page whose path holds &, +, <, >, " or a query — the ' \
-                                 'site\'s relative-links plugin can\'t match every form of such a path, and a link ' \
-                                 'it misses stays a .md link, which the site serves only for a page without front ' \
-                                 'matter; percent-encode the path (%26, %2B, %C3%A9) and drop the query'
+    MARKDOWN_LINK_PATH_MESSAGE = 'a link to a Markdown page that the site\'s relative-links plugin can\'t always ' \
+                                 'rewrite — a link it misses stays a .md link, which the site serves only for a ' \
+                                 'page without front matter; end the path in a literal .md, percent-encode any &, ' \
+                                 '+, <, > or " in it (%26, %2B), drop the query, and link a page, not an image'
     INVALID_UTF8_MESSAGE = 'not valid UTF-8 — both renderers read the file as UTF-8, so its text and anchors ' \
                            'are not what was written; save it as UTF-8'
 
@@ -331,22 +331,28 @@ module AnchorContract
     end
 
     # jekyll-relative-links turns a link to a Markdown page into one to the built page, in two passes: one over the
-    # markdown source, keyed by the path as written, and one over the rendered HTML, keyed by the href as kramdown
-    # escapes it. A link either pass misses stays a .md link on the built page, which the site serves only for a
-    # page without front matter. Which forms each pass misses depends on its regex (a character reference, a bare
-    # `&` in a raw tag, an angle-bracket destination, a title, `+`, a query), so rather than model them the rule
-    # takes the one form both passes always match: a path with none of `& + < > "` and no query. A
-    # percent-encoded path (`%26`, `%2B`, `%C3%A9`) always matches.
+    # markdown source, keyed by the path as written (percent-decoded), and one over the rendered HTML, which only
+    # rewrites `<a href="….md">` and `<a href="….md#…">`. A link both miss stays a .md link on the built page, which
+    # the site serves only for a page without front matter. Which forms each pass misses depends on its regex (a
+    # character reference, a bare `&` in a raw tag, an angle-bracket destination, a title, `+` read as a space, a
+    # query, a path not ending in a literal `.md`, an image), so rather than model them the rule allows only the
+    # form both always rewrite: a link, not an image, whose path ends in a literal `.md`, holds none of `& + < > "`
+    # and has no query. Other characters may be percent-encoded (`%26`, `%2B`, `%C3%A9`).
     def unmatchable_page_link?(element)
       href = link_target(element)
       return false if href.nil? || href.empty?
 
       rendered = site_href(href)
       return false if rendered.match?(EXTERNAL)
-      return false unless decode(rendered.split(/[?#]/, 2).first.to_s).scrub.match?(MARKDOWN_EXT)
+
+      target = decode(rendered.split(/[?#]/, 2).first.to_s).scrub
+      # a NUL can't be a path (Pathname raises on it); build_link reports such a link as missing
+      return false if target.include?("\0")
+      return false unless Pathname.new(target).cleanpath.to_s.match?(MARKDOWN_EXT)
+      return true if element.type == :img || (element.type == :html_element && element.value == 'img')
 
       path, query = href.split('#', 2).first.to_s.split('?', 2)
-      !query.nil? || path.match?(/[&+<>"]/)
+      !query.nil? || path.match?(/[&+<>"]/) || !path.end_with?('.md')
     end
 
     # A page the site's parser raises on. kramdown-parser-gfm cannot build a heading or definition term whose text
