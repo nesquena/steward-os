@@ -41,20 +41,20 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    ([`release-pipeline`](../release-pipeline/SKILL.md) step 6). Skip a repository whose host isn't
    github.com, too (read `host` as the config lint's `normalize_host` does): this job closes only on
    github.com, and on any other host the issue is closed at release (by `release-pipeline` step 6
-   for the PRs it ships, by hand otherwise). Elsewhere, consider every **open** issue with a
-   **merged PR that links it as closing** (`Closes #N` in the PR's description, or a link from its
-   sidebar; a keyword only in a commit message doesn't link the PR), however long ago the PR merged:
-   a merge no release contains yet stays a candidate until one does. Skip an issue this job's ledger
-   shows it already closed: if it's open again, a human reopened it, and a reopen is a hold. An
-   issue that steps 2-5 leave open is checked again next run, so routing it to a human is
-   [reconciled](../../docs/playbooks/output-loop.md#3-keep-the-state-honest), not repeated: an issue
-   already routed isn't surfaced again until one of its signals changes. Its index row names this
-   job and keeps the step that routed it (2, 3, 4 or 5) and the time of the reporter's latest
-   comment or reaction; surface it again only if a different step now routes it or the reporter has
-   commented or reacted since. Then reconcile the index: drop a row this job wrote whose issue isn't
-   among this run's candidates (it closed, lost its merged closing link, or sits in a repository
-   this step skips). Reconcile only after every repository was listed in full: a listing that fails
-   drops nothing and alarms (step 7). No candidate → stop, silently.
+   for the PRs it ships, by hand otherwise). In the repositories not skipped, consider every
+   **open** issue with a **merged PR that links it as closing** (`Closes #N` in the PR's
+   description, or a link from its sidebar; a keyword only in a commit message doesn't link the PR),
+   however long ago the PR merged: a merge no release contains yet stays a candidate until one does.
+   Skip an issue this job's ledger shows it already closed: if it's open again, a human reopened it,
+   and a reopen is a hold. An issue that steps 2-5 leave open is checked again next run, so routing
+   it to a human is [reconciled](../../docs/playbooks/output-loop.md#3-keep-the-state-honest), not
+   repeated: an issue already routed isn't surfaced again until one of its signals changes. Its
+   index row names this job and keeps the step that routed it (2, 3, 4 or 5) and the time of the
+   reporter's latest comment or reaction; surface it again only if a different step now routes it or
+   the reporter has commented or reacted since. Then reconcile the index: drop a row this job wrote
+   whose issue isn't among this run's candidates (it closed, lost its merged closing link, or sits
+   in a repository this step skips). Reconcile only after every repository was listed in full: a
+   listing that fails drops nothing and alarms (step 7). No candidate → stop, silently.
 2. **Verify provably-shipped, not just merged.** For each candidate, the linking PR must be merged
    **and** its merge commit must be **contained in a released tag** — part of the "shipped" notion
    [`release-pipeline`](../release-pipeline/SKILL.md) enforces (tag exists **and** the merge is real

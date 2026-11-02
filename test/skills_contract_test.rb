@@ -249,6 +249,19 @@ class HostClosingContractTest < Minitest::Test
     assert_includes autoclose, 'a listing that fails drops nothing and alarms (step 7)'
     assert_includes autoclose, 'Its index row names this job and keeps the step that routed it (2, 3, 4 or 5) ' \
                                "and the time of the reporter's latest comment or reaction"
+    # Host scope: only github.com closes autonomously; the who-closes string above doesn't carry that.
+    assert_includes issue_lifecycle, 'The safe autonomous gate (Band A *with watchdog*, github.com repositories only)'
+    assert_includes setup, '`issue-autoclose` closes only on github.com; on any other host, an issue the host left ' \
+                          'open is closed at release'
+    # The reconcile runs after selection, and only on a complete listing.
+    assert_includes autoclose, '1. **Read `config.yaml`, select candidates and reconcile.** Load `repositories:`'
+    assert_includes autoclose, 'Then reconcile the index: drop a row this job wrote'
+    assert_operator autoclose.index('consider every **open** issue'), :<,
+                    autoclose.index('Then reconcile the index: drop a row this job wrote'),
+                    'reconcile after selection, so "not among this run\'s candidates" is decidable'
+    assert_includes autoclose, 'Reconcile only after every repository was listed in full: a listing that fails ' \
+                               'drops nothing and alarms (step 7)'
+    assert_includes autoclose, 'part of the "shipped" notion'
   end
 end
 
