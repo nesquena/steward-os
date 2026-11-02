@@ -126,16 +126,17 @@ run. The gate that needed the run stops there and is **not all-clear**; a skippe
 passed suite, and a green CI does not stand in for it. The same holds when the pre-scan hits or the
 sandbox can't be built. There are two ways forward: configure a sandbox, or have a human run the
 skipped gates (the suite with any differential, and visual verification where a visible surface
-changed) in isolation they control, on the exact head commit, plus trunk for any differential.
-The human reports successful results through the operator's authenticated direct channel, not through the PR thread. **Human success supplies only the skipped
-execution legs**; it does not clear an unresolved review finding or replace either independent
-reading pass. Resume findings resolution and the aggregate verdict. Record aggregate all-clear *by
-human run* only when every required leg is complete, fresh and successful and all required findings
-are resolved on that same head. Any new commit, rebase or changed trunk invalidates the previous
-gate evidence. At the default settings the system can review an untrusted PR but cannot clear one to
-merge on its own. A release-time build or install of untrusted code that needs the network or a
-credential the sandbox withholds has only the human route: the run names the release commit and the
-artifact's digest, and is checked fresh before tagging.
+changed) in isolation they control, on the exact head commit, plus trunk for any differential. The
+human reports successful results through the operator's authenticated direct channel, not through
+the PR thread. **Human success supplies only the skipped execution legs**; it does not clear an
+unresolved review finding or replace either independent reading pass. Resume findings resolution and
+the aggregate verdict. Record aggregate all-clear *by human run* only when every required leg is
+complete, fresh and successful and all required findings are resolved on that same head. Any new
+commit, rebase or changed trunk invalidates the previous gate evidence. At the default settings the
+system can review an untrusted PR but cannot clear one to merge on its own. A release-time build or
+install of untrusted code that needs the network or a credential the sandbox withholds has only the
+human route: the run names the release commit and the artifact's digest, and is checked fresh before
+tagging.
 
 **Human-run receipt and consumption.** Keep the receipt in an operator/reviewer-owned trusted
 location, outside the contributor-writable checkout or PR thread. The
