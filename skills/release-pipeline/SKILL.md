@@ -100,35 +100,31 @@ pulled or deployed, so a merge isn't
    tooling's output). Confirm it matches the tested candidate's from step 4, for this release
    commit, with the same algorithm (recomputing the kept candidate's digest in the published
    digest's algorithm where step 4 kept another) and over the same object (for an image, the same
-   manifest, or for a multi-platform image the same index). A matching digest covers those bytes
-   only: where the registry also serves metadata a client installs from (an npm version manifest's
-   dependencies, scripts or binaries, say), confirm it agrees with the metadata embedded in the kept
-   candidate too (an npm package.json, a wheel's METADATA or a gemspec, say), whether or not that
-   candidate was published. If neither source gives a digest yet (an outage, say), that isn't a
-   mismatch: step 6 waits until one does. When the digests differ or that metadata doesn't agree, a
+   manifest, or for a multi-platform image the same index).  If neither source gives a digest yet
+   (an outage, say), that isn't a mismatch: step 6 waits until one does. When the digests differ, a
    human compares the published artifact with the kept tested candidate before step 6, from what
    each records: any index, manifest and config, the metadata the registry serves for it (against
-   the metadata embedded in the kept candidate), and its entries and their bytes, nested archives
-   and layers included, all read as stored (decompressing as needed, and comparing every record
-   where a format keeps more than one), not from files extracted onto a disk (their modes and owners
-   depend on the unpacker and who runs it). The comparison covers everything an install keeps or
-   runs, including each entry's type and link target, contents, modes, ownership, extended
-   attributes and file capabilities where the format records them, install scripts, an image's whole
-   config, requirements and dependencies. Step 6 goes ahead only if the human traces every
-   difference to a step of the release process, finds that none changes what installing it, or the
-   installed software, does or may do (a signature that only lets it be verified, or entry order and
-   timestamps nothing reads, say; not a repeated path, a format's required first entry or an mtime a
-   build compares), and keeps a comparison receipt where step 4 keeps the digest, outside anything a
-   contributor can write. The receipt names who compared and when, the release commit, both digests,
-   and each difference with the step it traces to and why it changes nothing that installing it, or
-   the installed software, does or may do. Where the digests differ, it also accounts for the digest
-   change itself, including bytes outside the entries (an archive prefix or comment, say): a
-   comparison that finds no difference hasn't explained it. Step 6 reads the receipt from there, not
-   from a PR thread. For an artifact of the kind step 4 covers, a difference that fails this test,
-   or no kept candidate or kept digest for this release commit, is a mismatch: stop, step 6 waits,
-   and a human decides whether to yank the release or fix forward. Where a comparison was due, no
-   receipt, or an old or incomplete one (another release commit, or digests other than the two
-   compared), means it isn't finished: step 6 waits until a current one is kept.
+   the candidate's own embedded metadata, where the candidate was never published), and its entries
+   and their bytes, nested archives and layers included, all read as stored (decompressing as
+   needed, and comparing every record where a format keeps more than one), not from files extracted
+   onto a disk (their modes and owners depend on the unpacker and who runs it). The comparison
+   covers everything an install keeps or runs, including each entry's type and link target,
+   contents, modes, ownership, extended attributes and file capabilities where the format records
+   them, install scripts, an image's whole config, requirements and dependencies. Step 6 goes ahead
+   only if the human traces every difference to a step of the release process, finds that none
+   changes what installing it, or the installed software, does or may do (a signature that only lets
+   it be verified, or entry order and timestamps nothing reads, say; not a repeated path, a format's
+   required first entry or an mtime a build compares), and keeps a comparison receipt where step 4
+   keeps the digest, outside anything a contributor can write. The receipt names who compared and
+   when, the release commit, both digests, and each difference with the step it traces to and why it
+   changes nothing that installing it, or the installed software, does or may do. It also accounts
+   for the digest change itself, including bytes outside the entries (an archive prefix or comment,
+   say): a comparison that finds no difference hasn't explained it. Step 6 reads the receipt from
+   there, not from a PR thread. For an artifact of the kind step 4 covers, a difference that fails
+   this test, or no kept candidate or kept digest for this release commit, is a mismatch: stop, step
+   6 waits, and a human decides whether to yank the release or fix forward. Where a comparison was
+   due, no receipt, or an old or incomplete one (another release commit, or digests other than the
+   two compared), means it isn't finished: step 6 waits until a current one is kept.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
    with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
