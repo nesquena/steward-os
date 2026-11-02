@@ -984,7 +984,9 @@ class UnportableTest < Minitest::Test
   end
 
   def test_a_quoted_html_link_with_a_character_reference_is_not_rejected
-    assert_empty rejections(%(<a href="a&amp;b.md?x&sol;y">x</a>\n))
+    # Only the raw-HTML rule: its .md path is a character-reference path, which entity_path? rejects.
+    found = rejections(%(<a href="a&amp;b.md?x&sol;y">x</a>\n)).map(&:message)
+    refute_includes found, AnchorContract::Extract::RAW_HTML_MESSAGE
   end
 
   def test_a_commented_out_link_tag_is_not_rejected
@@ -1036,6 +1038,26 @@ class UnportableTest < Minitest::Test
 
   def test_a_raw_heading_tag_inside_a_fence_is_not_rejected
     assert_empty rejections(%(# Real\n\n```html\n<h2 id="phantom">x</h2>\n```\n))
+  end
+
+  # The site's relative-links plugin rewrites a link to a Markdown page by the path as written, so a path that
+  # names its page only through a character reference is rejected on a page the site builds. A plain or
+  # percent-encoded path, a reference in the fragment or query (only the path is compared), and a non-Markdown
+  # target are not.
+  def test_a_character_reference_in_a_markdown_page_path_is_rejected
+    message = AnchorContract::Extract::ENTITY_PATH_MESSAGE
+    ['[x](&eacute;.md)', '[x](&#233;.md#real)', '[x](a&amp;b.md)', '[x](x.md&num;top)',
+     '[x](&period;&period;&sol;x.md)', '[x](&eacute;.MD)', '[x](&eacute;.markdown)', '[x](&eacute;%FF.md)',
+     "[x][r]\n\n[r]: &eacute;.md", '<a href="&eacute;.md">x</a>', '<a href="a&amp;b.md#x">x</a>'].each do |link|
+      found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
+      assert_equal [[3, message]], found.map { |r| [r.line, r.message] }, link
+    end
+    ['[x](plain.md)', '[x](%C3%A9.md#real)', '[x](&eacute.md)', '[x](a&b.md)', '[x](plain.md#r&eacute;al)',
+     '[x](plain.md?q=&eacute;.md)', '[x](&eacute;.png)', '[x](https://e.example/&eacute;.md)', '[x](#&eacute;)',
+     '[x](&sol;docs/x.md)', '<a href="plain.md#x">x</a>', '<a href="&eacute;.png">x</a>'].each do |link|
+      found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
+      assert_empty found.select { |r| r.message == message }, link
+    end
   end
 
   # kramdown-parser-gfm raises building a heading that holds a reference to a surrogate or past U+10FFFF, and
@@ -1347,6 +1369,25 @@ class DiscoveryTest < Minitest::Test
       assert_equal 0, $?.exitstatus, out
       assert_includes out, 'OK — every link resolves.'
       assert_match(/2 relative links, 2 anchors/, out, 'both non-ASCII links were checked')
+    end
+  end
+
+  # The real page exists and GitHub resolves `&eacute;.md` to it, but the built site keeps it a `.md` link it
+  # does not serve, so the lint fails while the percent-encoded link beside it passes.
+  def test_a_character_reference_link_to_a_tracked_page_still_fails_the_lint
+    with_repo do |dir|
+      File.write(File.join(dir, '_config.yml'), "exclude: []\n")
+      write(dir, 'docs/é.md', "---\ntitle: e\n---\n\n# Real\n")
+      write(dir, 'docs/index.md', "---\ntitle: i\n---\n\n[ok](%C3%A9.md#real)\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 0, $?.exitstatus, out
+
+      write(dir, 'docs/index.md', "---\ntitle: i\n---\n\n[ok](%C3%A9.md#real) [n](&eacute;.md#real)\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(/docs\/index\.md:5 — a character reference in the path of a link to a Markdown page/, out)
     end
   end
 

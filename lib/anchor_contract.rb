@@ -217,6 +217,9 @@ module AnchorContract
         nil
       end
     end
+    ENTITY_PATH_MESSAGE = 'a character reference in the path of a link to a Markdown page — the site\'s ' \
+                          'relative-links plugin rewrites the path as written, so the built page keeps an ' \
+                          '.md link the site does not serve; write the path plainly or percent-encoded'
     INVALID_UTF8_MESSAGE = 'not valid UTF-8 — both renderers read the file as UTF-8, so its text and anchors ' \
                            'are not what was written; save it as UTF-8'
 
@@ -314,6 +317,7 @@ module AnchorContract
         line = el.options[:location] || line
         message = unportable_message(el)
         out << Rejection.new(source: source, line: line, message: message) if message
+        out << Rejection.new(source: source, line: line, message: ENTITY_PATH_MESSAGE) if entity_path?(el)
         next unless el.type == :text && el.value.match?(RAW_HTML_TAG)
 
         declined << Rejection.new(source: source, line: line, message: RAW_HTML_MESSAGE)
@@ -321,6 +325,23 @@ module AnchorContract
       out.concat(raw_link_rejections(text, declined, source: source))
       out.concat(divergent_heading_ids(text, source: source))
       out
+    end
+
+    # jekyll-relative-links rewrites a link to a Markdown page by its path as written: a markdown link in the
+    # source before kramdown runs, and an `<a href="*.md">` in the rendered HTML, where the reference is still
+    # as written. A link it can't match is left as it is. So a path that names its page only once a character
+    # reference is resolved (`&eacute;.md`, `&#233;.md`, `a&amp;b.md`, `x.md&num;top`) stays a `.md` link on the
+    # built page, and the site publishes that page as `.html`, not `.md`. GitHub resolves the reference, so only
+    # the site's reader gets the broken link; site_href alone would pass it.
+    def entity_path?(element)
+      href = link_target(element)
+      return false if href.nil? || href.empty?
+
+      rendered = site_href(href)
+      return false if rendered.match?(EXTERNAL)
+
+      path = rendered.split(/[?#]/, 2).first.to_s
+      path != href.split(/[?#]/, 2).first.to_s && decode(path).scrub.match?(MARKDOWN_EXT)
     end
 
     # A page the site's parser raises on. kramdown-parser-gfm cannot build a heading or definition term whose text
