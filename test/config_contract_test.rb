@@ -1858,6 +1858,7 @@ class MarkerTest < Minitest::Test
     c['issue_capture']['enabled'] = false
     set_job(c, 'issue-capture', false)
     set_job(c, 'announcements', false)
+    set_job(c, 'issue-autoclose', false) # its own index check isn't the divert scope this pins
     c['scheduled_jobs']['outputs']['alarms_to'] = 'SECURITY-reports.md'
     assert_nil divert_warning(c)
   end
