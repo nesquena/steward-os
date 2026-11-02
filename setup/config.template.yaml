@@ -136,7 +136,7 @@ scheduled_jobs:                 # start with a few; add as you climb the autonom
     # checks. Delivery (push to a chat channel) is an optional enhancement on top — if it fails,
     # the index still has the work. See docs/playbooks/output-loop.md.
     index_path: ""              # pull-based review queue the human checks (e.g. state/index.md).
-                                # Required, and must NOT be a public surface, whenever anything writes to it:
+                                # Required, and must NOT be a public surface, when any of these is on:
                                 # issue_capture.enabled (it can host the vuln-divert level-3 fallback), an
                                 # enabled announcements job, or an enabled issue-autoclose job. A repo-hosted
                                 # index in a public repo is not a valid destination.
