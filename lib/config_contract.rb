@@ -81,6 +81,8 @@ module ConfigContract
     host_closing_off
     autoclose_needs_watchdog
     no_model_job
+    not_applicable_job
+    not_applicable_divert
   ].freeze
 
   # Jobs whose skill is a no-model procedure. `issue-capture` is absent on
@@ -108,6 +110,16 @@ module ConfigContract
     'chat-monitor' => 'community.chat.monitor'
   }.freeze
 
+  # The markable block served by each template job that serves one. A job on a marked block must
+  # not be enabled. `trust` has no job, deliberately. MarkerMapTest keeps this
+  # in step with the template.
+  JOB_BLOCKS = {
+    'chat-monitor' => 'community',
+    'mentions-sweep' => 'community',
+    'issue-capture' => 'issue_capture',
+    'label-sync' => 'labels'
+  }.freeze
+
   # Every rule ParseRules can emit. The meta-test reads this list and
   # SEMANTIC_RULES, so keep it in sync when adding a parse rule.
   PARSE_RULES = %i[
@@ -118,7 +130,34 @@ module ConfigContract
     ambiguous_scalar
   ].freeze
 
+  # Blocks a config may mark as not applying. Safety blocks are absent on
+  # purpose: marking must never weaken a safety rule.
+  MARKABLE_BLOCKS = %w[community issue_capture labels trust].freeze
+
+  MARKER_RULES = %i[
+    not_applicable_block
+    not_applicable_conflict
+  ].freeze
+
   CAPTURE_STATE_PATHS = %w[queue_path ledger_path checkpoint_path].freeze
+
+  # Entries of the top-level `not_applicable` list that name a markable block.
+  def self.marked_blocks(config)
+    marker = config['not_applicable']
+    return [] unless marker.is_a?(Array)
+
+    marker.select { |b| MARKABLE_BLOCKS.include?(b) }
+  end
+
+  # Marked blocks that are absent or an empty mapping: the only shape a marked
+  # block may take.
+  def self.exempt_blocks(config)
+    marked_blocks(config).select { |b| !config.key?(b) || config[b] == {} }
+  end
+
+  def self.exempt_path?(config, path)
+    exempt_blocks(config).any? { |b| path == b || path.start_with?("#{b}.") }
+  end
 
   # Pure. Given the parsed config and the parsed template, return violations.
   #
@@ -206,6 +245,8 @@ module ConfigContract
 
     (tpl_leaves - cfg_leaves).sort.each do |path|
       next if SCHEDULE_KEYS.include?(path)
+      next if path == 'not_applicable'
+      next if exempt_path?(config, path)
       next if covered?(path, cfg_leaves)
       # missing-key loop — ...and it accounts for the keys the template puts
       # beneath it. Gated on a genuinely empty [] or {}: a nil or scalar
@@ -216,8 +257,33 @@ module ConfigContract
       violations << err(:missing_key, path, 'required by setup/config.template.yaml but absent here')
     end
 
-    violations + job_schedule_violations(config)
+    violations + job_schedule_violations(config) + marker_violations(config)
   end
+
+  def self.marker_violations(config)
+    return [] unless config.key?('not_applicable')
+
+    marker = config['not_applicable']
+
+    unless marker.is_a?(Array)
+      return [err(:not_applicable_block, 'not_applicable',
+                  "expected a list of block names, got #{marker.class}")]
+    end
+
+    marker.uniq.flat_map do |b|
+      unless MARKABLE_BLOCKS.include?(b)
+        next [err(:not_applicable_block, 'not_applicable',
+                  "#{b.inspect} is not a block that can be marked (one of: #{MARKABLE_BLOCKS.join(', ')})")]
+      end
+      next [] unless config.key?(b) && config[b] != {}
+
+      [err(:not_applicable_conflict, b,
+           "#{b} is listed in not_applicable but is configured — delete the block or leave it {} if it was " \
+           "never used; a block that has written state or an audit trail (issue_capture's queue, ledger and " \
+           "checkpoint, trust's ledger) stays configured and disabled, so remove it from the list instead")]
+    end
+  end
+  private_class_method :marker_violations
 
   def self.job_schedule_violations(config)
     violations_for_each(config, 'scheduled_jobs', 'jobs') do |job, i|
@@ -287,6 +353,8 @@ module ConfigContract
     violations = []
 
     BOOLEAN_KEYS.each do |path|
+      next if exempt_path?(config, path)
+
       value = fetch_path(config, path)
       next if [true, false].include?(value)
 
@@ -294,6 +362,8 @@ module ConfigContract
     end
 
     STRING_KEYS.each do |path|
+      next if exempt_path?(config, path)
+
       value = fetch_path(config, path)
       next if value.is_a?(String)
 
@@ -301,6 +371,8 @@ module ConfigContract
     end
 
     NON_NEGATIVE_INT_KEYS.each do |path|
+      next if exempt_path?(config, path)
+
       value = fetch_path(config, path)
       next if value.is_a?(Integer) && !value.negative?
 
@@ -500,6 +572,17 @@ module ConfigContract
     watchdog = watchdog_enabled?(config)
 
     violations = []
+
+    # A marked issue_capture drops the capture rules below, but a vulnerability
+    # report can still arrive by other routes and the divert still needs a
+    # destination (docs/reference/security-spine.md).
+    if marked_blocks(config).include?('issue_capture') &&
+       blank?(config.dig('security', 'security_contact')) && blank?(outputs['alarms_to'])
+      violations << err(:not_applicable_divert, 'scheduled_jobs.outputs.alarms_to',
+                        'issue_capture is listed in not_applicable, but the vulnerability divert ' \
+                        'still needs a destination: set security.security_contact or ' \
+                        'scheduled_jobs.outputs.alarms_to (docs/reference/security-spine.md)')
+    end
 
     if capture
       if blank?(outputs['alarms_to'])
@@ -774,6 +857,11 @@ module ConfigContract
                                       "(on #{AUTOCLOSE_HOSTS.join(', ')}, with host_closes_on_merge false), so " \
                                       'it closes nothing (skills/issue-autoclose/SKILL.md, step 1)')
     end
+    if JOB_BLOCKS.key?(name) && marked_blocks(config).include?(JOB_BLOCKS[name])
+      found << err(:not_applicable_job, "scheduled_jobs.jobs[#{index}]",
+                   "job '#{job['name']}' is enabled but #{JOB_BLOCKS[name]} is listed in " \
+                   'not_applicable, so the job has no block to run on')
+    end
     flag = JOB_FLAGS[name]
     if flag && fetch_path(config, flag) != true
       found << err(:job_flag_agree, "scheduled_jobs.jobs[#{index}]",
@@ -807,12 +895,28 @@ module ConfigContract
   # required-rules; the "github-advisory" sentinel is statically known-private.
   def self.unverifiable_warning(config, outputs, index)
     capture = config.dig('issue_capture', 'enabled') == true
-    return [] unless capture || announcements_enabled?(config)
+    # A marked issue_capture runs no capture, but triage still diverts a
+    # vulnerability report to security_contact or alarms_to, so their privacy
+    # needs the same confirmation (not_applicable_divert checks only presence).
+    divert_only = !capture && marked_blocks(config).include?('issue_capture')
+    announcements = announcements_enabled?(config)
+    return [] unless capture || divert_only || announcements
 
     unverifiable = []
     unverifiable << "index_path '#{index}' (outside the repo)" if !blank?(index) && !repo_relative?(index)
-    unverifiable.concat(unverifiable_capture_destinations(config, outputs)) if capture
+    if capture
+      unverifiable.concat(unverifiable_capture_destinations(config, outputs))
+    elsif divert_only
+      unverifiable.concat(unverifiable_divert_destinations(config, outputs))
+    end
     return [] if unverifiable.empty?
+
+    before = if capture
+               'enabling autonomous capture'
+             else
+               [('enabling announcements' if announcements),
+                ('relying on the vulnerability divert' if divert_only)].compact.join(' or ')
+             end
 
     # The leading spaces below line the continuation up under Violation#to_line's
     # own two-space "  x " prefix (see to_line above) so bin/config-lint's
@@ -821,19 +925,28 @@ module ConfigContract
     [Violation.new(severity: :warning, rule: :destinations_unverifiable, key: 'scheduled_jobs.outputs',
                    message: "#{unverifiable.size} destination(s) could not be verified as private:\n" \
                             "#{unverifiable.map { |u| "      #{u}" }.join("\n")}\n" \
-                            "    Confirm each before enabling #{capture ? 'autonomous capture' : 'announcements'}.")]
+                            "    Confirm each before #{before}.")]
   end
 
-  def self.unverifiable_capture_destinations(config, outputs)
-    undecidable = 'channel privacy not statically decidable'
+  UNDECIDABLE = 'channel privacy not statically decidable'
+
+  # The divert's destinations: alarms_to, and security_contact unless it is
+  # the known-private "github-advisory" sentinel.
+  def self.unverifiable_divert_destinations(config, outputs)
     unverifiable = []
-    unverifiable << "digest_to '#{outputs['digest_to']}' (#{undecidable})" unless blank?(outputs['digest_to'])
-    unverifiable << "alarms_to '#{outputs['alarms_to']}' (#{undecidable})" unless blank?(outputs['alarms_to'])
+    unverifiable << "alarms_to '#{outputs['alarms_to']}' (#{UNDECIDABLE})" unless blank?(outputs['alarms_to'])
 
     security_contact = config.dig('security', 'security_contact')
     if !blank?(security_contact) && security_contact != 'github-advisory'
-      unverifiable << "security_contact '#{security_contact}' (#{undecidable})"
+      unverifiable << "security_contact '#{security_contact}' (#{UNDECIDABLE})"
     end
+    unverifiable
+  end
+
+  def self.unverifiable_capture_destinations(config, outputs)
+    unverifiable = []
+    unverifiable << "digest_to '#{outputs['digest_to']}' (#{UNDECIDABLE})" unless blank?(outputs['digest_to'])
+    unverifiable.concat(unverifiable_divert_destinations(config, outputs))
 
     CAPTURE_STATE_PATHS.each do |k|
       value = config.dig('issue_capture', k)

@@ -1472,6 +1472,11 @@ class CorpusTest < Minitest::Test
     assert_equal 0, $CHILD_STATUS.exitstatus, out
   end
 
+  def test_marked_fixture_passes_through_the_real_entrypoint
+    out = IO.popen([BIN, File.join(FIXTURE_ROOT, 'green-marked.yaml')], err: [:child, :out], &:read)
+    assert_equal 0, $CHILD_STATUS.exitstatus, out
+  end
+
   red_fixtures.each do |path|
     name = File.basename(path, '.yaml')
     expected = name.sub(/\Ared-/, '').to_sym
@@ -1524,5 +1529,321 @@ class MetaTest < Minitest::Test
     missing = (ConfigContract::SEMANTIC_RULES + ConfigContract::PARSE_RULES) - covered
     assert_empty missing,
                  "these rules have no red fixture, so nothing proves they fire: #{missing.inspect}"
+  end
+
+  def test_every_marker_rule_has_a_red_fixture
+    covered = Dir.glob(File.join(FIXTURE_ROOT, 'red-*.yaml'))
+                 .map { |p| File.basename(p, '.yaml').sub(/\Ared-/, '').to_sym }
+    missing = ConfigContract::MARKER_RULES - covered
+    assert_empty missing,
+                 "these marker rules have no red fixture, so nothing proves they fire: #{missing.inspect}"
+  end
+end
+
+# --- JOB_BLOCKS and MARKABLE_BLOCKS stay in step with the template ---
+class MarkerMapTest < Minitest::Test
+  TEMPLATE = ConfigContract::Extract.load(File.expand_path('../setup/config.template.yaml', __dir__)).freeze
+
+  def test_markable_blocks_are_template_top_level_keys
+    ConfigContract::MARKABLE_BLOCKS.each do |b|
+      assert_includes TEMPLATE.keys, b, "#{b} is markable but is not a template block"
+    end
+  end
+
+  def test_job_blocks_name_template_jobs_and_markable_blocks
+    jobs = TEMPLATE.dig('scheduled_jobs', 'jobs').map { |j| j['name'] }
+    ConfigContract::JOB_BLOCKS.each do |job, block|
+      assert_includes jobs, job, "#{job} is not a template job"
+      assert_includes ConfigContract::MARKABLE_BLOCKS, block, "#{block} is not markable"
+    end
+  end
+
+  def test_every_markable_block_but_trust_has_a_job
+    served = ConfigContract::JOB_BLOCKS.values.uniq
+    # trust has no job, deliberately
+    assert_equal (ConfigContract::MARKABLE_BLOCKS - ['trust']).sort, served.sort
+  end
+end
+
+class MarkerTest < Minitest::Test
+  TEMPLATE = ConfigContract::Extract.load(File.expand_path('../setup/config.template.yaml', __dir__)).freeze
+  BASE = ConfigContract::Extract.load(File.join(FIXTURE_ROOT, 'green-enabled.yaml')).freeze
+  BLOCKS = ConfigContract::MARKABLE_BLOCKS
+  UNMARKABLE = %w[security secrets autonomy project repositories scope ci_and_gates scheduled_jobs].freeze
+
+  def cfg
+    Marshal.load(Marshal.dump(BASE))
+  end
+
+  def check(config)
+    ConfigContract.check(config: config, template: TEMPLATE)
+  end
+
+  def rules(config)
+    check(config).map(&:rule)
+  end
+
+  def keys_for(config, rule)
+    check(config).select { |v| v.rule == rule }.map(&:key)
+  end
+
+  def test_absent_marker_changes_nothing
+    absent = cfg
+    absent.delete('not_applicable')
+    empty = cfg
+    empty['not_applicable'] = []
+    assert_equal check(absent).map(&:to_line), check(empty).map(&:to_line)
+  end
+
+  def test_each_block_absent_when_marked
+    BLOCKS.each do |b|
+      c = cfg
+      c.delete(b)
+      c['not_applicable'] = [b]
+      r = rules(c)
+      assert_empty keys_for(c, :missing_key).grep(/\A#{b}(\.|\z)/), b
+      refute_includes r, :phases_skipped, b
+    end
+  end
+
+  def test_marked_empty_mapping_is_exempt
+    BLOCKS.each do |b|
+      c = cfg
+      c[b] = {}
+      c['not_applicable'] = [b]
+      vs = check(c)
+      assert_empty vs.select { |v| v.key.start_with?("#{b}.") || v.key == b }, b
+      refute_includes vs.map(&:rule), :phases_skipped, b
+    end
+  end
+
+  def test_unlisted_block_keeps_missing_key
+    BLOCKS.each do |b|
+      c = cfg
+      c.delete(b)
+      assert_includes keys_for(c, :missing_key).map { |k| k.split('.').first }, b
+    end
+  end
+
+  def test_unmarkable_block_is_refused_and_not_exempt
+    UNMARKABLE.each do |b|
+      c = cfg
+      c.delete(b)
+      c['not_applicable'] = [b]
+      r = rules(c)
+      assert_includes r, :not_applicable_block, b
+      assert_includes r, :missing_key, b
+    end
+    c = cfg
+    c['security'] = {}
+    c['not_applicable'] = ['security']
+    assert_includes rules(c), :not_applicable_block
+  end
+
+  def test_non_list_marker_is_refused_and_exempts_nothing
+    ['community', { 'community' => true }].each do |bad|
+      c = cfg
+      c.delete('community')
+      c['not_applicable'] = bad
+      r = rules(c)
+      assert_includes r, :not_applicable_block, bad.inspect
+      assert_includes r, :missing_key, bad.inspect
+    end
+  end
+
+  def test_near_miss_entries_are_refused
+    ['Community', ' trust', 'issue-capture', nil, 1].each do |bad|
+      c = cfg
+      c['not_applicable'] = [bad]
+      assert_includes rules(c), :not_applicable_block, bad.inspect
+    end
+  end
+
+  def test_near_miss_earns_no_exemption
+    c = cfg
+    c.delete('community')
+    c['not_applicable'] = ['Community']
+    assert_includes rules(c), :missing_key
+  end
+
+  def test_marked_block_with_content_conflicts
+    BLOCKS.each do |b|
+      c = cfg
+      c['not_applicable'] = [b]
+      assert_includes keys_for(c, :not_applicable_conflict), b
+    end
+  end
+
+  def test_marked_block_as_empty_list_conflicts
+    BLOCKS.each do |b|
+      c = cfg
+      c[b] = []
+      c['not_applicable'] = [b]
+      assert_includes keys_for(c, :not_applicable_conflict), b
+    end
+  end
+
+  def test_marked_block_as_null_stays_unknown_key
+    BLOCKS.each do |b|
+      c = cfg
+      c[b] = nil
+      c['not_applicable'] = [b]
+      r = rules(c)
+      assert_includes r, :unknown_key, b
+      assert_includes r, :not_applicable_conflict, b
+    end
+  end
+
+  def test_exempt_block_is_skipped_by_type_phase
+    c = cfg
+    c['scheduled_jobs']['jobs'].each do |j|
+      j['enabled'] = false if %w[issue-capture chat-monitor].include?(j['name'])
+    end
+    c.delete('issue_capture')
+    c.delete('community')
+    c['not_applicable'] = %w[issue_capture community]
+    vs = check(c)
+    assert_empty vs.select { |v| v.rule.to_s.start_with?('type_') }
+    refute_includes vs.map(&:rule), :phases_skipped
+  end
+
+  def test_unmarked_empty_block_keeps_its_type_checks
+    c = cfg
+    c['community'] = {}
+    assert_includes keys_for(c, :type_boolean), 'community.chat.monitor'
+  end
+
+  # Mark blocks: delete them and list them.
+  def marked(c, *blocks)
+    blocks.each { |b| c.delete(b) }
+    c['not_applicable'] = blocks
+    c
+  end
+
+  def set_job(c, name, enabled)
+    c['scheduled_jobs']['jobs'].each { |j| j['enabled'] = enabled if j['name'] == name }
+  end
+
+  def test_enabled_job_on_a_marked_block_is_refused
+    c = marked(cfg, 'labels')
+    set_job(c, 'label-sync', true)
+    assert_includes rules(c), :not_applicable_job
+    refute_includes rules(c), :phases_skipped
+  end
+
+  def test_normalized_job_name_is_caught
+    c = marked(cfg, 'labels')
+    c['scheduled_jobs']['jobs'].each { |j| j['name'] = 'Label_Sync' if j['name'] == 'label-sync' }
+    assert_includes rules(c), :not_applicable_job
+    refute_includes rules(c), :phases_skipped
+  end
+
+  def test_every_mapped_job_is_refused_on_its_block
+    {
+      'chat-monitor' => 'community',
+      'mentions-sweep' => 'community',
+      'issue-capture' => 'issue_capture',
+      'label-sync' => 'labels'
+    }.each do |job, block|
+      c = marked(cfg, block)
+      c['scheduled_jobs']['jobs'] << { 'name' => job, 'every' => '1h', 'enabled' => true, 'agent' => false } \
+        unless c['scheduled_jobs']['jobs'].any? { |j| j['name'] == job }
+      set_job(c, job, true)
+      assert_includes rules(c), :not_applicable_job, job
+    end
+  end
+
+  def test_disabled_job_on_a_marked_block_is_fine
+    c = marked(cfg, 'labels')
+    set_job(c, 'label-sync', false)
+    refute_includes rules(c), :not_applicable_job
+    refute_includes rules(c), :phases_skipped
+  end
+
+  def capture_marked
+    c = marked(cfg, 'issue_capture')
+    c['community']['chat']['monitor'] = false
+    set_job(c, 'issue-capture', false)
+    c['security']['security_contact'] = ''
+    c['scheduled_jobs']['outputs']['alarms_to'] = ''
+    c
+  end
+
+  def test_marked_capture_needs_a_divert_destination
+    c = capture_marked
+    assert_includes rules(c), :not_applicable_divert
+    refute_includes rules(c), :phases_skipped
+  end
+
+  def test_either_destination_satisfies_the_divert
+    c = capture_marked
+    c['security']['security_contact'] = 'github-advisory'
+    refute_includes rules(c), :not_applicable_divert
+    refute_includes rules(c), :phases_skipped
+    c = capture_marked
+    c['scheduled_jobs']['outputs']['alarms_to'] = 'ops@example.com'
+    refute_includes rules(c), :not_applicable_divert
+    refute_includes rules(c), :phases_skipped
+  end
+
+  def test_unmarked_capture_has_no_new_divert_rule
+    c = cfg
+    c['security']['security_contact'] = ''
+    c['scheduled_jobs']['outputs']['alarms_to'] = ''
+    refute_includes rules(c), :not_applicable_divert
+    refute_includes rules(c), :phases_skipped
+  end
+
+  def divert_warning(config)
+    check(config).find { |v| v.rule == :destinations_unverifiable }
+  end
+
+  def test_marked_capture_lists_divert_destinations_for_confirmation
+    c = capture_marked
+    set_job(c, 'announcements', false)
+    c['scheduled_jobs']['outputs']['alarms_to'] = 'SECURITY-reports.md'
+    c['security']['security_contact'] = 'security@example.com'
+    w = divert_warning(c)
+    refute_nil w, 'a marked issue_capture must still surface the divert destinations'
+    assert_equal :warning, w.severity
+    assert_includes w.message, "alarms_to 'SECURITY-reports.md'"
+    assert_includes w.message, "security_contact 'security@example.com'"
+    assert_includes w.message, 'relying on the vulnerability divert'
+    refute_includes w.message, 'autonomous capture'
+  end
+
+  def test_marked_capture_with_only_the_sentinel_has_no_divert_warning
+    c = capture_marked
+    set_job(c, 'announcements', false)
+    c['security']['security_contact'] = 'github-advisory'
+    c['scheduled_jobs']['outputs']['index_path'] = ''
+    assert_nil divert_warning(c)
+  end
+
+  def test_unmarked_capture_off_keeps_todays_warning_scope
+    c = cfg
+    c['community']['chat']['monitor'] = false
+    c['issue_capture']['enabled'] = false
+    set_job(c, 'issue-capture', false)
+    set_job(c, 'announcements', false)
+    c['scheduled_jobs']['outputs']['alarms_to'] = 'SECURITY-reports.md'
+    assert_nil divert_warning(c)
+  end
+
+  def test_unfilled_template_still_passes
+    vs = check(Marshal.load(Marshal.dump(TEMPLATE)))
+    assert_empty vs.select { |v| v.severity == :error }.map(&:to_line)
+    refute_includes vs.map(&:rule), :phases_skipped
+  end
+
+  def test_marked_config_still_trips_unrelated_rules
+    c = marked(cfg, 'community', 'issue_capture', 'labels', 'trust')
+    %w[issue-capture chat-monitor label-sync].each { |j| set_job(c, j, false) }
+    c['security']['security_contact'] = 'github-advisory'
+    c['repositories'][0]['visibility'] = 'public'
+    c['scheduled_jobs']['outputs']['index_path'] = 'state/index.md'
+    set_job(c, 'announcements', true)
+    assert_includes rules(c), :index_not_public
+    refute_includes rules(c), :phases_skipped
   end
 end
