@@ -237,6 +237,10 @@ module AnchorContract
     def unportable(text, source:)
       out = []
       out << Rejection.new(source: source, line: 1, message: BOM_MESSAGE) if text.start_with?(BOM)
+      # Every check below reads the page the way the site parses it, so a page that parse fails on is reported alone.
+      unbuildable = site_parse_failure(text, source: source)
+      return out << unbuildable if unbuildable
+
       line = 1
       declined = []
       walk(document(text, auto_ids: false).root) do |el|
@@ -250,6 +254,32 @@ module AnchorContract
       out.concat(raw_link_rejections(text, declined, source: source))
       out.concat(divergent_heading_ids(text, source: source))
       out
+    end
+
+    # A page the site's parser raises on. kramdown-parser-gfm cannot slug a heading whose text holds a character
+    # reference to a surrogate (`&#xD800;`) or past U+10FFFF. Jekyll renders with the same parser, so its build
+    # fails on the page (one with front matter; Jekyll copies a page without it as it is), while GitHub slugs the
+    # heading. No anchor into it holds on both, so the page is reported, on the line of the first heading the
+    # parser fails on by itself.
+    #
+    # ceiling: only ArgumentError, the error kramdown raises here, is reported; any other parse error still
+    # stops the lint with its backtrace. Add its class here if one turns up.
+    def site_parse_failure(text, source:)
+      document(text)
+      nil
+    rescue ArgumentError => e
+      line = nil
+      walk(document(text, auto_ids: false).root) do |el|
+        next unless line.nil? && el.type == :header
+
+        document("# #{el.options[:raw_text]}\n")
+      rescue ArgumentError
+        line = el.options[:location]
+      end
+      Rejection.new(source: source, line: line || 1,
+                    message: "the site's markdown parser fails on this page (#{e.message}), so the Jekyll " \
+                             'build fails on it too — a heading holding a character reference to a surrogate ' \
+                             'such as &#xD800; is the known cause; replace or drop the reference')
     end
 
     # The renderer comparison names the tag's own line, so it is preferred. The

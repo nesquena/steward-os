@@ -1011,6 +1011,15 @@ class UnportableTest < Minitest::Test
   def test_a_raw_heading_tag_inside_a_fence_is_not_rejected
     assert_empty rejections(%(# Real\n\n```html\n<h2 id="phantom">x</h2>\n```\n))
   end
+
+  # kramdown-parser-gfm raises slugging a heading that holds a reference to a surrogate, and Jekyll renders with
+  # it, so the Jekyll build fails on the page while GitHub slugs it `a--b`. No anchor holds on both: the heading is
+  # reported on its own line.
+  def test_a_heading_the_site_parser_cannot_slug_is_rejected
+    found = rejections("# Fine\n\n## a &#xD800; b\n")
+    assert_equal [3], found.map(&:line)
+    assert_match(/Jekyll build fails/, found.first.message)
+  end
 end
 
 # --- Discovery: git-tracked enumeration reaches dot-dirs, skips untracked ---
@@ -1241,21 +1250,49 @@ class DiscoveryTest < Minitest::Test
     end
   end
 
+  # The real bin, copied into the fixture repo, under a POSIX locale.
+  def lint(dir)
+    %w[bin lib].each do |d|
+      FileUtils.cp_r(File.expand_path("../#{d}", __dir__), dir) unless File.exist?(File.join(dir, d))
+    end
+    IO.popen({ 'LANG' => 'C', 'LC_ALL' => 'C' }, [File.join(dir, 'bin', 'anchor-lint')],
+             err: [:child, :out], encoding: 'UTF-8', &:read)
+  end
+
   # The real bin under a POSIX locale, where Ruby's default external encoding
   # is US-ASCII: tracked names, headings and links outside ASCII still resolve,
   # in a file both renderers publish and in one only GitHub does.
   def test_the_lint_passes_under_a_posix_locale
     with_repo do |dir|
-      %w[bin lib].each { |d| FileUtils.cp_r(File.expand_path("../#{d}", __dir__), dir) }
       write(dir, 'café.md', "# Café — menu\n\n[readme](README.md#read--me)\n")
       write(dir, 'README.md', "# Read — me\n\n[menu](café.md#café--menu)\n")
       File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
       add_all(dir)
-      out = IO.popen({ 'LANG' => 'C', 'LC_ALL' => 'C' }, [File.join(dir, 'bin', 'anchor-lint')],
-                     err: [:child, :out], encoding: 'UTF-8', &:read)
+      out = lint(dir)
       assert_equal 0, $?.exitstatus, out
       assert_includes out, 'OK — every link resolves.'
       assert_match(/2 relative links, 2 anchors/, out, 'both non-ASCII links were checked')
+    end
+  end
+
+  # A heading the site's parser cannot slug fails the Jekyll build, so a page both renderers publish is reported,
+  # never a crash of the lint. GitHub slugs the same heading `a--b`, so in a file only GitHub renders the anchor
+  # still resolves.
+  def test_a_heading_the_site_cannot_slug_is_reported_not_a_crash
+    with_repo do |dir|
+      write(dir, 'README.md', "# a &#xD800; b\n\n[self](#a--b)\n")
+      File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 0, $?.exitstatus, out
+      assert_includes out, '1 relative links, 1 anchors'
+
+      write(dir, 'page.md', "# Fine\n\n## a &#xD800; b\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(/page\.md:3 — .*Jekyll build fails/, out)
+      refute_match(/input string invalid \(ArgumentError\)|\.rb:\d+:in /, out, 'a report, not a backtrace')
     end
   end
 end

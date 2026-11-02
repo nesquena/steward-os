@@ -67,7 +67,12 @@ docs.each do |rel|
     # are the deduped union of both renderers so a link either one produces is
     # checked, and heading ids come from the site's parser (whose slugger mirrors
     # github-slugger for the docs GitHub also renders directly).
-    rejections.concat(AnchorContract::Extract.unportable(text, source: rel))
+    rejected = AnchorContract::Extract.unportable(text, source: rel)
+    rejections.concat(rejected)
+    # Any rejection stops the lint before links are checked, and a page the site's parser fails on has no
+    # ids or links to read.
+    next unless rejected.empty?
+
     headings[rel] = AnchorContract::Extract.heading_ids(text)
     links.concat(AnchorContract::Extract.merged_links(text, source: rel))
   end
