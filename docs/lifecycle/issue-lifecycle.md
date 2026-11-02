@@ -91,14 +91,16 @@ A serious issue that nobody is building becomes a Builder task → it enters the
 An issue closes without a human only when its fix is **provably shipped** and it's **fully
 resolved**, never partially. A close is [reversible](../playbooks/autonomy-ladder.md#what-reversible-means)
 by reopening, but a wrong close still costs the reporter's trust.
-The safe autonomous gate (Band A *with watchdog*, on github.com repositories; elsewhere the issue
-is closed at release) is mechanically strict:
+The safe autonomous gate (Band A *with watchdog*, github.com repositories only) is mechanically strict:
 - a merged PR explicitly links the issue as closing it (in the PR's description or sidebar; a
   keyword only in a commit message doesn't link the PR), **and**
 - the merge commit is contained in a released tag (provably shipped, not just on the trunk), **and**
 - the issue is **single-surface** — if it enumerates several distinct symptoms, it does *not*
   auto-close; it routes to a human for full-surface verification, **and**
 - no "still broken" pushback after the fix, and no hold.
+
+On other hosts the issue is closed at release (by `release-pipeline` step 6 for the PRs it ships, by hand
+otherwise).
 
 The gate needs the issue still open at release. GitHub and GitLab close a linked issue at merge
 unless that's turned off per repository, so unless every merge is the release, each repository turns

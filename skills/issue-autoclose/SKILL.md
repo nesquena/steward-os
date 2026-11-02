@@ -18,7 +18,7 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 > never closes on taste, staleness, or a maintainer's judgment call — those stay human
 > ([`issue-close-proposal`](../issue-close-proposal/SKILL.md) prepares two kinds for that human:
 > done with no linking PR, and duplicate). Every run
-> reconciles the index first (step 1). If step 1 finds no candidate, there is nothing else to do —
+> reconciles the index (step 1). If step 1 finds no candidate, there is nothing else to do —
 > stop. Otherwise every candidate goes through the gates:
 > it's closed, it waits for a release, or it stays open and is routed to a human.
 
@@ -35,29 +35,31 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 
 ## Steps
 
-1. **Reconcile, read `config.yaml` and select candidates.** Reconcile the index (drop a row this job
-   wrote for an issue that's since closed or is no longer a candidate), then load `repositories:`
-   and the release model. Skip a repository whose `host_closes_on_merge` is `true`: its host closed
-   the issue at merge, so there's nothing to close, and the release names the version on it
+1. **Read `config.yaml`, select candidates and reconcile.** Load `repositories:` and the release
+   model. Skip a repository whose `host_closes_on_merge` is `true`: its host closed the issue at
+   merge, so there's nothing to close, and the release names the version on it
    ([`release-pipeline`](../release-pipeline/SKILL.md) step 6). Skip a repository whose host isn't
    github.com, too (read `host` as the config lint's `normalize_host` does): this job closes only on
-   github.com, and on any other host the issue is closed at release (release-pipeline step 6 for the
-   PRs that step ships, by hand for anything else). Elsewhere, consider every **open** issue with a
+   github.com, and on any other host the issue is closed at release (by `release-pipeline` step 6
+   for the PRs it ships, by hand otherwise). Elsewhere, consider every **open** issue with a
    **merged PR that links it as closing** (`Closes #N` in the PR's description, or a link from its
    sidebar; a keyword only in a commit message doesn't link the PR), however long ago the PR merged:
    a merge no release contains yet stays a candidate until one does. Skip an issue this job's ledger
    shows it already closed: if it's open again, a human reopened it, and a reopen is a hold. An
    issue that steps 2-5 leave open is checked again next run, so routing it to a human is
    [reconciled](../../docs/playbooks/output-loop.md#3-keep-the-state-honest), not repeated: an issue
-   already routed isn't surfaced again until one of its signals changes. Its index row keeps the
-   step that routed it (2, 3, 4 or 5) and the time of the reporter's latest comment or reaction;
-   surface it again only if a different step now routes it or the reporter has commented or reacted
-   since. No candidate → stop, silently.
+   already routed isn't surfaced again until one of its signals changes. Its index row names this
+   job and keeps the step that routed it (2, 3, 4 or 5) and the time of the reporter's latest
+   comment or reaction; surface it again only if a different step now routes it or the reporter has
+   commented or reacted since. Then reconcile the index: drop a row this job wrote whose issue isn't
+   among this run's candidates (it closed, lost its merged closing link, or sits in a repository
+   this step skips). Reconcile only after every repository was listed in full: a listing that fails
+   drops nothing and alarms (step 7). No candidate → stop, silently.
 2. **Verify provably-shipped, not just merged.** For each candidate, the linking PR must be merged
-   **and** its merge commit must be **contained in a released tag** — the same three-part "shipped"
-   notion [`release-pipeline`](../release-pipeline/SKILL.md) enforces (tag exists **and** the merge
-   is real **and** it's in a release, not merely on the trunk). A merge that no release tag contains
-   is **not** shipped. That's a wait, not a hold: leave the issue open and unrouted, and it stays a
+   **and** its merge commit must be **contained in a released tag** — part of the "shipped" notion
+   [`release-pipeline`](../release-pipeline/SKILL.md) enforces (tag exists **and** the merge is real
+   **and** it's in a release, not merely on the trunk). A merge that no release tag contains is
+   **not** shipped. That's a wait, not a hold: leave the issue open and unrouted, and it stays a
    candidate until a release contains the merge. Under `style: continuous` no release tag is coming,
    so there's nothing to wait for: route the candidate to a human, who checks the deploy
    (`shipped_means`). Read `style` as the config lint's `normalize_job_name` does: drop invisible
@@ -115,8 +117,7 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 - Only closes issues whose fix is in a **released tag** — a merely-merged, unreleased fix is left
   open.
 - Only closes on github.com repositories. On any other host it closes nothing, and the issue is
-  closed at release (release-pipeline step 6 for the PRs that step ships, by hand for anything
-  else).
+  closed at release (by `release-pipeline` step 6 for the PRs it ships, by hand otherwise).
 - Multi-surface issues, reopened issues, and issues with post-merge "still broken" pushback are
   **not** auto-closed — they route to a human. The exception: an issue this job closed and a human
   reopened is skipped (step 1), and the watchdog's "Autonomous closes" check surfaces the reopen.
