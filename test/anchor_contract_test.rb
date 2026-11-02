@@ -339,6 +339,18 @@ class LinksTest < Minitest::Test
     link = AnchorContract::Extract.links("[x](a&#xD800;.md)\n", source: 'docs/lifecycle/pr-lifecycle.md').first
     got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: dirs).map(&:rule)
     assert_equal [:missing], got, "a&#xD800;.md via links: path=#{link.path.inspect}"
+    # Only the path names the file: an invalid byte in the query or fragment leaves a valid path to
+    # resolve, as the rendered page does.
+    files << 'docs/lifecycle/x.md'
+    { 'x.md?q=&#xD800;' => [], 'x.md?q=%FF' => [], 'x.md#&#xD800;' => [:fragment],
+      'x.md#%FF' => [:fragment] }.each do |href, rules|
+      [AnchorContract::Extract.method(:links), AnchorContract::Extract.method(:links_cmark)].each do |extract|
+        link = extract.call("[x](#{href})\n", source: 'docs/lifecycle/pr-lifecycle.md').first
+        got = AnchorContract.check(links: [link], headings: { 'docs/lifecycle/x.md' => ['x'] },
+                                   files: files, dirs: dirs).map(&:rule)
+        assert_equal rules, got, "#{href} via #{extract.name}: path=#{link.path.inspect}"
+      end
+    end
     two = AnchorContract::Extract.merged_links("[a](%00.md) [b](%FF.md)\n", source: 'docs/lifecycle/pr-lifecycle.md')
     assert_equal %w[%00.md %FF.md], two.map(&:href).sort, 'two unnamed targets are two broken links, not one'
   end

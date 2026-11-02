@@ -457,18 +457,16 @@ module AnchorContract
       # `foo&bar.md` — unless the HTML parser has resolved them already. Percent
       # escapes are the browser's and are decoded per component below, after `#`
       # has done its splitting.
-      text = decoded ? href : CGI.unescapeHTML(href)
-      # A character reference to a surrogate leaves invalid UTF-8. Scrubbed so `#` can split it; the
-      # path is then nil below, never the scrubbed name.
-      named = text.valid_encoding?
-      target, fragment = text.scrub.split('#', 2)
+      # Split on the bytes: a character reference to a surrogate leaves invalid UTF-8, and only an
+      # invalid path names nothing. The query and fragment are not the file's name.
+      target, fragment = (decoded ? href : CGI.unescapeHTML(href)).b.split('#', 2)
       # A query string is stripped by every renderer before the path is resolved,
       # and percent escapes are decoded, so `foo%20bar.md?v=1` is the tracked
       # file `foo bar.md`.
       # An escape can decode to invalid UTF-8 or a NUL, which no file name holds: the path is nil,
       # and `resolve` reports the link as a missing target.
       rel = decode(target.to_s.split('?', 2).first.to_s)
-      path = if !named || !rel.valid_encoding? || rel.include?("\0")
+      path = if !rel.valid_encoding? || rel.include?("\0")
                nil
              elsif rel.empty?
                ''
