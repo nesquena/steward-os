@@ -673,18 +673,29 @@ module ConfigContract
   # Capture and the announcements job each write to the index, so either one
   # needs it, and each needs it private. One violation either way.
   def self.index_violations(config, index, capture)
-    return [] unless capture || announcements_enabled?(config)
+    announcements = job_enabled?(config, 'announcements')
+    autoclose = job_enabled?(config, 'issue-autoclose')
+    return [] unless capture || announcements || autoclose
 
     if blank?(index)
       need = if capture
                'issue_capture.enabled requires a pull index (issue-capture step 1)'
-             else
+             elsif announcements
                'an enabled announcements job requires a pull index for its decision row ' \
                  '(release-announce/SKILL.md)'
+             else
+               'an enabled issue-autoclose job requires a pull index for the issues it routes to a ' \
+                 'human (issue-autoclose/SKILL.md, step 1)'
              end
       [err(:pull_index_required, 'scheduled_jobs.outputs.index_path', need)]
     elsif repo_relative?(index) && public_repo?(config)
-      held = capture ? 'can hold a diverted vulnerability' : 'holds a draft awaiting a human decision'
+      held = if capture
+               'can hold a diverted vulnerability'
+             elsif announcements
+               'holds a draft awaiting a human decision'
+             else
+               'holds issues routed to a human'
+             end
       [err(:index_not_public, 'scheduled_jobs.outputs.index_path',
            "'#{index}' is repo-relative and this project lists a public repository. " \
            "An index that #{held} must not be a public " \
@@ -695,13 +706,13 @@ module ConfigContract
     end
   end
 
-  def self.announcements_enabled?(config)
+  def self.job_enabled?(config, name)
     jobs = config.dig('scheduled_jobs', 'jobs')
     return false unless jobs.is_a?(Array)
 
     jobs.any? do |j|
       j.is_a?(Hash) && j['enabled'] == true && j['name'].is_a?(String) &&
-        normalize_job_name(j['name']) == 'announcements'
+        normalize_job_name(j['name']) == name
     end
   end
 
@@ -899,8 +910,9 @@ module ConfigContract
     # vulnerability report to security_contact or alarms_to, so their privacy
     # needs the same confirmation (not_applicable_divert checks only presence).
     divert_only = !capture && marked_blocks(config).include?('issue_capture')
-    announcements = announcements_enabled?(config)
-    return [] unless capture || divert_only || announcements
+    announcements = job_enabled?(config, 'announcements')
+    autoclose = job_enabled?(config, 'issue-autoclose')
+    return [] unless capture || divert_only || announcements || autoclose
 
     unverifiable = []
     unverifiable << "index_path '#{index}' (outside the repo)" if !blank?(index) && !repo_relative?(index)
@@ -915,6 +927,7 @@ module ConfigContract
                'enabling autonomous capture'
              else
                [('enabling announcements' if announcements),
+                ('enabling issue-autoclose' if autoclose),
                 ('relying on the vulnerability divert' if divert_only)].compact.join(' or ')
              end
 

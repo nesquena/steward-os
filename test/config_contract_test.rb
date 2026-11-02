@@ -970,6 +970,38 @@ class SemanticTest < Minitest::Test
     assert(warnings.any? { |x| x.message.include?('/srv/steward/index.md') })
   end
 
+  # issue-autoclose routes a candidate that fails a gate to a human, through the index.
+  def autoclosing_without_capture(index:, visibility: 'private', name: 'issue-autoclose')
+    cfg = with_jobs({ 'name' => name, 'every' => '4h', 'enabled' => true, 'agent' => false })
+    cfg['issue_capture']['enabled'] = false
+    cfg['community']['chat']['monitor'] = false
+    cfg['repositories'][0]['visibility'] = visibility
+    cfg['scheduled_jobs']['outputs']['index_path'] = index
+    cfg
+  end
+
+  def test_issue_autoclose_needs_the_index_with_capture_off
+    message = rule(autoclosing_without_capture(index: ''), :pull_index_required).message
+    assert_includes message, 'issue-autoclose'
+    refute_includes message, 'issue_capture'
+  end
+
+  def test_a_near_miss_autoclose_name_still_needs_the_index
+    assert rule(autoclosing_without_capture(index: '', name: 'Issue_Autoclose '), :pull_index_required)
+  end
+
+  def test_the_autoclose_index_must_not_be_public
+    assert rule(autoclosing_without_capture(index: 'index.md', visibility: 'public'), :index_not_public)
+  end
+
+  def test_an_outside_repo_autoclose_index_warns
+    cfg = autoclosing_without_capture(index: '/srv/steward/index.md')
+    assert_nil rule(cfg, :index_not_public)
+    warning = check(cfg).find { |x| x.severity == :warning && x.message.include?('/srv/steward/index.md') }
+    refute_nil warning
+    assert_includes warning.message, 'enabling issue-autoclose'
+  end
+
   def test_no_index_rule_fires_with_capture_off_and_no_announcements_job
     cfg = base
     cfg['issue_capture']['enabled'] = false
