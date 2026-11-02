@@ -318,6 +318,11 @@ class LinksTest < Minitest::Test
     end
   end
 
+  def test_a_nul_in_the_path_never_resolves_to_a_real_file
+    refute_equal 'docs/lifecycle/pr-lifecycle.md', links('[x](pr-life%00cycle.md)').first.path
+    refute_equal 'docs/lifecycle/quality-gates.md', links('[x](quality-gates.md%00)').first.path
+  end
+
   def test_empty_fragment_is_not_a_fragment
     assert_nil links('[top](quality-gates.md#)').first.fragment
   end

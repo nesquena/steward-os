@@ -457,9 +457,10 @@ module AnchorContract
       # A query string is stripped by every renderer before the path is resolved,
       # and percent escapes are decoded, so `foo%20bar.md?v=1` is the tracked
       # file `foo bar.md`.
-      # An escape can decode to invalid UTF-8 or a NUL, which no file name holds: scrubbed, the link
-      # is reported as a missing target instead of crashing the path code.
-      rel = decode(target.to_s.split('?', 2).first.to_s).scrub.delete("\0")
+      # An escape can decode to invalid UTF-8 or a NUL, which no file name holds. Both are replaced
+      # with U+FFFD, so the link is reported as a missing target instead of crashing the path code,
+      # and never resolves to a real file.
+      rel = decode(target.to_s.split('?', 2).first.to_s).scrub.tr("\0", "\uFFFD")
       path = rel.empty? ? '' : Pathname.new(File.join(dir, rel)).cleanpath.to_s
       Link.new(source: source, line: line, href: href, path: path,
                fragment: fragment.nil? || fragment.empty? ? nil : decode(fragment).scrub)
