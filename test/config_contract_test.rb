@@ -982,7 +982,7 @@ class SemanticTest < Minitest::Test
 
   def test_issue_autoclose_needs_the_index_with_capture_off
     message = rule(autoclosing_without_capture(index: ''), :pull_index_required).message
-    assert_includes message, 'issue-autoclose'
+    assert_includes message, 'an enabled issue-autoclose job'
     refute_includes message, 'issue_capture'
   end
 
@@ -991,7 +991,8 @@ class SemanticTest < Minitest::Test
   end
 
   def test_the_autoclose_index_must_not_be_public
-    assert rule(autoclosing_without_capture(index: 'index.md', visibility: 'public'), :index_not_public)
+    v = rule(autoclosing_without_capture(index: 'index.md', visibility: 'public'), :index_not_public)
+    assert_includes v.message, 'holds issues routed to a human'
   end
 
   def test_an_outside_repo_autoclose_index_warns

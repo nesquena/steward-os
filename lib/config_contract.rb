@@ -670,8 +670,8 @@ module ConfigContract
       unwatched_closing_warning(config) + unverifiable_warning(config, outputs, index)
   end
 
-  # Capture and the announcements job each write to the index, so either one
-  # needs it, and each needs it private. One violation either way.
+  # Capture, the announcements job and issue-autoclose each write to the index, so any one needs
+  # it, and each needs it private. One violation either way.
   def self.index_violations(config, index, capture)
     announcements = job_enabled?(config, 'announcements')
     autoclose = job_enabled?(config, 'issue-autoclose')
