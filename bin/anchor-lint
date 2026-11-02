@@ -53,7 +53,7 @@ headings = {}
 links = []
 rejections = []
 docs.each do |rel|
-  text = File.read(File.join(ROOT, rel))
+  text = File.read(File.join(ROOT, rel), encoding: 'UTF-8')
 
   if excluded.include?(rel)
     # GitHub is the only renderer. Its link set and its heading ids, full stop.

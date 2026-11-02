@@ -9,7 +9,7 @@ require_relative '../lib/skills_contract'
 
 ROOT = File.expand_path('..', __dir__)
 
-policy = YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml'))) || {}
+policy = YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml'), encoding: 'UTF-8')) || {}
 planned = policy['planned'] || []
 job_aliases = policy['job_aliases'] || {}
 standalone = policy['standalone'] || []

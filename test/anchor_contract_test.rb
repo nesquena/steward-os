@@ -1115,12 +1115,30 @@ class DiscoveryTest < Minitest::Test
       excluded = AnchorContract::Extract.site_excluded_markdown(dir, File.join(dir, '_config.yml'))
       assert_includes excluded, 'README.md'
 
-      text = File.read(File.join(dir, 'README.md'))
+      text = File.read(File.join(dir, 'README.md'), encoding: 'UTF-8')
       links = AnchorContract::Extract.links_cmark(text, source: 'README.md')
       files, dirs = AnchorContract::Extract.repo_entries(dir)
       violations = AnchorContract.check(links: links, headings: {}, files: files, dirs: dirs)
       assert_empty violations
       assert_equal %w[dir/t.md], links.map(&:path)
+    end
+  end
+
+  # The real bin under a POSIX locale, where Ruby's default external encoding
+  # is US-ASCII: tracked names, headings and links outside ASCII still resolve,
+  # in a file both renderers publish and in one only GitHub does.
+  def test_the_lint_passes_under_a_posix_locale
+    with_repo do |dir|
+      %w[bin lib].each { |d| FileUtils.cp_r(File.expand_path("../#{d}", __dir__), dir) }
+      write(dir, 'café.md', "# Café — menu\n\n[readme](README.md#read--me)\n")
+      write(dir, 'README.md', "# Read — me\n\n[menu](café.md#café--menu)\n")
+      File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
+      add_all(dir)
+      out = IO.popen({ 'LANG' => 'C', 'LC_ALL' => 'C' }, [File.join(dir, 'bin', 'anchor-lint')],
+                     err: [:child, :out], encoding: 'UTF-8', &:read)
+      assert_equal 0, $?.exitstatus, out
+      assert_includes out, 'OK — every link resolves.'
+      assert_match(/2 relative links, 2 anchors/, out, 'both non-ASCII links were checked')
     end
   end
 end

@@ -123,7 +123,7 @@ end
 # --- End to end: the real repo passes with the committed policy ---
 class RepoContractTest < Minitest::Test
   def test_current_repo_has_no_errors
-    policy = YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml'))) || {}
+    policy = YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml'), encoding: 'UTF-8')) || {}
     doc_paths = Dir.glob(File.join(ROOT, 'docs', '**', '*.md'))
     skills_dir = File.join(ROOT, 'skills')
     present = SkillsContract::Extract.present_skills(skills_dir)
@@ -154,8 +154,8 @@ class IssueCaptureContractTest < Minitest::Test
   ].freeze
 
   def test_template_and_dogfood_config_keep_the_capture_contract
-    template = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.template.yaml')))
-    dogfood = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.yaml')))
+    template = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.template.yaml'), encoding: 'UTF-8'))
+    dogfood = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.yaml'), encoding: 'UTF-8'))
 
     assert_equal template.keys.sort, dogfood.keys.sort
     assert_equal REQUIRED_CONFIG_KEYS.sort, template.fetch('issue_capture').keys.sort
@@ -163,10 +163,10 @@ class IssueCaptureContractTest < Minitest::Test
   end
 
   def test_issue_capture_is_runnable_wired_and_not_still_planned
-    template = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.template.yaml')))
+    template = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.template.yaml'), encoding: 'UTF-8'))
     jobs = template.fetch('scheduled_jobs').fetch('jobs').to_h { |job| [job.fetch('name'), job] }
-    policy = YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml')))
-    capture = File.read(File.join(ROOT, 'skills', 'issue-capture', 'SKILL.md'))
+    policy = YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml'), encoding: 'UTF-8'))
+    capture = File.read(File.join(ROOT, 'skills', 'issue-capture', 'SKILL.md'), encoding: 'UTF-8')
 
     assert_includes jobs, 'issue-capture'
     assert_includes jobs, 'action-watchdog'
@@ -181,10 +181,10 @@ class IssueCaptureContractTest < Minitest::Test
   end
 
   def test_capture_has_one_owner_and_a_complete_transition_contract
-    capture = File.read(File.join(ROOT, 'skills', 'issue-capture', 'SKILL.md'))
-    watchdog = File.read(File.join(ROOT, 'skills', 'action-watchdog', 'SKILL.md'))
-    triage = File.read(File.join(ROOT, 'skills', 'issue-triage', 'SKILL.md'))
-    community = File.read(File.join(ROOT, 'docs', 'lifecycle', 'community.md'))
+    capture = File.read(File.join(ROOT, 'skills', 'issue-capture', 'SKILL.md'), encoding: 'UTF-8')
+    watchdog = File.read(File.join(ROOT, 'skills', 'action-watchdog', 'SKILL.md'), encoding: 'UTF-8')
+    triage = File.read(File.join(ROOT, 'skills', 'issue-triage', 'SKILL.md'), encoding: 'UTF-8')
+    community = File.read(File.join(ROOT, 'docs', 'lifecycle', 'community.md'), encoding: 'UTF-8')
 
     assert_operator capture.index('**Vulnerability divert'), :<, capture.index('**Classify and tier')
     assert_operator capture.index('private delivery succeeds'), :<, capture.index('terminal `diverted` event')
@@ -212,7 +212,7 @@ class HostClosingContractTest < Minitest::Test
   # Each repository's host_closes_on_merge decides what three skills and the setup interview do. Read
   # with whitespace folded, so a re-wrap doesn't break the pin.
   def test_host_closing_is_honoured_wherever_it_decides_something
-    read = ->(*path) { File.read(File.join(ROOT, *path)).gsub(/\s+/, ' ') }
+    read = ->(*path) { File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ') }
     autoclose = read.call('skills', 'issue-autoclose', 'SKILL.md')
     release = read.call('skills', 'release-pipeline', 'SKILL.md')
     watchdog = read.call('skills', 'action-watchdog', 'SKILL.md')
@@ -429,7 +429,7 @@ class GuardRepoTest < Minitest::Test
   E = SkillsContract::Extract
 
   def policy
-    YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml')))
+    YAML.safe_load(File.read(File.join(ROOT, '_data', 'skills.yml'), encoding: 'UTF-8'))
   end
 
   def live(present: nil, blocks: {})
@@ -455,7 +455,7 @@ class GuardRepoTest < Minitest::Test
 
   def test_removing_a_block_is_caught
     Dir.mktmpdir do |dir|
-      src = File.read(File.join(ROOT, 'skills', 'pr-triage', 'SKILL.md'))
+      src = File.read(File.join(ROOT, 'skills', 'pr-triage', 'SKILL.md'), encoding: 'UTF-8')
       path = File.join(dir, 'SKILL.md')
       File.write(path, src.lines.reject { |l| l.start_with?('>') }.join)
       v = live(blocks: { 'pr-triage' => E.first_blockquote(path) })
