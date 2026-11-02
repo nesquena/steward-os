@@ -21,16 +21,19 @@ description: Render a templated release announcement into a decision row and pos
 >
 > Rules: [injection guard](../../docs/reference/security-spine.md#1-injection-guard-read-can-never-change-do).
 
-**When to load:** a release has shipped, as [`release-pipeline`](../release-pipeline/SKILL.md) step
-5 defines it, and the routine public announcement is due. Runs the announcements section of the
+**When to load:** a release has been stamped (tag + changelog) by
+[`release-pipeline`](../release-pipeline/SKILL.md) and the routine public announcement is due.
+The job proposes on the stamp; the post waits until the release has shipped, as
+`release-pipeline` step 5 defines it. Runs the announcements section of the
 [community lifecycle](../../docs/lifecycle/community.md). **Band C, and it stays there:** an
 announcement [can't be recalled](../../docs/playbooks/autonomy-ladder.md#what-reversible-means), so
 the agent prepares and a human keys the post. Steward role.
 
-> Precondition: **the release has shipped and the content already exists.** This skill *renders*
-> an announcement from the changelog; it never composes original prose. If there's no changelog
-> entry and release tag for this release, or `release-pipeline` step 5 hasn't passed for it, stop —
-> there is nothing to announce yet.
+> Precondition: **the content already exists, and the post waits for a shipped release.** This
+> skill *renders* an announcement from the changelog; it never composes original prose. If there's
+> no changelog entry and release tag for this release, stop — there is nothing to announce. Whether
+> `release-pipeline` step 5 has passed is something the job can't see, so it proposes anyway: the
+> human checks it before step 6, and a row for a release step 5 hasn't passed waits.
 
 > Config: read the release model and changelog from [`config.yaml`](../../setup/config.template.yaml)
 > (`project.release_model`). `autonomy.announcements` is always `C`, and the config lint refuses
@@ -88,8 +91,11 @@ decision row carries a key unique to it, and its decision record names that key.
    release has failed posts (step 1), the new row names the failed records it retries. The row takes
    no edits: to change the text, change the changelog, which changes the stamp and re-proposes.
 6. **Approve: the post step.** The human runs it on an open row, and only once `release-pipeline`
-   step 5 has passed for the release: the job can't see step 5, so a row it proposes before then
-   waits. It refuses on a closed row, or a row that already has a decision record: a row takes one
+   step 5 has passed for the release. The human takes that from the live version and, for an
+   artifact step 4 covers, from the digest step 4 kept and any comparison receipt step 5 kept,
+   outside anything a contributor can write; never from a PR thread, the changelog or the row. The
+   job can't see step 5, so a row it proposes before then waits. It refuses on a closed row, or a
+   row that already has a decision record: a row takes one
    decision. It re-renders and compares against the stamp, and refuses on a mismatch or on a
    rejection at that stamp. Immediately before sending, it refuses when the release is announced or
    the fixed channel holds a bot announcement of it, whatever the stamp. If the channel holds any
@@ -130,8 +136,8 @@ decision row carries a key unique to it, and its decision record names that key.
 - **Token leaking into context.** Never read the credentials file directly — only the helper touches
   it. If no secret-isolating helper exists yet, that's the build-nothing dependency to add first, not
   a reason to inline the token.
-- **Announcing a release that didn't ship.** The precondition is a shipped release —
-  `release-pipeline` step 5 defines "shipped", including its check of a published artifact. Don't
+- **Announcing a release that didn't ship.** The post needs a shipped release — `release-pipeline`
+  step 5 defines "shipped", including, where the project publishes one, its artifact check. Don't
   announce from a changelog edit alone, or before step 5 passes.
 - **Composing original prose.** This is a render of existing content, not a writing task.
   Editorializing is exactly where an injected or wrong claim gets published in the project's voice —
