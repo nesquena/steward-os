@@ -298,6 +298,12 @@ class LinksTest < Minitest::Test
     assert_equal 'café', l.fragment
   end
 
+  def test_decodes_an_escape_next_to_a_literal_non_ascii_character
+    l = links('[x](é%C3%A9.md#ç%C3%A7)').first
+    assert_equal 'docs/lifecycle/éé.md', l.path
+    assert_equal 'çç', l.fragment
+  end
+
   def test_empty_fragment_is_not_a_fragment
     assert_nil links('[top](quality-gates.md#)').first.fragment
   end

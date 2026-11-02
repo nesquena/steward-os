@@ -464,7 +464,7 @@ module AnchorContract
     end
 
     def decode(str)
-      str.gsub(PERCENT_ESCAPE) { Regexp.last_match(1).hex.chr }.force_encoding(Encoding::UTF_8)
+      str.b.gsub(PERCENT_ESCAPE) { Regexp.last_match(1).hex.chr }.force_encoding(Encoding::UTF_8)
     end
 
     # Every tracked markdown file, repo-relative. Git-tracked enumeration keeps
