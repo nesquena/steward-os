@@ -278,8 +278,9 @@ module ConfigContract
       next [] unless config.key?(b) && config[b] != {}
 
       [err(:not_applicable_conflict, b,
-           "#{b} is listed in not_applicable but is configured - remove it from the list, or empty the block " \
-            "if it has no history; a block with history stays configured and disabled, so remove it from the list instead")]
+           "#{b} is listed in not_applicable but is configured — delete the block or leave it {} if it was " \
+           "never used; a block that has written state or an audit trail (issue_capture's queue, ledger and " \
+           "checkpoint, trust's ledger) stays configured and disabled, so remove it from the list instead")]
     end
   end
   private_class_method :marker_violations
@@ -379,8 +380,6 @@ module ConfigContract
     end
 
     ARRAY_OF_NON_BLANK_STRING_KEYS.each do |path|
-      next if exempt_path?(config, path)
-
       value = fetch_path(config, path)
       # An empty [] is a valid "no surfaces declared". Genuine absence is a
       # phase-1 missing_key error that suppresses this whole phase, so reaching
@@ -896,12 +895,28 @@ module ConfigContract
   # required-rules; the "github-advisory" sentinel is statically known-private.
   def self.unverifiable_warning(config, outputs, index)
     capture = config.dig('issue_capture', 'enabled') == true
-    return [] unless capture || announcements_enabled?(config)
+    # A marked issue_capture runs no capture, but triage still diverts a
+    # vulnerability report to security_contact or alarms_to, so their privacy
+    # needs the same confirmation (not_applicable_divert checks only presence).
+    divert_only = !capture && marked_blocks(config).include?('issue_capture')
+    announcements = announcements_enabled?(config)
+    return [] unless capture || divert_only || announcements
 
     unverifiable = []
     unverifiable << "index_path '#{index}' (outside the repo)" if !blank?(index) && !repo_relative?(index)
-    unverifiable.concat(unverifiable_capture_destinations(config, outputs)) if capture
+    if capture
+      unverifiable.concat(unverifiable_capture_destinations(config, outputs))
+    elsif divert_only
+      unverifiable.concat(unverifiable_divert_destinations(config, outputs))
+    end
     return [] if unverifiable.empty?
+
+    before = if capture
+               'enabling autonomous capture'
+             else
+               [('enabling announcements' if announcements),
+                ('relying on the vulnerability divert' if divert_only)].compact.join(' or ')
+             end
 
     # The leading spaces below line the continuation up under Violation#to_line's
     # own two-space "  x " prefix (see to_line above) so bin/config-lint's
@@ -910,19 +925,28 @@ module ConfigContract
     [Violation.new(severity: :warning, rule: :destinations_unverifiable, key: 'scheduled_jobs.outputs',
                    message: "#{unverifiable.size} destination(s) could not be verified as private:\n" \
                             "#{unverifiable.map { |u| "      #{u}" }.join("\n")}\n" \
-                            "    Confirm each before enabling #{capture ? 'autonomous capture' : 'announcements'}.")]
+                            "    Confirm each before #{before}.")]
   end
 
-  def self.unverifiable_capture_destinations(config, outputs)
-    undecidable = 'channel privacy not statically decidable'
+  UNDECIDABLE = 'channel privacy not statically decidable'
+
+  # The divert's destinations: alarms_to, and security_contact unless it is
+  # the known-private "github-advisory" sentinel.
+  def self.unverifiable_divert_destinations(config, outputs)
     unverifiable = []
-    unverifiable << "digest_to '#{outputs['digest_to']}' (#{undecidable})" unless blank?(outputs['digest_to'])
-    unverifiable << "alarms_to '#{outputs['alarms_to']}' (#{undecidable})" unless blank?(outputs['alarms_to'])
+    unverifiable << "alarms_to '#{outputs['alarms_to']}' (#{UNDECIDABLE})" unless blank?(outputs['alarms_to'])
 
     security_contact = config.dig('security', 'security_contact')
     if !blank?(security_contact) && security_contact != 'github-advisory'
-      unverifiable << "security_contact '#{security_contact}' (#{undecidable})"
+      unverifiable << "security_contact '#{security_contact}' (#{UNDECIDABLE})"
     end
+    unverifiable
+  end
+
+  def self.unverifiable_capture_destinations(config, outputs)
+    unverifiable = []
+    unverifiable << "digest_to '#{outputs['digest_to']}' (#{UNDECIDABLE})" unless blank?(outputs['digest_to'])
+    unverifiable.concat(unverifiable_divert_destinations(config, outputs))
 
     CAPTURE_STATE_PATHS.each do |k|
       value = config.dig('issue_capture', k)

@@ -1,5 +1,6 @@
 # Fixture: green-enabled.yaml with community, issue_capture, labels and trust
-# deleted and listed in not_applicable, their jobs disabled, security_contact
+# deleted and listed in not_applicable, their jobs disabled, jobs that need no
+# marked block (scoreboard-refresh, fleet-heartbeat) enabled, security_contact
 # filled. alarms_to is blank on purpose, to prove security_contact alone
 # satisfies not_applicable_divert. Must stay green.
 project:
@@ -65,6 +66,8 @@ scheduled_jobs:
     - { name: "announcements",   every: "8h", enabled: true,  agent: false }
     - { name: "label-sync",      every: "4h", enabled: false,  agent: false }
     - { name: "issue-autoclose", every: "4h", enabled: true,  agent: false }
+    - { name: "scoreboard-refresh", every: "2h", enabled: true, agent: false }
+    - { name: "fleet-heartbeat", cron: "30 8 * * *", enabled: true, agent: false }
   outputs:
     index_path: "/srv/steward/index.md"
     digest_to: ""

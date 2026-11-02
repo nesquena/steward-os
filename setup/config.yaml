@@ -11,6 +11,7 @@ project:
     shipped_means: "merged-to-main-and-pages-deployed"
 
 not_applicable: []              # blocks that don't apply to this project: community, issue_capture, labels, trust
+                                # delete a listed block (or leave it {}); a block with state stays, disabled
 
 repositories:
   - host: "github.com"

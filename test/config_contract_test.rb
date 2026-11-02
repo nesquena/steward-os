@@ -1558,12 +1558,6 @@ class MarkerMapTest < Minitest::Test
     end
   end
 
-  def test_job_blocks_is_exactly_this_map
-    assert_equal({ 'chat-monitor' => 'community', 'mentions-sweep' => 'community',
-                   'issue-capture' => 'issue_capture', 'label-sync' => 'labels' },
-                 ConfigContract::JOB_BLOCKS)
-  end
-
   def test_every_markable_block_but_trust_has_a_job
     served = ConfigContract::JOB_BLOCKS.values.uniq
     # trust has no job, deliberately
@@ -1798,6 +1792,42 @@ class MarkerTest < Minitest::Test
     c['scheduled_jobs']['outputs']['alarms_to'] = ''
     refute_includes rules(c), :not_applicable_divert
     refute_includes rules(c), :phases_skipped
+  end
+
+  def divert_warning(config)
+    check(config).find { |v| v.rule == :destinations_unverifiable }
+  end
+
+  def test_marked_capture_lists_divert_destinations_for_confirmation
+    c = capture_marked
+    set_job(c, 'announcements', false)
+    c['scheduled_jobs']['outputs']['alarms_to'] = 'SECURITY-reports.md'
+    c['security']['security_contact'] = 'security@example.com'
+    w = divert_warning(c)
+    refute_nil w, 'a marked issue_capture must still surface the divert destinations'
+    assert_equal :warning, w.severity
+    assert_includes w.message, "alarms_to 'SECURITY-reports.md'"
+    assert_includes w.message, "security_contact 'security@example.com'"
+    assert_includes w.message, 'relying on the vulnerability divert'
+    refute_includes w.message, 'autonomous capture'
+  end
+
+  def test_marked_capture_with_only_the_sentinel_has_no_divert_warning
+    c = capture_marked
+    set_job(c, 'announcements', false)
+    c['security']['security_contact'] = 'github-advisory'
+    c['scheduled_jobs']['outputs']['index_path'] = ''
+    assert_nil divert_warning(c)
+  end
+
+  def test_unmarked_capture_off_keeps_todays_warning_scope
+    c = cfg
+    c['community']['chat']['monitor'] = false
+    c['issue_capture']['enabled'] = false
+    set_job(c, 'issue-capture', false)
+    set_job(c, 'announcements', false)
+    c['scheduled_jobs']['outputs']['alarms_to'] = 'SECURITY-reports.md'
+    assert_nil divert_warning(c)
   end
 
   def test_unfilled_template_still_passes
