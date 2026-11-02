@@ -1526,3 +1526,151 @@ class MetaTest < Minitest::Test
                  "these rules have no red fixture, so nothing proves they fire: #{missing.inspect}"
   end
 end
+
+
+class MarkerTest < Minitest::Test
+  TEMPLATE = ConfigContract::Extract.load(File.expand_path('../setup/config.template.yaml', __dir__)).freeze
+  BASE = ConfigContract::Extract.load(File.join(FIXTURE_ROOT, 'green-enabled.yaml')).freeze
+  BLOCKS = ConfigContract::MARKABLE_BLOCKS
+  UNMARKABLE = %w[security secrets autonomy project repositories scope ci_and_gates scheduled_jobs].freeze
+
+  def cfg
+    Marshal.load(Marshal.dump(BASE))
+  end
+
+  def check(config)
+    ConfigContract.check(config: config, template: TEMPLATE)
+  end
+
+  def rules(config)
+    check(config).map(&:rule)
+  end
+
+  def keys_for(config, rule)
+    check(config).select { |v| v.rule == rule }.map(&:key)
+  end
+
+  def test_absent_marker_changes_nothing
+    absent = cfg
+    absent.delete('not_applicable')
+    empty = cfg
+    empty['not_applicable'] = []
+    assert_equal check(absent).map(&:to_line), check(empty).map(&:to_line)
+  end
+
+  def test_each_block_absent_when_marked
+    BLOCKS.each do |b|
+      c = cfg
+      c.delete(b)
+      c['not_applicable'] = [b]
+      r = rules(c)
+      assert_empty keys_for(c, :missing_key).grep(/\A#{b}(\.|\z)/), b
+      refute_includes r, :phases_skipped, b
+    end
+  end
+
+  def test_marked_empty_mapping_is_exempt
+    BLOCKS.each do |b|
+      c = cfg
+      c[b] = {}
+      c['not_applicable'] = [b]
+      vs = check(c)
+      assert_empty vs.select { |v| v.key.start_with?("#{b}.") || v.key == b }, b
+      refute_includes vs.map(&:rule), :phases_skipped, b
+    end
+  end
+
+  def test_unlisted_block_keeps_missing_key
+    BLOCKS.each do |b|
+      c = cfg
+      c.delete(b)
+      assert_includes keys_for(c, :missing_key).map { |k| k.split('.').first }, b
+    end
+  end
+
+  def test_unmarkable_block_is_refused_and_not_exempt
+    UNMARKABLE.each do |b|
+      c = cfg
+      c.delete(b)
+      c['not_applicable'] = [b]
+      r = rules(c)
+      assert_includes r, :not_applicable_block, b
+      assert_includes r, :missing_key, b
+    end
+  end
+
+  def test_non_list_marker_is_refused_and_exempts_nothing
+    ['community', { 'community' => true }].each do |bad|
+      c = cfg
+      c.delete('community')
+      c['not_applicable'] = bad
+      r = rules(c)
+      assert_includes r, :not_applicable_block, bad.inspect
+      assert_includes r, :missing_key, bad.inspect
+    end
+  end
+
+  def test_near_miss_entries_are_refused
+    ['Community', ' trust', 'issue-capture', nil, 1].each do |bad|
+      c = cfg
+      c['not_applicable'] = [bad]
+      assert_includes rules(c), :not_applicable_block, bad.inspect
+    end
+  end
+
+  def test_near_miss_earns_no_exemption
+    c = cfg
+    c.delete('community')
+    c['not_applicable'] = ['Community']
+    assert_includes rules(c), :missing_key
+  end
+
+  def test_marked_block_with_content_conflicts
+    BLOCKS.each do |b|
+      c = cfg
+      c['not_applicable'] = [b]
+      assert_includes keys_for(c, :not_applicable_conflict), b
+    end
+  end
+
+  def test_marked_block_as_empty_list_conflicts
+    BLOCKS.each do |b|
+      c = cfg
+      c[b] = []
+      c['not_applicable'] = [b]
+      assert_includes keys_for(c, :not_applicable_conflict), b
+    end
+  end
+
+  def test_marked_block_as_null_stays_unknown_key
+    BLOCKS.each do |b|
+      c = cfg
+      c[b] = nil
+      c['not_applicable'] = [b]
+      r = rules(c)
+      assert_includes r, :unknown_key, b
+      assert_includes r, :not_applicable_conflict, b
+    end
+  end
+
+  def test_exempt_block_is_skipped_by_type_phase
+    c = cfg
+    c['issue_capture']['enabled'] = false
+    c['community']['chat']['monitor'] = false
+    c['scheduled_jobs']['jobs'].each do |j|
+      j['enabled'] = false if %w[issue-capture chat-monitor].include?(j['name'])
+    end
+    c.delete('issue_capture')
+    c.delete('community')
+    c['not_applicable'] = %w[issue_capture community]
+    vs = check(c)
+    assert_empty vs.select { |v| v.rule.to_s.start_with?('type_') }
+    refute_includes vs.map(&:rule), :phases_skipped
+  end
+
+  def test_unmarked_empty_block_keeps_its_type_checks
+    c = cfg
+    c['community'] = {}
+    assert_includes keys_for(c, :type_boolean), 'community.chat.monitor'
+  end
+end

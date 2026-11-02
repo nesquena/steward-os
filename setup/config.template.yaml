@@ -14,6 +14,8 @@ project:
                                                # say so here, e.g. tag-exists-and-artifact-published: it turns
                                                # on the artifact check in release-pipeline steps 4-5
 
+not_applicable: []              # blocks that don't apply to this project: community, issue_capture, labels, trust
+
 repositories:                   # list every repo the project spans
   - host: "github.com"
     owner: ""

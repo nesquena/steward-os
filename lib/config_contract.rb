@@ -118,7 +118,34 @@ module ConfigContract
     ambiguous_scalar
   ].freeze
 
+  # Blocks a config may mark as not applying. Safety blocks are absent on
+  # purpose: marking must never weaken a safety rule.
+  MARKABLE_BLOCKS = %w[community issue_capture labels trust].freeze
+
+  MARKER_RULES = %i[
+    not_applicable_block
+    not_applicable_conflict
+  ].freeze
+
   CAPTURE_STATE_PATHS = %w[queue_path ledger_path checkpoint_path].freeze
+
+  # Entries of the top-level `not_applicable` list that name a markable block.
+  def self.marked_blocks(config)
+    marker = config['not_applicable']
+    return [] unless marker.is_a?(Array)
+
+    marker.select { |b| MARKABLE_BLOCKS.include?(b) }
+  end
+
+  # Marked blocks that are absent or an empty mapping: the only shape a marked
+  # block may take.
+  def self.exempt_blocks(config)
+    marked_blocks(config).select { |b| !config.key?(b) || config[b] == {} }
+  end
+
+  def self.exempt_path?(config, path)
+    exempt_blocks(config).any? { |b| path == b || path.start_with?("#{b}.") }
+  end
 
   # Pure. Given the parsed config and the parsed template, return violations.
   #
@@ -206,6 +233,8 @@ module ConfigContract
 
     (tpl_leaves - cfg_leaves).sort.each do |path|
       next if SCHEDULE_KEYS.include?(path)
+      next if path == 'not_applicable'
+      next if exempt_path?(config, path)
       next if covered?(path, cfg_leaves)
       # missing-key loop — ...and it accounts for the keys the template puts
       # beneath it. Gated on a genuinely empty [] or {}: a nil or scalar
@@ -216,8 +245,30 @@ module ConfigContract
       violations << err(:missing_key, path, 'required by setup/config.template.yaml but absent here')
     end
 
-    violations + job_schedule_violations(config)
+    violations + job_schedule_violations(config) + marker_violations(config)
   end
+
+  def self.marker_violations(config)
+    marker = config['not_applicable']
+    return [] unless config.key?('not_applicable')
+
+    unless marker.is_a?(Array)
+      return [err(:not_applicable_block, 'not_applicable',
+                  "expected a list of block names, got #{marker.class}")]
+    end
+
+    marker.flat_map do |b|
+      unless MARKABLE_BLOCKS.include?(b)
+        next [err(:not_applicable_block, 'not_applicable',
+                  "#{b.inspect} is not a block that can be marked (one of: #{MARKABLE_BLOCKS.join(', ')})")]
+      end
+      next [] unless config.key?(b) && config[b] != {}
+
+      [err(:not_applicable_conflict, b,
+           "#{b} is listed in not_applicable but is configured - remove it from the list, or empty the block")]
+    end
+  end
+  private_class_method :marker_violations
 
   def self.job_schedule_violations(config)
     violations_for_each(config, 'scheduled_jobs', 'jobs') do |job, i|
@@ -287,6 +338,8 @@ module ConfigContract
     violations = []
 
     BOOLEAN_KEYS.each do |path|
+      next if exempt_path?(config, path)
+
       value = fetch_path(config, path)
       next if [true, false].include?(value)
 
@@ -294,6 +347,8 @@ module ConfigContract
     end
 
     STRING_KEYS.each do |path|
+      next if exempt_path?(config, path)
+
       value = fetch_path(config, path)
       next if value.is_a?(String)
 
@@ -301,6 +356,8 @@ module ConfigContract
     end
 
     NON_NEGATIVE_INT_KEYS.each do |path|
+      next if exempt_path?(config, path)
+
       value = fetch_path(config, path)
       next if value.is_a?(Integer) && !value.negative?
 
@@ -308,6 +365,8 @@ module ConfigContract
     end
 
     ARRAY_OF_NON_BLANK_STRING_KEYS.each do |path|
+      next if exempt_path?(config, path)
+
       value = fetch_path(config, path)
       # An empty [] is a valid "no surfaces declared". Genuine absence is a
       # phase-1 missing_key error that suppresses this whole phase, so reaching
