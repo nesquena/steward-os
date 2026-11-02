@@ -298,6 +298,63 @@ class LinksTest < Minitest::Test
     assert_equal 'café', l.fragment
   end
 
+  def test_decodes_an_escape_next_to_a_literal_non_ascii_character
+    l = links('[x](é%C3%A9.md#ç%C3%A7)').first
+    assert_equal 'docs/lifecycle/éé.md', l.path
+    assert_equal 'çç', l.fragment
+  end
+
+  # An href that can't name a real file is a broken link to report, never a crash: invalid UTF-8
+  # from an escape or a character reference, and a NUL, through both extractors.
+  def test_a_href_that_cannot_name_a_file_is_still_a_link
+    ['%FF.md', 'a&#xD800;.md', '%00.md', 'x.md#%FF', 'x.md#a&#xD800;'].each do |href|
+      [AnchorContract::Extract.method(:links), AnchorContract::Extract.method(:links_cmark)].each do |extract|
+        l = extract.call("[x](#{href})\n", source: 'docs/lifecycle/pr-lifecycle.md').first
+        refute_nil l, "#{href} via #{extract.name}"
+        assert l.path.nil? || (l.path.valid_encoding? && !l.path.include?("\0")),
+               "#{href} via #{extract.name}: #{l.path.inspect}"
+        assert l.fragment.nil? || l.fragment.valid_encoding?, "#{href} via #{extract.name}: #{l.fragment.inspect}"
+      end
+    end
+  end
+
+  def test_a_nul_in_the_path_never_resolves_to_a_real_file
+    refute_equal 'docs/lifecycle/pr-lifecycle.md', links('[x](pr-life%00cycle.md)').first.path
+    refute_equal 'docs/lifecycle/quality-gates.md', links('[x](quality-gates.md%00)').first.path
+  end
+
+  # The outcome, through `check`, beside the tracked names a sanitized path would alias: a path no
+  # file can have is missing, never a lookalike.
+  def test_a_path_no_file_can_have_is_missing_even_beside_a_lookalike
+    files = Set['docs/lifecycle/pr-lifecycle.md', 'docs/lifecycle/quality-gates.md',
+                "docs/lifecycle/\uFFFD.md", "docs/lifecycle/a\uFFFD\uFFFD\uFFFD.md"]
+    dirs = Set['docs', 'docs/lifecycle']
+    %w[pr-life%00cycle.md quality-gates.md%00 %00.md %FF.md].each do |href|
+      [AnchorContract::Extract.method(:links), AnchorContract::Extract.method(:links_cmark)].each do |extract|
+        link = extract.call("[x](#{href})\n", source: 'docs/lifecycle/pr-lifecycle.md').first
+        got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: dirs).map(&:rule)
+        assert_equal [:missing], got, "#{href} via #{extract.name}: path=#{link.path.inspect}"
+      end
+    end
+    link = AnchorContract::Extract.links("[x](a&#xD800;.md)\n", source: 'docs/lifecycle/pr-lifecycle.md').first
+    got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: dirs).map(&:rule)
+    assert_equal [:missing], got, "a&#xD800;.md via links: path=#{link.path.inspect}"
+    # Only the path names the file: an invalid byte in the query or fragment leaves a valid path to
+    # resolve, as the rendered page does.
+    files << 'docs/lifecycle/x.md'
+    { 'x.md?q=&#xD800;' => [], 'x.md?q=%FF' => [], 'x.md#&#xD800;' => [:fragment],
+      'x.md#%FF' => [:fragment] }.each do |href, rules|
+      [AnchorContract::Extract.method(:links), AnchorContract::Extract.method(:links_cmark)].each do |extract|
+        link = extract.call("[x](#{href})\n", source: 'docs/lifecycle/pr-lifecycle.md').first
+        got = AnchorContract.check(links: [link], headings: { 'docs/lifecycle/x.md' => ['x'] },
+                                   files: files, dirs: dirs).map(&:rule)
+        assert_equal rules, got, "#{href} via #{extract.name}: path=#{link.path.inspect}"
+      end
+    end
+    two = AnchorContract::Extract.merged_links("[a](%00.md) [b](%FF.md)\n", source: 'docs/lifecycle/pr-lifecycle.md')
+    assert_equal %w[%00.md %FF.md], two.map(&:href).sort, 'two unnamed targets are two broken links, not one'
+  end
+
   def test_empty_fragment_is_not_a_fragment
     assert_nil links('[top](quality-gates.md#)').first.fragment
   end
