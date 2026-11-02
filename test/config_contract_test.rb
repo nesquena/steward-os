@@ -806,7 +806,9 @@ class SemanticTest < Minitest::Test
   end
 
   def test_any_release_model_but_continuous_counts_as_tagged
-    ['other', '', 'tag_per_release', nil, 3].each { |s| refute_empty closing(true, style: s), s.inspect }
+    ['other', '', 'tag_per_release', nil, 3, 'continous', 'continuous-deploy', 'cont'].each do |s|
+      refute_empty closing(true, style: s), s.inspect
+    end
   end
 
   def test_a_host_without_a_per_repository_switch_may_declare_closing_on
@@ -825,6 +827,58 @@ class SemanticTest < Minitest::Test
     cfg['project'] = []
     cfg['repositories'] = [{ 'host' => 'github.com', 'visibility' => 'private', 'host_closes_on_merge' => true }]
     refute_empty ConfigContract.check(config: cfg, template: cfg).select { |x| x.rule == :host_closing_off }
+  end
+
+  # Closing declared off with the watchdog on or off: the warning for nothing checking it.
+  def unwatched(closes: false, hosts: ['github.com'], style: 'tag-per-release', watchdog: false)
+    cfg = base
+    cfg['project'] = { 'release_model' => { 'style' => style } }
+    cfg['repositories'] = hosts.map do |h|
+      { 'host' => h, 'visibility' => 'private', 'host_closes_on_merge' => closes }
+    end
+    cfg['scheduled_jobs']['jobs'][0]['enabled'] = watchdog
+    cfg['issue_capture']['capture_marker'] = ''
+    cfg['community']['chat']['capture_reaction'] = ''
+    cfg['community']['chat']['monitor'] = false
+    ConfigContract.check(config: cfg, template: cfg).select { |x| x.rule == :host_closing_unwatched }
+  end
+
+  def test_closing_off_with_no_watchdog_warns
+    v = unwatched
+    assert_equal 1, v.size
+    assert_equal :warning, v.first.severity
+    assert_equal 'repositories', v.first.key
+    assert_includes v.first.message, 'repositories[0] (github.com)'
+  end
+
+  def test_the_warning_names_every_unwatched_repository_once
+    v = unwatched(hosts: ['GitLab.com:443', 'codeberg.org', 'github.com'])
+    assert_equal 1, v.size
+    assert_includes v.first.message, 'repositories[0] (gitlab.com)'
+    assert_includes v.first.message, 'repositories[2] (github.com)'
+    refute_includes v.first.message, 'codeberg.org'
+  end
+
+  def test_closing_off_with_the_watchdog_does_not_warn
+    assert_empty unwatched(watchdog: true)
+  end
+
+  def test_a_continuous_release_does_not_warn
+    assert_empty unwatched(style: 'continuous')
+  end
+
+  def test_a_tagged_release_with_any_other_style_still_warns
+    ['other', nil, 'continous'].each { |s| refute_empty unwatched(style: s), s.inspect }
+  end
+
+  def test_a_host_without_the_switch_does_not_warn
+    assert_empty unwatched(hosts: ['codeberg.org', 'git.example.com'])
+  end
+
+  # `true` on a switch host is host_closing_off's error, not this warning.
+  def test_closing_on_does_not_warn
+    assert_empty unwatched(closes: true)
+    assert_empty unwatched(closes: true, hosts: ['codeberg.org'])
   end
 
   def autoclosing(watchdog_enabled: true, name: 'issue-autoclose', enabled: true)

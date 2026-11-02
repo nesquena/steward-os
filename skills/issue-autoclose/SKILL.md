@@ -18,8 +18,9 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 > never closes on taste, staleness, or a maintainer's judgment call — those stay human
 > ([`issue-close-proposal`](../issue-close-proposal/SKILL.md) prepares two kinds for that human:
 > done with no linking PR, and duplicate). If step 1
-> finds no candidate, there is nothing to do — stop. Otherwise every candidate goes through the
-> gates: it's closed, or it stays open and is routed to a human.
+> finds no candidate, there is nothing to do: reconcile the index (drop a row for an issue a human
+> has since closed), then stop. Otherwise every candidate goes through the gates: it's closed, it
+> waits for a release, or it stays open and is routed to a human.
 
 > Config: read the repos from [`config.yaml`](../../setup/config.template.yaml) (`repositories:`,
 > each with `host_closes_on_merge`), the release model from `project.release_model` (what "released tag" means for this project), and
@@ -49,7 +50,8 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    **and** its merge commit must be **contained in a released tag** — the same three-part "shipped"
    notion [`release-pipeline`](../release-pipeline/SKILL.md) enforces (tag exists **and** the merge
    is real **and** it's in a release, not merely on the trunk). A merge that no release tag contains
-   is **not** shipped → leave open.
+   is **not** shipped. That's a wait, not a hold: leave the issue open and unrouted, and it stays a
+   candidate until a release contains the merge.
 3. **Verify single-surface — structured signals only.** Auto-close only an issue that resolves as a
    single unit: **exactly one** linked closing PR, **zero open task-list checkboxes** in the body,
    and **no** `multi-surface`/`epic` label. If it enumerates several distinct symptoms (>1 linked PR,
@@ -60,8 +62,9 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    commit** (a "still broken" reply, a 👎, a re-report). Any post-merge reporter activity → **route
    to a human**, don't close. A human hold always wins.
 5. **Any signal missing or ambiguous → don't close.** Everything short of *all* gates stays open and
-   is surfaced to a human. **Under-close rather than mis-close** — a wrongly-closed issue erodes
-   reporter trust, and reopening is the loud failure this whole gate exists to avoid.
+   is surfaced to a human, except a fix only waiting for a release (step 2). **Under-close rather
+   than mis-close** — a wrongly-closed issue erodes reporter trust, and reopening is the loud
+   failure this whole gate exists to avoid.
 6. **Close with credit and ledger.** Close the issue with a **templated** credit line naming the
    resolving PR and release tag — no original prose, no conversation (public voice stays human;
    anything beyond the template is Band B **draft → human**). Append the close — issue, closing PR,
@@ -86,7 +89,8 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 - **A host that closes issues at merge.** GitHub and GitLab do unless it's turned off per
   repository. Step 1 then finds no open candidate and the job stays silent, so its own output never
   shows the gap. That's why each repository declares `host_closes_on_merge`, and the
-  [watchdog](../action-watchdog/SKILL.md) flags a close the host made at merge.
+  [watchdog](../action-watchdog/SKILL.md), which this job requires enabled, flags a close the host
+  made at merge.
 - **Selecting by time.** A cutoff such as "merged since the last close" drops an issue whose PR
   merged after one release's tag but before that close: by the time a release contains it, it's
   behind the cutoff. Select by the issue being open (step 1), not by when its PR merged.
@@ -101,11 +105,13 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 - Only closes issues whose fix is in a **released tag** — a merely-merged, unreleased fix is left
   open.
 - Multi-surface issues, reopened issues, and issues with post-merge "still broken" pushback are
-  **not** auto-closed — they route to a human.
+  **not** auto-closed — they route to a human. The exception: an issue this job closed and a human
+  reopened is skipped (step 1), and the watchdog's "Autonomous closes" check surfaces the reopen.
 - Re-running immediately is a **no-op** (ledger + reopen-state respected) — it never re-closes and
   never reopens.
 - With nothing to close and nothing new to route, the job is **silent**; on error, it **alarms**.
-- A candidate that fails a gate is routed to a human even when nothing else qualifies to close.
+- A candidate that fails a gate in steps 3-5 is routed to a human even when nothing else qualifies
+  to close; one only waiting for a release (step 2) stays open and unrouted.
 - It skips a repository whose `host_closes_on_merge` is `true`.
 - [`action-watchdog`](../action-watchdog/SKILL.md) has a corresponding **"Autonomous closes"** check
   that independently re-verifies every close against live ground truth.

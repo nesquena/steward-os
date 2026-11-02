@@ -102,9 +102,9 @@ The safe autonomous gate (Band A *with watchdog*) is mechanically strict:
 The gate needs the issue still open at release. GitHub and GitLab close a linked issue at merge
 unless that's turned off per repository, so unless every merge is the release, each repository turns
 it off and declares so (`host_closes_on_merge: false`,
-[setup interview](../../setup/setup-interview.md) question 2), and the watchdog flags a close the host
-made at merge. Where a host can't turn it off, the issue closes at merge and the release names the
-version on it.
+[setup interview](../../setup/setup-interview.md) question 2), and an enabled watchdog flags a close
+the host made at merge. Where a host can't turn it off, the issue closes at merge and the release
+names the version on it.
 
 Anything short of that stays open and is surfaced to a human. **Under-close rather than mis-close** —
 a wrongly-closed issue erodes reporter trust. Every autonomous close is logged and

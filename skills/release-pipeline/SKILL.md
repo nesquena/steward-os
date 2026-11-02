@@ -64,8 +64,10 @@ pulled or deployed, so a merge isn't
    never claim shipped from a passed gate alone.
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** On a repository whose `host_closes_on_merge` is
-   `true`, the host closed those issues at merge: comment on them, and don't reopen them. Update the [trust ledger](../../docs/lifecycle/contributor-recognition.md)
-   with one terminal outcome for the PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
+   `true`, the host closed those issues at merge: comment on them, close any it left open (an
+   absorbed PR never merges, so the host closes nothing for it), and don't reopen them. Update the
+   [trust ledger](../../docs/lifecycle/contributor-recognition.md) with one terminal outcome for the
+   PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
    Clean up the branch/worktree.
 
 ## The attribution-verification gate

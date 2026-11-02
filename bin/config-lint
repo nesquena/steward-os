@@ -82,7 +82,7 @@ puts
 puts BOUNDARY
 
 if total_errors.zero?
-  puts "OK — contract holds (#{total_warnings} unverifiable, see above)."
+  puts "OK — contract holds (#{total_warnings} warning(s), see above)."
   exit 0
 else
   puts "FAILED — #{total_errors} violation(s)."

@@ -519,7 +519,7 @@ module ConfigContract
       unless missing.empty?
         violations << err(:capture_state_paths_required, 'issue_capture',
                           "issue_capture.enabled requires private #{missing.join(', ')} " \
-                          '(issue-capture/SKILL.md:19-21)')
+                          '(issue-capture step 1)')
       end
 
       public_state = CAPTURE_STATE_PATHS.select { |k| repo_relative?(config.dig('issue_capture', k)) }
@@ -549,7 +549,7 @@ module ConfigContract
     if monitor && !blank?(platform) && !blank?(reaction) && !watchdog
       violations << err(:reaction_needs_watchdog, 'community.chat.capture_reaction',
                         'a public capture reaction requires an enabled action-watchdog job ' \
-                        '(issue-capture/SKILL.md:23-25)')
+                        '(issue-capture step 1)')
     end
 
     if monitor && !capture
@@ -584,7 +584,7 @@ module ConfigContract
     end
 
     violations + band_violations(config) + host_closing_violations(config) + job_violations(config) +
-      unverifiable_warning(config, outputs, index)
+      unwatched_closing_warning(config) + unverifiable_warning(config, outputs, index)
   end
 
   # Capture and the announcements job each write to the index, so either one
@@ -594,7 +594,7 @@ module ConfigContract
 
     if blank?(index)
       need = if capture
-               'issue_capture.enabled requires a pull index (issue-capture/SKILL.md:26-27)'
+               'issue_capture.enabled requires a pull index (issue-capture step 1)'
              else
                'an enabled announcements job requires a pull index for its decision row ' \
                  '(release-announce/SKILL.md)'
@@ -674,6 +674,34 @@ module ConfigContract
            'ships its fix, and this host turns closing at merge off per repository ' \
            '(setup/setup-interview.md, question 2)')]
     end
+  end
+
+  # `false` on a host with the switch is a claim nothing else checks: issue-autoclose
+  # refuses to run without the watchdog, but release-pipeline alone doesn't need
+  # it. A warning, not an error, since the template ships with every job off and
+  # the lint checks the template itself. A continuous release closes at merge
+  # anyway, so it needs no watch.
+  def self.unwatched_closing_warning(config)
+    style = fetch_path(config, 'project.release_model.style')
+    return [] if style.is_a?(String) && normalize_job_name(style) == 'continuous'
+    return [] if watchdog_enabled?(config)
+
+    repos = config['repositories']
+    return [] unless repos.is_a?(Array)
+
+    unwatched = repos.each_with_index.filter_map do |repo, i|
+      next unless repo.is_a?(Hash) && repo['host_closes_on_merge'] == false && repo['host'].is_a?(String)
+
+      host = normalize_host(repo['host'])
+      "repositories[#{i}] (#{host})" if HOSTS_WITH_REPO_CLOSING_SWITCH.include?(host)
+    end
+    return [] if unwatched.empty?
+
+    [Violation.new(severity: :warning, rule: :host_closing_unwatched, key: 'repositories',
+                   message: "host_closes_on_merge is false on #{unwatched.join(', ')}, but no enabled " \
+                            "action-watchdog checks it: if the host's setting is still on, issues close " \
+                            'at merge, before the release that ships their fix ' \
+                            '(skills/action-watchdog/SKILL.md, Host closes)')]
   end
 
   # ` WWW.GitHub.com.:443` is github.com. The type phase has already refused

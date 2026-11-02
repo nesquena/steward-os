@@ -205,6 +205,26 @@ class IssueCaptureContractTest < Minitest::Test
     assert_includes community, 'Chat monitoring stays off until the shared capture core'
     refute_includes triage, '**Capture-dedupe.**', 'pre-tracker capture has one procedural owner'
   end
+
+  # Each repository's host_closes_on_merge decides what three skills and the setup interview do. Read
+  # with whitespace folded, so a re-wrap doesn't break the pin.
+  def test_host_closing_is_honoured_wherever_it_decides_something
+    read = ->(*path) { File.read(File.join(ROOT, *path)).gsub(/\s+/, ' ') }
+    autoclose = read.call('skills', 'issue-autoclose', 'SKILL.md')
+    release = read.call('skills', 'release-pipeline', 'SKILL.md')
+    watchdog = read.call('skills', 'action-watchdog', 'SKILL.md')
+    setup = read.call('setup', 'setup-interview.md')
+
+    assert_includes autoclose, 'Skip a repository whose `host_closes_on_merge` is `true`'
+    assert_includes autoclose, "That's a wait, not a hold: leave the issue open and unrouted"
+    assert_includes release, 'On a repository whose `host_closes_on_merge` is `true`, the host closed ' \
+                             'those issues at merge: comment on them, close any it left open'
+    assert_includes watchdog, 'for each repository whose `host_closes_on_merge` is `false`'
+    assert_includes watchdog, "On any other host (Gitea, Forgejo, or a self-managed instance), there's " \
+                              'nothing to read'
+    assert_includes setup, 'untick **Auto-close issues with merged linked pull requests**'
+    assert_includes setup, 'untick **Auto-close referenced issues on default branch**'
+  end
 end
 
 # --- Injection guard: the block every untrusted-reading skill opens with ---

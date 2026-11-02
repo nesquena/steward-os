@@ -38,14 +38,17 @@ description: Independently fact-check the autonomous actions the system took (is
      nonterminal capture intent with no public action yet = 🟡.
    - **Host closes** (no ledger: the host acts on its own, and nothing in the system records it):
      for each repository whose `host_closes_on_merge` is `false`, read what closed each issue closed
-     since this check's last recorded run. Keep that time in the watchdog's own private state. The
-     first run starts the window, so closes from before the setting went off don't count; if the
-     record is ever lost, the next run starts a new window and reports it 🟡, since closes in the
-     gap went unchecked. On GitHub, read the `ClosedEvent`'s `closer`. On GitLab, read the issue's
-     resource state events (a `closed` event with a `source_merge_request_id` or a `source_commit`),
-     and the project's `autoclose_referenced_issues` setting, which its API reports. → an issue
-     the host closed from a merge or a commit, or a GitLab setting that's on = 🟡: a human checks
-     the repository's setting and decides about the issue.
+     since that repository's window opened. Keep each repository's window start in the watchdog's
+     own private state. A repository with no recorded start (the first run, a repository added or
+     switched from `true`, or a lost record) opens its window now and reports that once as 🟡, since
+     closes before then went unchecked: a no-model script can't tell those cases apart, so it treats
+     them alike. On GitHub, read the `ClosedEvent`'s `closer`. On GitLab, read the issue's resource
+     state events (a `closed` event with a `source_merge_request_id` or a `source_commit`), and the
+     project's `autoclose_referenced_issues` setting, which its API reports. On any other host
+     (Gitea, Forgejo, or a self-managed instance), there's nothing to read: report once per window,
+     as 🟡, that host closes can't be observed there. → an issue the host closed from a merge or a
+     commit, or a GitLab setting that's on = 🟡: a human checks the repository's setting and decides
+     about the issue.
    - **(Add a check here for every new autonomous action — same change that adds the action.)**
 3. **Classify severities.** 🔴 = correctness failure (an action was *wrong* — act now). 🟡 = drift
    (stale, reconcile soon).
