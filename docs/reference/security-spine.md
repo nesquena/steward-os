@@ -126,8 +126,8 @@ run. The gate that needed the run stops there and is **not all-clear**; a skippe
 passed suite, and a green CI does not stand in for it. The same holds when the pre-scan hits or the
 sandbox can't be built. There are two ways forward: configure a sandbox, or have a human run the
 skipped gates (the suite with any differential, and visual verification where a visible surface
-changed) in isolation they control, on the exact head commit. The human reports successful results
-through the operator's authenticated direct channel, not through the PR thread. **Human success supplies only the skipped
+changed) in isolation they control, on the exact head commit, plus trunk for any differential.
+The human reports successful results through the operator's authenticated direct channel, not through the PR thread. **Human success supplies only the skipped
 execution legs**; it does not clear an unresolved review finding or replace either independent
 reading pass. Resume findings resolution and the aggregate verdict. Record aggregate all-clear *by
 human run* only when every required leg is complete, fresh and successful and all required findings
