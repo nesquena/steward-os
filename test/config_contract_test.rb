@@ -1778,6 +1778,12 @@ class MarkerTest < Minitest::Test
     refute_includes rules(c), :phases_skipped
   end
 
+  def test_unfilled_template_still_passes
+    vs = check(Marshal.load(Marshal.dump(TEMPLATE)))
+    assert_empty vs.select { |v| v.severity == :error }.map(&:to_line)
+    refute_includes vs.map(&:rule), :phases_skipped
+  end
+
   def test_marked_config_still_trips_unrelated_rules
     c = marked(cfg, 'community', 'issue_capture', 'labels', 'trust')
     %w[issue-capture chat-monitor label-sync].each { |j| set_job(c, j, false) }
