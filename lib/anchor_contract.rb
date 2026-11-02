@@ -46,8 +46,14 @@ module AnchorContract
 
   Violation = Struct.new(:rule, :link, :message, keyword_init: true) do
     def to_line
-      "  x #{link.source}:#{link.line} -> #{link.href} — #{message}"
+      "  x #{link.source}:#{link.line} -> #{AnchorContract.printable(link.href)} — #{message}"
     end
+  end
+
+  # A decoded href or fragment can hold a NUL or another control character. It is printed escaped (`\u0000`,
+  # `\e`), the way String#inspect writes it, so the report stays one readable line.
+  def self.printable(str)
+    str.gsub(/[^[:print:]]/) { |char| char.inspect[1..-2] }
   end
 
   # A construct that is not itself a broken link, but takes one out of reach of
@@ -79,7 +85,7 @@ module AnchorContract
     return nil if ids.include?(link.fragment)
 
     Violation.new(rule: :fragment, link: link,
-                  message: "no heading in #{doc} produces the anchor ##{link.fragment}")
+                  message: "no heading in #{doc} produces the anchor ##{printable(link.fragment)}")
   end
   private_class_method :check_link
 
@@ -101,7 +107,7 @@ module AnchorContract
       return nil if link.fragment.nil?
 
       return Violation.new(rule: :fragment, link: link,
-                           message: "##{link.fragment} on directory #{link.path} — the site anchors " \
+                           message: "##{printable(link.fragment)} on directory #{link.path} — the site anchors " \
                                     'into index.md and GitHub into README.md; name the document')
     end
 
