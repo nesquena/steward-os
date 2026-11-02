@@ -442,8 +442,7 @@ end
 # links_cmark reads links through commonmarker (comrak), the renderer GitHub uses
 # for README/CONTRIBUTING/SECURITY/skills. It exists to catch the links kramdown
 # and cmark-gfm disagree about — a reference label they case-fold differently, a
-# target GitHub decodes a character reference in — which the site-only kramdown
-# walk drops. bin/anchor-lint unions this set with the kramdown one.
+# raw tag only one parses — which the site-only kramdown walk drops. bin/anchor-lint unions this set with the kramdown one.
 class LinksCmarkTest < Minitest::Test
   def paths(text, source: 'docs/lifecycle/pr-lifecycle.md')
     AnchorContract::Extract.links_cmark(text, source: source).map(&:path)
@@ -797,16 +796,20 @@ class CheckTest < Minitest::Test
     assert_match(%r{docs/ghost\.md}, v.to_line)
   end
 
-  # A decoded fragment or href can hold a control character. The report prints it escaped, so a NUL or an escape
-  # sequence never reaches the terminal and the line stays readable.
+  # A decoded fragment or href, or a tracked file name, can hold a control character. The report prints it
+  # escaped, so a NUL or an escape sequence never reaches the terminal and the line stays readable.
   def test_a_control_character_is_printed_escaped
     lines = [check(link(path: 'docs/reference/glossary.md', fragment: "a\u0000b", href: 'glossary.md#a%00b')),
              check(link(path: 'docs/reference', fragment: "\e[2J", href: 'docs/reference/#%1B%5B2J')),
-             check(link(path: 'docs/ghost.md', href: "ghost\u0001.md"))].map { |found| found.first.to_line }
+             check(link(path: 'docs/ghost.md', href: "ghost\u0001.md")),
+             check(link(path: "docs/gh\eost.md", source: "in\edex.md"))].map { |found| found.first.to_line }
+    lines << AnchorContract::Rejection.new(source: "a\e[2J.md", line: 1, message: "write d\u0000/x.md").to_line
     lines.each { |line| refute_match(/[^[:print:]]/, line) }
     assert_includes lines[0], 'produces the anchor #a\u0000b'
     assert_includes lines[1], '#\e[2J on directory docs/reference'
     assert_includes lines[2], '-> ghost\u0001.md'
+    assert_includes lines[3], 'in\edex.md:1'
+    assert_includes lines[4], 'a\e[2J.md:1 — write d\u0000/x.md'
   end
 end
 

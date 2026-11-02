@@ -44,8 +44,8 @@ files, dirs = AnchorContract::Extract.repo_entries(ROOT)
 # The files _config.yml keeps out of the built site. GitHub renders them with
 # cmark-gfm and the site renders them with nothing, so they are checked against
 # the cmark oracle alone; a kramdown reading would judge them by a parser that
-# never publishes them (an undecoded `dir&sol;target.md`, a differently-slugged
-# heading id). Every other doc renders on both the site and GitHub, so its links
+# never publishes them (a differently-slugged heading id, a reference label
+# folded another way). Every other doc renders on both the site and GitHub, so its links
 # and ids have to hold under both.
 excluded = AnchorContract::Extract.site_excluded_markdown(ROOT, config_path)
 

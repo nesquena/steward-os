@@ -46,12 +46,13 @@ module AnchorContract
 
   Violation = Struct.new(:rule, :link, :message, keyword_init: true) do
     def to_line
-      "  x #{link.source}:#{link.line} -> #{AnchorContract.printable(link.href)} — #{message}"
+      AnchorContract.printable("  x #{link.source}:#{link.line} -> #{link.href} — #{message}")
     end
   end
 
-  # A decoded href or fragment can hold a NUL or another control character. It is printed escaped (`\u0000`,
-  # `\e`), the way String#inspect writes it, so the report stays one readable line.
+  # A report line can carry a NUL or another control character (a decoded href or fragment, a tracked file
+  # name, a parser's message). It is printed escaped (`\u0000`, `\e`), the way String#inspect writes it, so the
+  # report stays one readable line.
   def self.printable(str)
     str.gsub(/[^[:print:]]/) { |char| char.inspect[1..-2] }
   end
@@ -61,7 +62,7 @@ module AnchorContract
   # which always names a link.
   Rejection = Struct.new(:source, :line, :message, keyword_init: true) do
     def to_line
-      "  x #{source}:#{line} — #{message}"
+      AnchorContract.printable("  x #{source}:#{line} — #{message}")
     end
   end
 
@@ -85,7 +86,7 @@ module AnchorContract
     return nil if ids.include?(link.fragment)
 
     Violation.new(rule: :fragment, link: link,
-                  message: "no heading in #{doc} produces the anchor ##{printable(link.fragment)}")
+                  message: "no heading in #{doc} produces the anchor ##{link.fragment}")
   end
   private_class_method :check_link
 
@@ -107,7 +108,7 @@ module AnchorContract
       return nil if link.fragment.nil?
 
       return Violation.new(rule: :fragment, link: link,
-                           message: "##{printable(link.fragment)} on directory #{link.path} — the site anchors " \
+                           message: "##{link.fragment} on directory #{link.path} — the site anchors " \
                                     'into index.md and GitHub into README.md; name the document')
     end
 
@@ -243,13 +244,14 @@ module AnchorContract
     def unportable(text, source:)
       out = []
       out << Rejection.new(source: source, line: 1, message: BOM_MESSAGE) if text.start_with?(BOM)
-      # Every check below reads the page the way the site parses it, so a page that parse fails on is reported alone.
-      unbuildable = site_parse_failure(text, source: source)
+      # Every check below parses the page with kramdown, so a page that parse fails on is reported alone.
+      root = document(text, auto_ids: false).root
+      unbuildable = site_parse_failure(text, root, source: source)
       return out << unbuildable if unbuildable
 
       line = 1
       declined = []
-      walk(document(text, auto_ids: false).root) do |el|
+      walk(root) do |el|
         line = el.options[:location] || line
         message = unportable_message(el)
         out << Rejection.new(source: source, line: line, message: message) if message
@@ -268,19 +270,21 @@ module AnchorContract
     # heading. No anchor into it holds on both, so the page is reported, on the line of the first heading the
     # parser fails on by itself.
     #
-    # ceiling: only ArgumentError, the error kramdown raises here, is reported; any other parse error still
-    # stops the lint with its backtrace. Add its class here if one turns up.
-    def site_parse_failure(text, source:)
+    # ceiling: only an ArgumentError from the id-generating parse is reported, the error kramdown raises here;
+    # any other parse error still stops the lint with its backtrace. Add its class here if one turns up.
+    # root is the page parsed without ids, which parses: only the id-generating parse is rescued.
+    def site_parse_failure(text, root, source:)
       document(text)
       nil
     rescue ArgumentError => e
       line = nil
-      walk(document(text, auto_ids: false).root) do |el|
-        next unless line.nil? && el.type == :header
+      walk(root) do |el|
+        next unless el.type == :header
 
         document("# #{el.options[:raw_text]}\n")
       rescue ArgumentError
         line = el.options[:location]
+        break
       end
       Rejection.new(source: source, line: line || 1,
                     message: "the site's markdown parser fails on this page (#{e.message}), so the Jekyll " \
@@ -323,6 +327,8 @@ module AnchorContract
     # [href/src, source line] for every raw <a>/<img> kramdown parsed as an HTML element.
     # kramdown keeps the attribute value as written, so it is run through the
     # same HTML5 parser the cmark side uses to resolve its character references.
+    # This is the source read the way cmark reads it, to pair the two renderers'
+    # raw tags, not the href a site reader follows (that is site_href).
     def site_raw_targets(text)
       out = []
       walk(document(text).root) do |el|
@@ -367,8 +373,8 @@ module AnchorContract
 
     # Both renderers' link sets for one document, deduped by resolved identity so
     # a link they agree on is counted once while one only cmark sees (a reference
-    # label they case-fold differently, a raw-HTML target, a decoded character
-    # reference) or resolves elsewhere is kept and checked.
+    # label they case-fold differently, a raw-HTML target) or resolves elsewhere
+    # is kept and checked.
     def merged_links(text, source:)
       dedup_links(links(text, source: source) + links_cmark(text, source: source))
     end
@@ -396,8 +402,8 @@ module AnchorContract
     # Read from BOTH renderers and unioned by the caller: kramdown is exact for
     # the site, and cmark-gfm (links_cmark) is exact for the files GitHub renders
     # directly. A link only one of them sees — a reference label they case-fold
-    # differently, a target GitHub decodes a character reference in — is still a
-    # link on the page it renders, so the gate has to check it.
+    # differently, a raw tag one parses and the other doesn't — is still a link on
+    # the page it renders, so the gate has to check it.
     def links(text, source:)
       dir = File.dirname(source)
       out = []
