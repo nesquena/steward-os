@@ -42,9 +42,12 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    ([`release-pipeline`](../release-pipeline/SKILL.md) step 6). Elsewhere, consider every **open**
    issue with a **merged PR that links it as closing** (`Closes #N` in the PR's description, or a
    link from its sidebar; on GitHub a keyword only in a commit message doesn't link the PR, while on
-   GitLab a closing pattern in one of the merge request's commit messages does, and the merge
-   request lists that issue among those it closes), however long ago the PR merged: a merge no
-   release contains yet stays a candidate until one does. Skip an issue
+   GitLab a closing pattern in one of the merge request's commit messages does), however long ago
+   the PR merged: a merge no release contains yet stays a candidate until one does. On GitLab, read
+   the link from the issue's side (`GET /projects/:id/issues/:iid/closed_by`), not from the merge
+   request's `closes_issues` list, which leaves out an issue whose project has auto-closing off, as
+   this setup requires. `closed_by` lists merge requests in the issue's own project; a link from
+   another project's isn't read, so that issue isn't a candidate and stays open. Skip an issue
    this job's ledger shows it already closed: if it's open again, a human reopened it, and a reopen
    is a hold. An issue that steps 2-5 leave open is checked again next run, so routing it to a human
    is [reconciled](../../docs/playbooks/output-loop.md#3-keep-the-state-honest), not repeated: an
@@ -57,7 +60,7 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    is **not** shipped. That's a wait, not a hold: leave the issue open and unrouted, and it stays a
    candidate until a release contains the merge. Under `style: continuous` no release tag is coming,
    so there's nothing to wait for: route the candidate to a human, who checks the deploy
-   (`shipped_means`).
+   (`shipped_means`). Read `style` as the config lint does, ignoring case and surrounding spaces.
 3. **Verify single-surface — structured signals only.** Auto-close only an issue that resolves as a
    single unit: **exactly one** linked closing PR, **zero open task-list checkboxes** in the body,
    and **no** `multi-surface`/`epic` label. If it enumerates several distinct symptoms (>1 linked PR,

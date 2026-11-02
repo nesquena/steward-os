@@ -224,9 +224,12 @@ class HostClosingContractTest < Minitest::Test
     assert_includes autoclose, "That's a wait, not a hold: leave the issue open and unrouted"
     assert_includes autoclose, 'however long ago the PR merged'
     assert_includes autoclose, 'Reconcile the index (drop a row for an issue a human has since closed), then load'
-    assert_includes autoclose, 'Under `style: continuous` no release tag is coming'
-    assert_includes autoclose, "on GitLab a closing pattern in one of the merge request's commit messages does, " \
-                               'and the merge request lists that issue'
+    assert_includes autoclose, "Under `style: continuous` no release tag is coming, so there's nothing to " \
+                               'wait for: route the candidate to a human'
+    assert_includes autoclose, "GitLab a closing pattern in one of the merge request's commit messages does)"
+    assert_includes autoclose, 'Read `style` as the config lint does, ignoring case and surrounding spaces'
+    assert_includes autoclose, "On GitLab, read the link from the issue's side " \
+                               '(`GET /projects/:id/issues/:iid/closed_by`)'
     assert_includes issue_lifecycle, 'stays unrouted until a release contains the merge'
     assert_includes pr_lifecycle, "comment on them, and don't reopen them"
     assert_includes release, 'On a repository whose `host_closes_on_merge` is `true`, the host closed ' \
