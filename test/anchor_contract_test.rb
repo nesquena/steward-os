@@ -304,9 +304,18 @@ class LinksTest < Minitest::Test
     assert_equal 'çç', l.fragment
   end
 
-  def test_a_path_escape_that_decodes_to_invalid_utf8_is_still_a_link
-    l = links('[x](%FF.md)').first
-    assert l.path.valid_encoding?, l.path.inspect
+  # An href that can't name a real file is a broken link to report, never a crash: invalid UTF-8
+  # from an escape or a character reference, and a NUL, through both extractors.
+  def test_a_href_that_cannot_name_a_file_is_still_a_link
+    ['%FF.md', 'a&#xD800;.md', '%00.md', 'x.md#%FF', 'x.md#a&#xD800;'].each do |href|
+      [AnchorContract::Extract.method(:links), AnchorContract::Extract.method(:links_cmark)].each do |extract|
+        l = extract.call("[x](#{href})\n", source: 'docs/lifecycle/pr-lifecycle.md').first
+        refute_nil l, "#{href} via #{extract.name}"
+        assert l.path.valid_encoding?, "#{href} via #{extract.name}: #{l.path.inspect}"
+        refute_includes l.path, "\0", "#{href} via #{extract.name}"
+        assert l.fragment.nil? || l.fragment.valid_encoding?, "#{href} via #{extract.name}: #{l.fragment.inspect}"
+      end
+    end
   end
 
   def test_empty_fragment_is_not_a_fragment
