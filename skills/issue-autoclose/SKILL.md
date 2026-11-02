@@ -39,18 +39,13 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    issue a human has since closed), then load `repositories:` and the release model. Skip a
    repository whose `host_closes_on_merge` is `true`: its host closed the issue at merge, so there's
    nothing to close, and the release names the version on it
-   ([`release-pipeline`](../release-pipeline/SKILL.md) step 6). Elsewhere, consider every **open**
-   issue with a **merged PR that links it as closing** (`Closes #N` in the PR's description, or a
-   link from its sidebar; on GitHub a keyword only in a commit message doesn't link the PR, while on
-   GitLab a closing pattern in one of the merge request's commit messages does), however long ago
-   the PR merged: a merge no release contains yet stays a candidate until one does. On GitLab, read
-   the links from the issue's side, through GraphQL: the work item's development widget
-   (`closingMergeRequests`) lists every merge request set to close it, from any project. Don't use
-   the merge request's `closes_issues` list, which leaves out an issue whose project has
-   auto-closing off, as this setup requires, or `closed_by`, which lists only the issue's own
-   project's merge requests, so step 3 could count one where there are two. The widget lists only
-   merge requests the job's token can read, so give it read access to every project in
-   `repositories:`. Skip an issue
+   ([`release-pipeline`](../release-pipeline/SKILL.md) step 6). Skip a repository whose host isn't
+   github.com, too (read `host` as the config lint's `normalize_host` does): this job closes only on
+   GitHub, where reading a closing link was probed live, and on any other host release-pipeline
+   step 6 closes an issue its release resolves. Elsewhere, consider every **open** issue with a
+   **merged PR that links it as closing** (`Closes #N` in the PR's description, or a link from its
+   sidebar; a keyword only in a commit message doesn't link the PR), however long ago the PR
+   merged: a merge no release contains yet stays a candidate until one does. Skip an issue
    this job's ledger shows it already closed: if it's open again, a human reopened it, and a reopen
    is a hold. An issue that steps 2-5 leave open is checked again next run, so routing it to a human
    is [reconciled](../../docs/playbooks/output-loop.md#3-keep-the-state-honest), not repeated: an
@@ -68,8 +63,7 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    (`shipped_means`). Read `style` as the config lint's `normalize_job_name` does: drop invisible
    format characters, trim surrounding whitespace, and ignore case.
 3. **Verify single-surface — structured signals only.** Auto-close only an issue that resolves as a
-   single unit: **exactly one** linked closing PR (on GitLab, counted from that same
-   `closingMergeRequests` list), **zero open task-list checkboxes** in the body,
+   single unit: **exactly one** linked closing PR, **zero open task-list checkboxes** in the body,
    and **no** `multi-surface`/`epic` label. If it enumerates several distinct symptoms (>1 linked PR,
    an unchecked task item, or the label), it does **not** auto-close — **route to a human** for
    full-surface verification. Never parse the free-text body to *infer* resolution.
@@ -120,6 +114,8 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 ## Verification
 - Only closes issues whose fix is in a **released tag** — a merely-merged, unreleased fix is left
   open.
+- Only closes on github.com repositories. On any other host it closes nothing, and release-pipeline
+  step 6 closes the issue at release.
 - Multi-surface issues, reopened issues, and issues with post-merge "still broken" pushback are
   **not** auto-closed — they route to a human. The exception: an issue this job closed and a human
   reopened is skipped (step 1), and the watchdog's "Autonomous closes" check surfaces the reopen.
