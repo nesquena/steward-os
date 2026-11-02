@@ -39,7 +39,7 @@ documented TODO, not an assumption.
      the host already closed.
 
    `issue-autoclose` closes only on github.com; on any other host, an issue the host left open is
-   closed at release.
+   closed at release (by `release-pipeline` step 6 for the PRs it ships, by hand otherwise).
 
    GitHub's setting can't be read through its API, so an enabled
    [watchdog](https://github.com/nesquena/steward-os/blob/main/skills/action-watchdog/SKILL.md)
