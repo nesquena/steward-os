@@ -1,0 +1,94 @@
+# Red fixture for not_applicable_divert.
+# Edits vs green-enabled.yaml: issue_capture deleted and listed in
+# not_applicable, its job and the chat monitor switched off, and both
+# security_contact and alarms_to blanked.
+project:
+  name: "fixture project"
+  trunk_branch: "main"
+  release_model:
+    style: "tag-per-release"
+    changelog_file: "CHANGELOG.md"
+    shipped_means: "tag-exists-and-deployed"
+
+repositories:
+  - host: "github.com"
+    owner: "example"
+    name: "app"
+    role: "primary"
+    visibility: "private"
+    host_closes_on_merge: false
+
+scope:
+  anchors:
+    - "serves the product"
+  philosophy_veto:
+    - "scope creep"
+  bypass_scope_gate:
+    - "bug-fix-on-shipped-feature"
+    - "security-fix"
+    - "reliability-fix"
+
+community:
+  chat:
+    platform: "discord"
+    server_id: "1234"
+    bug_channels: ["bugs"]
+    monitor: false
+    capture_reaction: ""
+  mentions_sweep:
+    enabled: false
+    disambiguate_against: ""
+
+
+security:
+  security_contact: ""
+  security_sensitive_surfaces: ["auth"]
+
+ci_and_gates:
+  test_command: "bundle exec rspec"
+  test_runtime_estimate: "4 min"
+  ci_present: true
+  code_review_tool: ""
+  adversarial_review_tool: ""
+  visual_preview_tool: ""
+  ui_viewports: []
+
+autonomy:
+  pr_labeling: "B"
+  issue_triage_replies: "B"
+  issue_autoclose: "C"
+  announcements: "C"
+  pr_merge: "B"
+  human_reachable_at: "#steward-ops"
+
+labels:
+  add_only: true
+  size: { by: diff_lines,   buckets: { S: 50, M: 200, L: 500, XL: null } }
+  area: { by: paths,        map: { "app/**": "area:app" } }
+  type: { by: title_prefix, map: { feat: "type:feature" } }
+
+trust:
+  ledger_path: "/srv/steward/trust.md"
+  prior: 0.5
+  shrinkage: 3.0
+  half_life_days: 180
+
+secrets:
+  credentials_file: "/srv/steward/.env"
+  execute_contributor_code: false
+  sandbox_available: false
+
+scheduled_jobs:
+  jobs:
+    - { name: "issue-capture",   every: "1h", enabled: false, agent: true  }
+    - { name: "action-watchdog", every: "6h", enabled: true,  agent: false }
+    - { name: "announcements",   every: "8h", enabled: true,  agent: false }
+    - { name: "label-sync",      every: "4h", enabled: true,  agent: false }
+    - { name: "issue-autoclose", every: "4h", enabled: true,  agent: false }
+  outputs:
+    index_path: "/srv/steward/index.md"
+    digest_to: ""
+    alarms_to: ""
+
+not_applicable:
+  - "issue_capture"

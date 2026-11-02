@@ -81,6 +81,8 @@ module ConfigContract
     host_closing_off
     autoclose_needs_watchdog
     no_model_job
+    not_applicable_job
+    not_applicable_divert
   ].freeze
 
   # Jobs whose skill is a no-model procedure. `issue-capture` is absent on
@@ -106,6 +108,16 @@ module ConfigContract
   JOB_FLAGS = {
     'issue-capture' => 'issue_capture.enabled',
     'chat-monitor' => 'community.chat.monitor'
+  }.freeze
+
+  # The markable block each template job serves. A job on a marked block must
+  # not be enabled. `trust` has no job, deliberately. MarkerMapTest keeps this
+  # in step with the template.
+  JOB_BLOCKS = {
+    'chat-monitor' => 'community',
+    'mentions-sweep' => 'community',
+    'issue-capture' => 'issue_capture',
+    'label-sync' => 'labels'
   }.freeze
 
   # Every rule ParseRules can emit. The meta-test reads this list and
@@ -560,6 +572,17 @@ module ConfigContract
 
     violations = []
 
+    # A marked issue_capture drops the capture rules above, but a vulnerability
+    # report can still arrive by other routes and the divert still needs a
+    # destination (docs/reference/security-spine.md).
+    if marked_blocks(config).include?('issue_capture') &&
+       blank?(config.dig('security', 'security_contact')) && blank?(outputs['alarms_to'])
+      violations << err(:not_applicable_divert, 'scheduled_jobs.outputs.alarms_to',
+                        'issue_capture is listed in not_applicable, but the vulnerability divert ' \
+                        'still needs a destination: set security.security_contact or ' \
+                        'scheduled_jobs.outputs.alarms_to (docs/reference/security-spine.md)')
+    end
+
     if capture
       if blank?(outputs['alarms_to'])
         violations << err(:alarms_to_required, 'scheduled_jobs.outputs.alarms_to',
@@ -832,6 +855,11 @@ module ConfigContract
                              message: "job '#{job['name']}' is enabled, but no repository is one it acts on " \
                                       "(on #{AUTOCLOSE_HOSTS.join(', ')}, with host_closes_on_merge false), so " \
                                       'it closes nothing (skills/issue-autoclose/SKILL.md, step 1)')
+    end
+    if JOB_BLOCKS.key?(name) && marked_blocks(config).include?(JOB_BLOCKS[name])
+      found << err(:not_applicable_job, "scheduled_jobs.jobs[#{index}]",
+                   "job '#{job['name']}' is enabled but #{JOB_BLOCKS[name]} is listed in " \
+                   'not_applicable, so the job has no block to run on')
     end
     flag = JOB_FLAGS[name]
     if flag && fetch_path(config, flag) != true
