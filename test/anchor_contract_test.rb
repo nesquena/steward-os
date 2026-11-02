@@ -304,6 +304,11 @@ class LinksTest < Minitest::Test
     assert_equal 'çç', l.fragment
   end
 
+  def test_a_path_escape_that_decodes_to_invalid_utf8_is_still_a_link
+    l = links('[x](%FF.md)').first
+    assert l.path.valid_encoding?, l.path.inspect
+  end
+
   def test_empty_fragment_is_not_a_fragment
     assert_nil links('[top](quality-gates.md#)').first.fragment
   end

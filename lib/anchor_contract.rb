@@ -457,7 +457,7 @@ module AnchorContract
       # A query string is stripped by every renderer before the path is resolved,
       # and percent escapes are decoded, so `foo%20bar.md?v=1` is the tracked
       # file `foo bar.md`.
-      rel = decode(target.to_s.split('?', 2).first.to_s)
+      rel = decode(target.to_s.split('?', 2).first.to_s).scrub
       path = rel.empty? ? '' : Pathname.new(File.join(dir, rel)).cleanpath.to_s
       Link.new(source: source, line: line, href: href, path: path,
                fragment: fragment.nil? || fragment.empty? ? nil : decode(fragment))
