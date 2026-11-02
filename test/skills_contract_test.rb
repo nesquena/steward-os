@@ -205,7 +205,10 @@ class IssueCaptureContractTest < Minitest::Test
     assert_includes community, 'Chat monitoring stays off until the shared capture core'
     refute_includes triage, '**Capture-dedupe.**', 'pre-tracker capture has one procedural owner'
   end
+end
 
+# --- Each repository's host_closes_on_merge is honoured wherever it decides something ---
+class HostClosingContractTest < Minitest::Test
   # Each repository's host_closes_on_merge decides what three skills and the setup interview do. Read
   # with whitespace folded, so a re-wrap doesn't break the pin.
   def test_host_closing_is_honoured_wherever_it_decides_something
@@ -220,8 +223,9 @@ class IssueCaptureContractTest < Minitest::Test
     assert_includes release, 'On a repository whose `host_closes_on_merge` is `true`, the host closed ' \
                              'those issues at merge: comment on them, close any it left open'
     assert_includes watchdog, 'for each repository whose `host_closes_on_merge` is `false`'
-    assert_includes watchdog, "On any other host (Gitea, Forgejo, or a self-managed instance), there's " \
-                              'nothing to read'
+    assert_includes watchdog, 'On any other host (Gitea, Forgejo, or a self-managed instance), this ' \
+                              "check can't tell from the name which API the host speaks"
+    assert_includes watchdog, "While a repository is declared `true`, drop its start"
     assert_includes setup, 'untick **Auto-close issues with merged linked pull requests**'
     assert_includes setup, 'untick **Auto-close referenced issues on default branch**'
   end

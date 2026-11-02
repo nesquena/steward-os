@@ -106,8 +106,10 @@ it off and declares so (`host_closes_on_merge: false`,
 the host made at merge. Where a host can't turn it off, the issue closes at merge and the release
 names the version on it.
 
-Anything short of that stays open and is surfaced to a human. **Under-close rather than mis-close** —
-a wrongly-closed issue erodes reporter trust. Every autonomous close is logged and
+Anything short of that stays open. An issue whose fix is only waiting for a release stays unrouted
+until a release contains the merge; any other gate it fails, or any signal that's missing or
+ambiguous, is surfaced to a human. **Under-close rather than mis-close** — a wrongly-closed issue
+erodes reporter trust. Every autonomous close is logged and
 [fact-checked by the watchdog](../playbooks/watchdog-pattern.md).
 
 A human can still close an issue that falls short of that gate. For two cases, an issue that's

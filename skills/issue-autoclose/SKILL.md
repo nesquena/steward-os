@@ -17,10 +17,10 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
 > Precondition: **the fix has shipped.** This skill closes issues that a released PR resolved; it
 > never closes on taste, staleness, or a maintainer's judgment call — those stay human
 > ([`issue-close-proposal`](../issue-close-proposal/SKILL.md) prepares two kinds for that human:
-> done with no linking PR, and duplicate). If step 1
-> finds no candidate, there is nothing to do: reconcile the index (drop a row for an issue a human
-> has since closed), then stop. Otherwise every candidate goes through the gates: it's closed, it
-> waits for a release, or it stays open and is routed to a human.
+> done with no linking PR, and duplicate). Every run
+> reconciles the index (dropping a row for an issue a human has since closed). If step 1 finds no
+> candidate, there is nothing else to do — stop. Otherwise every candidate goes through the gates:
+> it's closed, it waits for a release, or it stays open and is routed to a human.
 
 > Config: read the repos from [`config.yaml`](../../setup/config.template.yaml) (`repositories:`,
 > each with `host_closes_on_merge`), the release model from `project.release_model` (what "released tag" means for this project), and
@@ -45,7 +45,7 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    is a hold. An issue that steps 2-5 leave open is checked again next run, so routing it to a human
    is [reconciled](../../docs/playbooks/output-loop.md#3-keep-the-state-honest), not repeated: an
    issue already routed isn't surfaced again until one of its signals changes. No candidate →
-   silent no-op.
+   reconcile the index and stop, silently.
 2. **Verify provably-shipped, not just merged.** For each candidate, the linking PR must be merged
    **and** its merge commit must be **contained in a released tag** — the same three-part "shipped"
    notion [`release-pipeline`](../release-pipeline/SKILL.md) enforces (tag exists **and** the merge
