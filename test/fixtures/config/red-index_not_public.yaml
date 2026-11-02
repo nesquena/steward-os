@@ -17,6 +17,7 @@ repositories:
     name: "app"
     role: "primary"
     visibility: "public"
+    host_closes_on_merge: false
 
 scope:
   anchors:

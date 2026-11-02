@@ -36,6 +36,21 @@ description: Independently fact-check the autonomous actions the system took (is
      marker? Did every vulnerability-diverted item receive **no** public mark? → a mark without a
      staged record, a missing/duplicate mark, or any public mark on a diverted item = 🔴; a stale
      nonterminal capture intent with no public action yet = 🟡.
+   - **Host closes** (no ledger: the host acts on its own, and nothing in the system records it):
+     for each repository whose `host_closes_on_merge` is `false`, read what closed each issue closed
+     since that repository's window opened. Keep each repository's window start in the watchdog's
+     own private state. A repository with no recorded start (the first run, a repository added or
+     switched from `true`, or a lost record) opens its window now and reports that once as 🟡, since
+     closes before then went unchecked: a no-model script can't tell those cases apart, so it treats
+     them alike. While a repository is declared `true`, drop its start, so switching it back opens a
+     new window. On GitHub, read the `ClosedEvent`'s `closer`. On GitLab, read the issue's resource
+     state events (a `closed` event with a `source_merge_request_id` or a `source_commit`), and the
+     project's `autoclose_referenced_issues` setting, which its API reports. On any other host
+     (Gitea, Forgejo, or a self-managed instance), this check can't tell from the name which API the
+     host speaks, so it reads nothing there: report once per window, as 🟡, that host closes can't be
+     observed there. → an issue the host closed from a merge or a
+     commit, or a GitLab setting that's on = 🟡: a human checks the repository's setting and decides
+     about the issue.
    - **(Add a check here for every new autonomous action — same change that adds the action.)**
 3. **Classify severities.** 🔴 = correctness failure (an action was *wrong* — act now). 🟡 = drift
    (stale, reconcile soon).
@@ -54,5 +69,7 @@ description: Independently fact-check the autonomous actions the system took (is
 
 ## Verification
 - Deliberately record a *wrong* action (in a test ledger) and confirm the watchdog flags it 🔴.
+- On a repository declared `host_closes_on_merge: false`, merge a PR that closes a test issue with
+  the host's closing on, and confirm the watchdog flags it 🟡.
 - On a clean state, the watchdog is silent.
 - Every autonomous public action in the system has a corresponding check here.

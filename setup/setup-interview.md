@@ -26,6 +26,26 @@ documented TODO, not an assumption.
 1. **What is the project?** One-line description. (Used in every public-facing template.)
 2. **Which repositories does it span?** For each: host/owner/name, role (primary app, desktop,
    mobile, docs…), and visibility. Multi-repo projects route work to the right repo — list them all.
+   Then, for each: **does its host close a linked issue when the PR merges?** Unless every merge is
+   the release (question 4), an issue stays open until the release that ships its fix, so turn that
+   off and record `host_closes_on_merge: false`:
+   - **GitHub:** Settings → General → Issues → untick **Auto-close issues with merged linked pull
+     requests**.
+   - **GitLab:** Settings → Repository → Branch defaults → untick **Auto-close referenced issues on
+     default branch**. It covers only that project's issues: its merge requests and commits can
+     still close another project's, so turn it off in each project whose issues they reference.
+   - **A host where only the instance admin can change it** (Gitea and Forgejo set closing keywords
+     instance-wide): ask the admin, or record `true`. The release then names the version on issues
+     the host already closed.
+
+   GitHub's setting can't be read through its API, so an enabled
+   [watchdog](https://github.com/nesquena/steward-os/blob/main/skills/action-watchdog/SKILL.md)
+   checks that the host hasn't closed an issue at merge (on GitLab it also reads the setting). The
+   config lint refuses `true` on github.com and gitlab.com unless the release model is continuous,
+   and warns on `false` there with no watchdog enabled. It knows those two hosts only by name, so it
+   enforces nothing on a self-managed GitLab or GitHub Enterprise instance, and the watchdog can't
+   observe closes there or on Gitea and Forgejo: record what the instance actually does.
+   `host` is a bare host name, such as `github.com` (a port is allowed; a URL isn't).
 3. **What's the default branch / trunk?** (e.g. `main`.)
 4. **What's the release model?** Tag-per-release? A changelog file? How does "shipped" get verified
    (a tag, a deploy, a running version)? Do you publish an artifact others install or pull (a

@@ -78,6 +78,8 @@ module ConfigContract
     job_flag_agree
     announcements_band_c
     pr_merge_band_b
+    host_closing_off
+    autoclose_needs_watchdog
     no_model_job
   ].freeze
 
@@ -329,14 +331,43 @@ module ConfigContract
     Violation.new(severity: :error, rule: rule, key: key, message: message)
   end
 
-  def self.repository_violations(config)
-    violations_for_each(config, 'repositories') do |repo, i|
-      value = repo['visibility']
-      next [] if VISIBILITIES.include?(value)
+  # A bare host name, optionally with a port: what host_closing_off compares.
+  # A URL, a path or user info is refused, so no spelling of github.com can
+  # slip past the rule.
+  HOST_FORMAT = /\A[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.?(?::\d{1,5})?\z/
 
-      [err(:type_enum, "repositories[#{i}].visibility",
-           "expected one of #{VISIBILITIES.join(', ')}, got #{value.inspect}")]
+  # Every repository is a mapping that names its host and says whether that
+  # host closes a linked issue at merge. The shape phase can't tell: it merges
+  # list entries, so a second entry missing a key, or an entry that isn't a
+  # mapping, would pass it. Absence is nil here and fails closed like a present
+  # null. An empty list stays allowed, as before (see public_repo?).
+  def self.repository_violations(config)
+    repos = config['repositories']
+    return [type_error(:type_list, 'repositories', repos, 'a list of repository mappings')] unless repos.is_a?(Array)
+
+    repos.each_with_index.flat_map do |repo, i|
+      next [type_error(:type_mapping, "repositories[#{i}]", repo, 'a repository mapping')] unless repo.is_a?(Hash)
+
+      repository_entry_violations(repo, i)
     end
+  end
+
+  def self.repository_entry_violations(repo, i)
+    found = []
+    value = repo['visibility']
+    unless VISIBILITIES.include?(value)
+      found << err(:type_enum, "repositories[#{i}].visibility",
+                   "expected one of #{VISIBILITIES.join(', ')}, got #{value.inspect}")
+    end
+    host = repo['host']
+    unless host.is_a?(String) && HOST_FORMAT.match?(normalize_job_name(host))
+      found << type_error(:type_host, "repositories[#{i}].host", host, 'a bare host name such as github.com')
+    end
+    closes = repo['host_closes_on_merge']
+    unless [true, false].include?(closes)
+      found << type_error(:type_boolean, "repositories[#{i}].host_closes_on_merge", closes, 'true or false')
+    end
+    found
   end
 
   def self.job_type_violations(config)
@@ -474,19 +505,21 @@ module ConfigContract
       if blank?(outputs['alarms_to'])
         violations << err(:alarms_to_required, 'scheduled_jobs.outputs.alarms_to',
                           'required when issue_capture.enabled — the divert needs an independent ' \
-                          'human route even when security_contact is set (config.template.yaml:130)')
+                          'human route even when security_contact is set ' \
+                          '(config.template.yaml, scheduled_jobs.outputs.alarms_to)')
       elsif alarms_to_aliased?(config, outputs)
         violations << err(:alarms_to_independent, 'scheduled_jobs.outputs.alarms_to',
                           'must be an independent human route — it duplicates security_contact, ' \
                           'index_path, or a capture-state path, so the divert has no fallback ' \
-                          'distinct from the destination it is meant to back up (config.template.yaml:130)')
+                          'distinct from the destination it is meant to back up ' \
+                          '(config.template.yaml, scheduled_jobs.outputs.alarms_to)')
       end
 
       missing = CAPTURE_STATE_PATHS.select { |k| blank?(config.dig('issue_capture', k)) }
       unless missing.empty?
         violations << err(:capture_state_paths_required, 'issue_capture',
                           "issue_capture.enabled requires private #{missing.join(', ')} " \
-                          '(issue-capture/SKILL.md:19-21)')
+                          '(issue-capture step 1)')
       end
 
       public_state = CAPTURE_STATE_PATHS.select { |k| repo_relative?(config.dig('issue_capture', k)) }
@@ -494,7 +527,7 @@ module ConfigContract
         violations << err(:state_paths_not_public, 'issue_capture',
                           "#{public_state.join(', ')} are repo-relative and this project lists a " \
                           'public repository. Capture state holds the diverted-vulnerability audit ' \
-                          'trail and must not be a public surface (config.template.yaml:46-48). Use ' \
+                          'trail and must not be a public surface (config.template.yaml, issue_capture). Use ' \
                           'an absolute path if it lives in a private repo')
       end
     end
@@ -507,7 +540,7 @@ module ConfigContract
     unless blank?(marker) || watchdog
       violations << err(:marker_needs_watchdog, 'issue_capture.capture_marker',
                         'a public capture marker requires an enabled action-watchdog job ' \
-                        '(config.template.yaml:51)')
+                        '(config.template.yaml, issue_capture.capture_marker)')
     end
 
     # Gated on platform being set: with platform blank, chat_needs_platform already
@@ -516,19 +549,19 @@ module ConfigContract
     if monitor && !blank?(platform) && !blank?(reaction) && !watchdog
       violations << err(:reaction_needs_watchdog, 'community.chat.capture_reaction',
                         'a public capture reaction requires an enabled action-watchdog job ' \
-                        '(issue-capture/SKILL.md:23-25)')
+                        '(issue-capture step 1)')
     end
 
     if monitor && !capture
       violations << err(:chat_needs_capture_core, 'community.chat.monitor',
                         'chat monitoring requires issue_capture.enabled — chat must not implement ' \
-                        'a second capture path (config.template.yaml:44)')
+                        'a second capture path (config.template.yaml, issue_capture.enabled)')
     end
 
     if monitor && blank?(platform)
       violations << err(:chat_needs_platform, 'community.chat.platform',
                         'a blank platform means chat monitoring is disabled, but monitor is true ' \
-                        '(config.template.yaml:32)')
+                        '(config.template.yaml, community.chat.platform)')
     end
 
     # Filing a capture is Band C: a new public issue reaches every watcher, so a
@@ -547,11 +580,11 @@ module ConfigContract
        config.dig('secrets', 'sandbox_available') != true
       violations << err(:sandbox_required, 'secrets.execute_contributor_code',
                         'running contributor code requires sandbox_available: true ' \
-                        '(config.template.yaml:106)')
+                        '(config.template.yaml, secrets.execute_contributor_code)')
     end
 
-    violations + band_violations(config) + job_violations(config) +
-      unverifiable_warning(config, outputs, index)
+    violations + band_violations(config) + host_closing_violations(config) + job_violations(config) +
+      unwatched_closing_warning(config) + unverifiable_warning(config, outputs, index)
   end
 
   # Capture and the announcements job each write to the index, so either one
@@ -561,7 +594,7 @@ module ConfigContract
 
     if blank?(index)
       need = if capture
-               'issue_capture.enabled requires a pull index (issue-capture/SKILL.md:26-27)'
+               'issue_capture.enabled requires a pull index (issue-capture step 1)'
              else
                'an enabled announcements job requires a pull index for its decision row ' \
                  '(release-announce/SKILL.md)'
@@ -572,8 +605,8 @@ module ConfigContract
       [err(:index_not_public, 'scheduled_jobs.outputs.index_path',
            "'#{index}' is repo-relative and this project lists a public repository. " \
            "An index that #{held} must not be a public " \
-           'surface (config.template.yaml:124-126). If it lives in a private repo, ' \
-           'use an absolute path to say so')]
+           'surface (config.template.yaml, scheduled_jobs.outputs.index_path). If it lives in a ' \
+           'private repo, use an absolute path to say so')]
     else
       []
     end
@@ -617,6 +650,66 @@ module ConfigContract
     violations
   end
 
+  # Hosts where closing a linked issue at merge is a per-repository setting an
+  # adopter can turn off (setup/setup-interview.md, question 2).
+  HOSTS_WITH_REPO_CLOSING_SWITCH = %w[github.com gitlab.com].freeze
+
+  # Unless every merge is the release, an issue stays open until the release that
+  # ships its fix (issue-autoclose, release-pipeline step 6), so a host that can
+  # turn closing at merge off per repository must have it off. Elsewhere `true`
+  # is the declared fallback: the release names the version on issues the host
+  # already closed. A release model that isn't a string reading "continuous"
+  # counts as tagged, so a typo can't switch the rule off.
+  def self.host_closing_violations(config)
+    style = fetch_path(config, 'project.release_model.style')
+    return [] if style.is_a?(String) && normalize_job_name(style) == 'continuous'
+
+    violations_for_each(config, 'repositories') do |repo, i|
+      host = repo['host']
+      next [] unless repo['host_closes_on_merge'] == true && host.is_a?(String) &&
+                     HOSTS_WITH_REPO_CLOSING_SWITCH.include?(normalize_host(host))
+
+      [err(:host_closing_off, "repositories[#{i}].host_closes_on_merge",
+           "must be false on #{normalize_host(host)} unless project.release_model.style is " \
+           'continuous: an issue stays open until the release that ships its fix, and this host ' \
+           'turns closing at merge off per repository (setup/setup-interview.md, question 2)')]
+    end
+  end
+
+  # `false` on a host with the switch is a claim nothing else checks: issue-autoclose
+  # refuses to run without the watchdog, but release-pipeline alone doesn't need
+  # it. A warning, not an error, since the template ships with the watchdog off and
+  # the lint checks the template itself. A continuous release closes at merge
+  # anyway, so it needs no watch.
+  def self.unwatched_closing_warning(config)
+    style = fetch_path(config, 'project.release_model.style')
+    return [] if style.is_a?(String) && normalize_job_name(style) == 'continuous'
+    return [] if watchdog_enabled?(config)
+
+    repos = config['repositories']
+    return [] unless repos.is_a?(Array)
+
+    unwatched = repos.each_with_index.filter_map do |repo, i|
+      next unless repo.is_a?(Hash) && repo['host_closes_on_merge'] == false && repo['host'].is_a?(String)
+
+      host = normalize_host(repo['host'])
+      "repositories[#{i}] (#{host})" if HOSTS_WITH_REPO_CLOSING_SWITCH.include?(host)
+    end
+    return [] if unwatched.empty?
+
+    [Violation.new(severity: :warning, rule: :host_closing_unwatched, key: 'repositories',
+                   message: "host_closes_on_merge is false on #{unwatched.join(', ')}, but no enabled " \
+                            "action-watchdog checks it: if the host's setting is still on, issues close " \
+                            'at merge, before the release that ships their fix ' \
+                            '(skills/action-watchdog/SKILL.md, Host closes)')]
+  end
+
+  # ` WWW.GitHub.com.:443` is github.com. The type phase has already refused
+  # anything that isn't a bare host name with an optional port.
+  def self.normalize_host(host)
+    normalize_job_name(host).sub(/:\d+\z/, '').sub(/\.\z/, '').sub(/\Awww\./, '')
+  end
+
   # Runtimes differ on whether `Issue_Capture ` is `issue-capture`, so the job
   # rules assume it is: an exact match would let a near-miss name slip past.
   # Invisible format characters (zero-width space, BOM) are dropped too.
@@ -653,6 +746,15 @@ module ConfigContract
     if job['agent'] == true && NO_MODEL_JOBS.include?(name)
       found << err(:no_model_job, "scheduled_jobs.jobs[#{index}]",
                    "job '#{job['name']}' runs a no-model procedure, so it must be agent: false")
+    end
+    # GitHub's closing-at-merge setting can't be read through its API, so the
+    # watchdog's host-closes check is what proves it stays off; its
+    # autonomous-closes check re-verifies the job's own closes.
+    if name == 'issue-autoclose' && !watchdog_enabled?(config)
+      found << err(:autoclose_needs_watchdog, "scheduled_jobs.jobs[#{index}]",
+                   "job '#{job['name']}' is enabled but action-watchdog is not: its host-closes " \
+                   'check is what proves the host is not closing issues at merge ' \
+                   '(skills/action-watchdog/SKILL.md)')
     end
     flag = JOB_FLAGS[name]
     if flag && fetch_path(config, flag) != true
