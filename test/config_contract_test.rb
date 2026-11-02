@@ -569,21 +569,17 @@ class TypeTest < Minitest::Test
   # Every repository declares host closing, so an entry that isn't a mapping is
   # an error rather than skipped, and so is a repositories value that isn't a list.
   def test_a_repository_that_is_not_a_mapping_is_an_error
-    [[]].each do |entry|
-      cfg = base
-      cfg['repositories'] << entry
-      v = find(cfg, :type_mapping)
-      assert v, entry.inspect
-      assert_equal 'repositories[1]', v.key
-    end
+    cfg = base
+    cfg['repositories'] << []
+    v = find(cfg, :type_mapping)
+    assert v
+    assert_equal 'repositories[1]', v.key
   end
 
   def test_repositories_that_are_not_a_list_are_an_error
-    [{}].each do |value|
-      cfg = base
-      cfg['repositories'] = value
-      assert_equal 'repositories', find(cfg, :type_list)&.key, value.inspect
-    end
+    cfg = base
+    cfg['repositories'] = {}
+    assert_equal 'repositories', find(cfg, :type_list)&.key
   end
 
   # A string or null where the template nests a mapping fails the shape phase first.

@@ -223,13 +223,19 @@ class HostClosingContractTest < Minitest::Test
     assert_includes autoclose, 'Skip a repository whose `host_closes_on_merge` is `true`'
     assert_includes autoclose, "That's a wait, not a hold: leave the issue open and unrouted"
     assert_includes autoclose, 'however long ago the PR merged'
+    assert_includes autoclose, 'Its index row keeps the step that routed it (2, 3, 4 or 5) and the time of ' \
+                               "the reporter's latest comment or reaction"
     assert_includes autoclose, 'Reconcile the index (drop a row for an issue a human has since closed), then load'
     assert_includes autoclose, "Under `style: continuous` no release tag is coming, so there's nothing to " \
                                'wait for: route the candidate to a human'
     assert_includes autoclose, "GitLab a closing pattern in one of the merge request's commit messages does)"
-    assert_includes autoclose, 'Read `style` as the config lint does, ignoring case and surrounding spaces'
-    assert_includes autoclose, "On GitLab, read the link from the issue's side " \
-                               '(`GET /projects/:id/issues/:iid/closed_by`)'
+    assert_includes autoclose, "Read `style` as the config lint's `normalize_job_name` does: drop invisible " \
+                               'format characters, trim surrounding whitespace, and ignore case'
+    assert_includes autoclose, "On GitLab, read the links from the issue's side, through GraphQL: the work " \
+                               "item's development widget (`closingMergeRequests`) lists every merge request " \
+                               'set to close it, from any project'
+    assert_includes autoclose, '**exactly one** linked closing PR (on GitLab, counted from that same ' \
+                               '`closingMergeRequests` list)'
     assert_includes issue_lifecycle, 'stays unrouted until a release contains the merge'
     assert_includes pr_lifecycle, "comment on them, and don't reopen them"
     assert_includes release, 'On a repository whose `host_closes_on_merge` is `true`, the host closed ' \

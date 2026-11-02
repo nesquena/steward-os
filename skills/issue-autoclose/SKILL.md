@@ -44,15 +44,20 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    link from its sidebar; on GitHub a keyword only in a commit message doesn't link the PR, while on
    GitLab a closing pattern in one of the merge request's commit messages does), however long ago
    the PR merged: a merge no release contains yet stays a candidate until one does. On GitLab, read
-   the link from the issue's side (`GET /projects/:id/issues/:iid/closed_by`), not from the merge
-   request's `closes_issues` list, which leaves out an issue whose project has auto-closing off, as
-   this setup requires. `closed_by` lists merge requests in the issue's own project; a link from
-   another project's isn't read, so that issue isn't a candidate and stays open. Skip an issue
+   the links from the issue's side, through GraphQL: the work item's development widget
+   (`closingMergeRequests`) lists every merge request set to close it, from any project. Don't use
+   the merge request's `closes_issues` list, which leaves out an issue whose project has
+   auto-closing off, as this setup requires, or `closed_by`, which lists only the issue's own
+   project's merge requests, so step 3 could count one where there are two. The widget lists only
+   merge requests the job's token can read, so give it read access to every project in
+   `repositories:`. Skip an issue
    this job's ledger shows it already closed: if it's open again, a human reopened it, and a reopen
    is a hold. An issue that steps 2-5 leave open is checked again next run, so routing it to a human
    is [reconciled](../../docs/playbooks/output-loop.md#3-keep-the-state-honest), not repeated: an
-   issue already routed isn't surfaced again until one of its signals changes. No candidate →
-   stop, silently.
+   issue already routed isn't surfaced again until one of its signals changes. Its index row keeps
+   the step that routed it (2, 3, 4 or 5) and the time of the reporter's latest comment or reaction;
+   surface it again only if a different step now routes it or the reporter has commented or reacted
+   since. No candidate → stop, silently.
 2. **Verify provably-shipped, not just merged.** For each candidate, the linking PR must be merged
    **and** its merge commit must be **contained in a released tag** — the same three-part "shipped"
    notion [`release-pipeline`](../release-pipeline/SKILL.md) enforces (tag exists **and** the merge
@@ -60,9 +65,11 @@ the strict path [`issue-triage`](../issue-triage/SKILL.md) defers to — triage 
    is **not** shipped. That's a wait, not a hold: leave the issue open and unrouted, and it stays a
    candidate until a release contains the merge. Under `style: continuous` no release tag is coming,
    so there's nothing to wait for: route the candidate to a human, who checks the deploy
-   (`shipped_means`). Read `style` as the config lint does, ignoring case and surrounding spaces.
+   (`shipped_means`). Read `style` as the config lint's `normalize_job_name` does: drop invisible
+   format characters, trim surrounding whitespace, and ignore case.
 3. **Verify single-surface — structured signals only.** Auto-close only an issue that resolves as a
-   single unit: **exactly one** linked closing PR, **zero open task-list checkboxes** in the body,
+   single unit: **exactly one** linked closing PR (on GitLab, counted from that same
+   `closingMergeRequests` list), **zero open task-list checkboxes** in the body,
    and **no** `multi-surface`/`epic` label. If it enumerates several distinct symptoms (>1 linked PR,
    an unchecked task item, or the label), it does **not** auto-close — **route to a human** for
    full-surface verification. Never parse the free-text body to *infer* resolution.
