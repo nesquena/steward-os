@@ -311,8 +311,8 @@ class LinksTest < Minitest::Test
       [AnchorContract::Extract.method(:links), AnchorContract::Extract.method(:links_cmark)].each do |extract|
         l = extract.call("[x](#{href})\n", source: 'docs/lifecycle/pr-lifecycle.md').first
         refute_nil l, "#{href} via #{extract.name}"
-        assert l.path.valid_encoding?, "#{href} via #{extract.name}: #{l.path.inspect}"
-        refute_includes l.path, "\0", "#{href} via #{extract.name}"
+        assert l.path.nil? || (l.path.valid_encoding? && !l.path.include?("\0")),
+               "#{href} via #{extract.name}: #{l.path.inspect}"
         assert l.fragment.nil? || l.fragment.valid_encoding?, "#{href} via #{extract.name}: #{l.fragment.inspect}"
       end
     end
@@ -321,6 +321,26 @@ class LinksTest < Minitest::Test
   def test_a_nul_in_the_path_never_resolves_to_a_real_file
     refute_equal 'docs/lifecycle/pr-lifecycle.md', links('[x](pr-life%00cycle.md)').first.path
     refute_equal 'docs/lifecycle/quality-gates.md', links('[x](quality-gates.md%00)').first.path
+  end
+
+  # The outcome, through `check`, beside the tracked names a sanitized path would alias: a path no
+  # file can have is missing, never a lookalike.
+  def test_a_path_no_file_can_have_is_missing_even_beside_a_lookalike
+    files = Set['docs/lifecycle/pr-lifecycle.md', 'docs/lifecycle/quality-gates.md',
+                "docs/lifecycle/\uFFFD.md", "docs/lifecycle/a\uFFFD\uFFFD\uFFFD.md"]
+    dirs = Set['docs', 'docs/lifecycle']
+    %w[pr-life%00cycle.md quality-gates.md%00 %00.md %FF.md].each do |href|
+      [AnchorContract::Extract.method(:links), AnchorContract::Extract.method(:links_cmark)].each do |extract|
+        link = extract.call("[x](#{href})\n", source: 'docs/lifecycle/pr-lifecycle.md').first
+        got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: dirs).map(&:rule)
+        assert_equal [:missing], got, "#{href} via #{extract.name}: path=#{link.path.inspect}"
+      end
+    end
+    link = AnchorContract::Extract.links("[x](a&#xD800;.md)\n", source: 'docs/lifecycle/pr-lifecycle.md').first
+    got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: dirs).map(&:rule)
+    assert_equal [:missing], got, "a&#xD800;.md via links: path=#{link.path.inspect}"
+    two = AnchorContract::Extract.merged_links("[a](%00.md) [b](%FF.md)\n", source: 'docs/lifecycle/pr-lifecycle.md')
+    assert_equal %w[%00.md %FF.md], two.map(&:href).sort, 'two unnamed targets are two broken links, not one'
   end
 
   def test_empty_fragment_is_not_a_fragment

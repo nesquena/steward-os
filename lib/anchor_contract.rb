@@ -88,6 +88,9 @@ module AnchorContract
   # non-markdown file (or a bare directory with nothing to anchor into), or a
   # Violation when the target does not resolve.
   def self.resolve(link, files, dirs)
+    # A path no file can have (build_link left it nil) is missing. It is rejected rather than
+    # sanitized: a replacement character could alias a real tracked file.
+    return Violation.new(rule: :missing, link: link, message: 'target does not exist') if link.path.nil?
     return link.source if link.path.empty?
 
     # A directory link is valid as long as the directory exists: GitHub renders
@@ -338,7 +341,8 @@ module AnchorContract
     # that resolve alike, are one broken (or fine) target, not two diagnostics.
     def dedup_links(links)
       seen = {}
-      links.each { |link| seen[[link.source, link.path, link.fragment]] ||= link }
+      # A nil path names nothing, so two such links don't resolve alike: they are kept apart by href.
+      links.each { |link| seen[[link.source, link.path || [:unnamed, link.href], link.fragment]] ||= link }
       seen.values
     end
 
@@ -453,15 +457,24 @@ module AnchorContract
       # `foo&bar.md` — unless the HTML parser has resolved them already. Percent
       # escapes are the browser's and are decoded per component below, after `#`
       # has done its splitting.
-      target, fragment = (decoded ? href : CGI.unescapeHTML(href)).scrub.split('#', 2)
+      text = decoded ? href : CGI.unescapeHTML(href)
+      # A character reference to a surrogate leaves invalid UTF-8. Scrubbed so `#` can split it; the
+      # path is then nil below, never the scrubbed name.
+      named = text.valid_encoding?
+      target, fragment = text.scrub.split('#', 2)
       # A query string is stripped by every renderer before the path is resolved,
       # and percent escapes are decoded, so `foo%20bar.md?v=1` is the tracked
       # file `foo bar.md`.
-      # An escape can decode to invalid UTF-8 or a NUL, which no file name holds. Both are replaced
-      # with U+FFFD, so the link is reported as a missing target instead of crashing the path code,
-      # and never resolves to a real file.
-      rel = decode(target.to_s.split('?', 2).first.to_s).scrub.tr("\0", "\uFFFD")
-      path = rel.empty? ? '' : Pathname.new(File.join(dir, rel)).cleanpath.to_s
+      # An escape can decode to invalid UTF-8 or a NUL, which no file name holds: the path is nil,
+      # and `resolve` reports the link as a missing target.
+      rel = decode(target.to_s.split('?', 2).first.to_s)
+      path = if !named || !rel.valid_encoding? || rel.include?("\0")
+               nil
+             elsif rel.empty?
+               ''
+             else
+               Pathname.new(File.join(dir, rel)).cleanpath.to_s
+             end
       Link.new(source: source, line: line, href: href, path: path,
                fragment: fragment.nil? || fragment.empty? ? nil : decode(fragment).scrub)
     end
