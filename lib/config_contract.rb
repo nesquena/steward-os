@@ -1098,7 +1098,7 @@ module ConfigContract
 
     # Parse a config. Raises a clear error rather than a bare Psych stacktrace.
     def load(path)
-      YAML.safe_load(File.read(path)) || {}
+      YAML.safe_load(File.read(path, encoding: 'UTF-8')) || {}
     rescue Psych::Exception => e
       raise "could not parse #{path}: #{e.message}"
     end
@@ -1107,7 +1107,7 @@ module ConfigContract
     # file the lint can trust, or [nil, violations] when the parsed hash would
     # not be what the file says. Conversion is YAML.safe_load on the text.
     def read(path)
-      text = File.read(path)
+      text = File.read(path, encoding: 'UTF-8')
       violations = ParseRules.violations(text)
       return [nil, violations] unless violations.empty?
 

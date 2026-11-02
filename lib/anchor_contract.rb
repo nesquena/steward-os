@@ -496,7 +496,7 @@ module AnchorContract
     end
 
     def tracked_files(root)
-      out = IO.popen(['git', '-C', root, 'ls-files', '-z'], &:read)
+      out = IO.popen(['git', '-C', root, 'ls-files', '-z'], encoding: 'UTF-8', &:read)
       raise "git ls-files failed in #{root}" unless $?&.success?
 
       out.split("\x00").reject(&:empty?)
@@ -512,7 +512,7 @@ module AnchorContract
     # FNM_PATHNAME, an entry is also a bare string prefix, and `include` is matched
     # against an entry's own name — none of which a lookalike matcher kept up with.
     def site_excluded_markdown(root, config_path)
-      raw = YAML.safe_load(File.read(config_path)) || {}
+      raw = YAML.safe_load(File.read(config_path, encoding: 'UTF-8')) || {}
       # Jekyll refuses to build from a config it cannot validate — a scalar
       # `exclude`, say — so there is no routing to mirror.
       Jekyll::Configuration[raw].validate
@@ -555,7 +555,7 @@ module AnchorContract
     # assumes, so an absent key passes; any other value silently re-slugs every
     # heading in the repo and invalidates all 125 anchor checks at once.
     def id_config_conflicts(config_path)
-      cfg = YAML.safe_load(File.read(config_path)) || {}
+      cfg = YAML.safe_load(File.read(config_path, encoding: 'UTF-8')) || {}
       kramdown = cfg['kramdown'] || {}
       [conflict(cfg, 'markdown', 'kramdown'),
        conflict(kramdown, 'input', 'GFM', prefix: 'kramdown.'),

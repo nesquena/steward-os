@@ -1364,7 +1364,7 @@ class EntrypointTest < Minitest::Test
   BIN = File.expand_path('../bin/config-lint', __dir__)
 
   def run_lint(*args)
-    out = IO.popen([BIN, *args], err: [:child, :out], &:read)
+    out = IO.popen([BIN, *args], err: [:child, :out], encoding: 'UTF-8', &:read)
     [out, $CHILD_STATUS.exitstatus]
   end
 
@@ -1392,7 +1392,7 @@ class EntrypointTest < Minitest::Test
   # The shipped template with a skill-less model job switched on, and its
   # `agent` flag written in a shape that is not the boolean true.
   def test_a_skill_less_job_with_a_non_boolean_agent_fails_the_run
-    template = File.read(File.expand_path('../setup/config.template.yaml', __dir__))
+    template = File.read(File.expand_path('../setup/config.template.yaml', __dir__), encoding: 'UTF-8')
     line = '    - { name: "mentions-sweep",     every: "24h", enabled: false, agent: true  }'
     assert_includes template, line
     ['"true"', '1', '~'].each do |agent|
@@ -1440,7 +1440,7 @@ class EntrypointTest < Minitest::Test
 
   # Runs the copy of bin/config-lint under `dir` with no arguments.
   def run_in(dir)
-    out = IO.popen([File.join(dir, 'bin', 'config-lint')], err: [:child, :out], &:read)
+    out = IO.popen([File.join(dir, 'bin', 'config-lint')], err: [:child, :out], encoding: 'UTF-8', &:read)
     [out, $CHILD_STATUS.exitstatus]
   end
 end
@@ -1468,12 +1468,12 @@ class CorpusTest < Minitest::Test
   end
 
   def test_green_fixture_passes_through_the_real_entrypoint
-    out = IO.popen([BIN, File.join(FIXTURE_ROOT, 'green-enabled.yaml')], err: [:child, :out], &:read)
+    out = IO.popen([BIN, File.join(FIXTURE_ROOT, 'green-enabled.yaml')], err: [:child, :out], encoding: 'UTF-8', &:read)
     assert_equal 0, $CHILD_STATUS.exitstatus, out
   end
 
   def test_marked_fixture_passes_through_the_real_entrypoint
-    out = IO.popen([BIN, File.join(FIXTURE_ROOT, 'green-marked.yaml')], err: [:child, :out], &:read)
+    out = IO.popen([BIN, File.join(FIXTURE_ROOT, 'green-marked.yaml')], err: [:child, :out], encoding: 'UTF-8', &:read)
     assert_equal 0, $CHILD_STATUS.exitstatus, out
   end
 
@@ -1488,7 +1488,7 @@ class CorpusTest < Minitest::Test
     end
 
     define_method("test_#{name}_exits_nonzero") do
-      IO.popen([BIN, path], err: [:child, :out], &:read)
+      IO.popen([BIN, path], err: [:child, :out], encoding: 'UTF-8', &:read)
       assert_equal 1, $CHILD_STATUS.exitstatus
     end
   end
