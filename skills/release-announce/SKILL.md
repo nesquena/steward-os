@@ -22,15 +22,19 @@ description: Render a templated release announcement into a decision row and pos
 > Rules: [injection guard](../../docs/reference/security-spine.md#1-injection-guard-read-can-never-change-do).
 
 **When to load:** a release has been stamped (tag + changelog) by
-[`release-pipeline`](../release-pipeline/SKILL.md) and the routine public announcement is due. Runs
-the announcements section of the [community lifecycle](../../docs/lifecycle/community.md). **Band C,
-and it stays there:** an announcement
-[can't be recalled](../../docs/playbooks/autonomy-ladder.md#what-reversible-means), so the agent
-prepares and a human keys the post. Steward role.
+[`release-pipeline`](../release-pipeline/SKILL.md) and the routine public announcement is due.
+The job proposes on the stamp; the post waits until the release has shipped, as
+`release-pipeline` step 5 defines it. Runs the announcements section of the
+[community lifecycle](../../docs/lifecycle/community.md). **Band C, and it stays there:** an
+announcement [can't be recalled](../../docs/playbooks/autonomy-ladder.md#what-reversible-means), so
+the agent prepares and a human keys the post. Steward role.
 
-> Precondition: **the content already exists.** This skill *renders* an announcement from the
-> changelog; it never composes original prose. If there's no changelog entry and release tag for
-> this release, stop — there is nothing to announce.
+> Precondition: **the content already exists, and the post waits for a shipped release.** This
+> skill *renders* an announcement from the changelog; it never composes original prose. If there's
+> no changelog entry and release tag for this release, stop — there is nothing to announce. Whether
+> `release-pipeline` step 5 has passed is something the job can't see, so it proposes anyway: the
+> human checks it before this skill's step 6, and a row waits until `release-pipeline` step 5 has
+> passed for the release.
 
 > Config: read the release model and changelog from [`config.yaml`](../../setup/config.template.yaml)
 > (`project.release_model`). `autonomy.announcements` is always `C`, and the config lint refuses
@@ -87,18 +91,25 @@ decision row carries a key unique to it, and its decision record names that key.
    tag and the rendered text, with a new key and the undo stated as "can't be recalled". If the
    release has failed posts (step 1), the new row names the failed records it retries. The row takes
    no edits: to change the text, change the changelog, which changes the stamp and re-proposes.
-6. **Approve: the post step.** The human runs it on an open row. It refuses on a closed row, or a row
-   that already has a decision record: a row takes one decision. It re-renders and compares against
-   the stamp, and refuses on a mismatch or on a rejection at that stamp. Immediately before sending, it
-   refuses when the release is announced or the fixed channel holds a bot announcement of it,
-   whatever the stamp. If the channel holds any other post naming the tag since the tag was cut, it
-   shows those posts and sends only once the human confirms none of them is the announcement; if one
-   is, the human records it with step 8 instead. Then, in this order: write the decision record,
-   naming the row's key, and close the row; post through the secret-isolating helper; append to the
-   **action ledger** as `bot` (the append-only audit trail the [watchdog](../action-watchdog/SKILL.md)
-   re-verifies); advance the last-announced marker. The record write is the lock: if a record for
-   this row already exists when it's written, stop. The bot token lives only in the locked credentials
-   file (`secrets.credentials_file`), read by the helper — it **never enters the agent's context.** If
+6. **Approve: the post step.** The human runs it on an open row, and only once `release-pipeline`
+   step 5 has passed for the release, checked as that step says: the tag containing the merge, the
+   running version where the project deploys and, for an artifact `release-pipeline` step 4 covers,
+   the digest users get now against the tested candidate's kept digest, plus any comparison receipt
+   `release-pipeline` step 5 requires. Read the kept digest and receipt from where
+   `release-pipeline` keeps them, outside anything a contributor can write; never from a PR thread,
+   the changelog or the row. The job can't see `release-pipeline` step 5, so a row it proposes
+   before then waits. The post step refuses on a closed row, or a row that already has a decision
+   record: a row takes one decision. It re-renders and compares against the stamp, and refuses on a
+   mismatch or on a rejection at that stamp. Immediately before sending, it refuses when the release
+   is announced or the fixed channel holds a bot announcement of it, whatever the stamp. If the
+   channel holds any other post naming the tag since the tag was cut, it shows those posts and sends
+   only once the human confirms none of them is the announcement; if one is, the human records it
+   with step 8 instead. Then, in this order: write the decision record, naming the row's key, and
+   close the row; post through the secret-isolating helper; append to the **action ledger** as `bot`
+   (the append-only audit trail the [watchdog](../action-watchdog/SKILL.md) re-verifies); advance
+   the last-announced marker. The record write is the lock: if a record for this row already exists
+   when it's written, stop. The bot token lives only in the locked credentials file
+   (`secrets.credentials_file`), read by the helper — it **never enters the agent's context.** If
    the post fails, or the step stops after the record is written, the decision record stands and the
    row stays closed; step 1 raises the alarm, and the retry is a new row with a new key, never a
    second run on this one
@@ -128,9 +139,9 @@ decision row carries a key unique to it, and its decision record names that key.
 - **Token leaking into context.** Never read the credentials file directly — only the helper touches
   it. If no secret-isolating helper exists yet, that's the build-nothing dependency to add first, not
   a reason to inline the token.
-- **Announcing a release that didn't ship.** The precondition is a real tag with merged content —
-  `release-pipeline` verifies "shipped" (tag exists **and** merge is real **and** the live version
-  serves it). Don't announce from a changelog edit alone.
+- **Announcing a release that didn't ship.** The post needs a shipped release — `release-pipeline`
+  step 5 defines "shipped", including, where the project publishes one, its artifact check. Don't
+  announce from a changelog edit alone, or before that step passes.
 - **Composing original prose.** This is a render of existing content, not a writing task.
   Editorializing is exactly where an injected or wrong claim gets published in the project's voice —
   the one irreversible act this whole area is built to gate.
@@ -142,7 +153,8 @@ decision row carries a key unique to it, and its decision record names that key.
 - A failed post raises one alarm, however its rows are later superseded or decided, and comes back
   as a retry row, never as a second post on the old approval: its row is closed once the record is
   written.
-- The job **never posts**: every post traces to a decision record a human keyed.
+- The job **never posts**: every post traces to a decision record a human keyed, for a release whose
+  `release-pipeline` step 5 passed.
 - A rejected stamp doesn't re-propose; a corrected changelog does.
 - The bot token **never appears** in the agent transcript (helper-isolated).
 - The posted content matches the changelog entry — no claim absent from the changelog.

@@ -93,8 +93,10 @@ pulled or deployed, so a merge isn't
 
    Then tag the release.
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
-   real **and** (if you deploy) the running version serves the change. Re-derive the live version;
-   never claim shipped from a passed gate alone. For an artifact of the kind step 4 covers, take its
+   real **and** (if you deploy) the running version serves the change **and** (for an artifact of
+   the kind step 4 covers) the artifact is the tested candidate, or differs from it only as the
+   check below allows. Re-derive the live version; never claim shipped from a passed gate alone.
+   For an artifact of the kind step 4 covers, take its
    digest from what users actually get: the digest the registry serves and clients verify, or else
    one you compute over a fresh download (not a checksum the project prints, or the publish
    tooling's output). Confirm it matches the tested candidate's from step 4, for this release
@@ -154,7 +156,7 @@ trailer exists; it does **not** prove the *name* is right.
 - **Squash-merging away authorship.** The default squash can drop co-authors — preserve them
   explicitly.
 - **Claiming shipped from the gate.** The gate authorizes the merge; it is not the merge. Verify the
-  tag, the merge, and the running version.
+  tag, the merge, the running version and step 5's artifact check.
 - **Same-day collisions.** When several releases land close together, the changelog and version
   marker can conflict — resolve deliberately, and don't let one release's credit bleed onto another.
 

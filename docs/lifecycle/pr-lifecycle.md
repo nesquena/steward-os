@@ -161,8 +161,9 @@ and the gate re-runs. Only an all-clear gate advances to merge.
   does, with a receipt. The
   [release pipeline](https://github.com/nesquena/steward-os/blob/main/skills/release-pipeline/SKILL.md) has the steps.
 - **Tag → deploy → verify** the change is actually live. "Shipped" means the tag exists *and* the
-  merge is real *and* (if you deploy) the running version serves it — never claim shipped from a
-  passed gate alone.
+  merge is real *and* (if you deploy) the running version serves it *and* (for an artifact the
+  release pipeline's step 4 covers) it passes its step 5 check — never claim shipped from a passed
+  gate alone.
 
 > Merge itself is **Band B**, and it stays there: the human owns the final call. A revert restores
 > the code, but not for anyone who already pulled or deployed it, so a merge isn't
