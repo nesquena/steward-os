@@ -355,6 +355,66 @@ class LinksTest < Minitest::Test
     assert_equal %w[%00.md %FF.md], two.map(&:href).sort, 'two unnamed targets are two broken links, not one'
   end
 
+  def merged(text) = AnchorContract::Extract.merged_links(text, source: 'docs/lifecycle/pr-lifecycle.md')
+
+  def rules(links, files, headings: {})
+    AnchorContract.check(links: links, headings: headings, files: files,
+                         dirs: Set['docs', 'docs/lifecycle']).map(&:rule)
+  end
+
+  # Each renderer's reading of the one link in a document.
+  def each_reading(text)
+    yield 'links', links(text)
+    yield 'links_cmark', AnchorContract::Extract.links_cmark(text, source: 'docs/lifecycle/pr-lifecycle.md')
+  end
+
+  # The page reads a character reference the HTML5 way, on the site and on GitHub alike: a reference to a surrogate
+  # is one U+FFFD. So the link names the tracked `a\uFFFD.md`, and not the three-character lookalike a bytewise
+  # scrub would give.
+  def test_a_surrogate_reference_names_the_file_html5_decodes_it_to
+    lookalikes = Set["docs/lifecycle/a\uFFFD\uFFFD\uFFFD.md", 'docs/lifecycle/a.md']
+    real = lookalikes | ["docs/lifecycle/a\uFFFD.md"]
+    each_reading("[x](a&#xD800;.md)\n") do |name, found|
+      assert_equal [], rules(found, real), name
+      assert_equal [:missing], rules(found, lookalikes), name
+    end
+    assert_equal [], rules(merged("[x](a&#xD800;.md)\n"), real)
+    assert_equal [:missing], rules(merged("[x](a&#xD800;.md)\n"), lookalikes), 'one link, so one report'
+  end
+
+  # kramdown writes a link's href through its own escaper, which leaves a well-formed reference for the browser to
+  # decode and escapes any other `&`. So `&eacute;.md` asks for `é.md`, and the unterminated `&eacute.md` asks for
+  # itself, on both renderers.
+  def test_a_named_reference_names_the_file_the_page_requests
+    { '&eacute;.md' => %w[docs/lifecycle/é.md docs/lifecycle/&eacute;.md],
+      '&eacute.md' => %w[docs/lifecycle/&eacute.md docs/lifecycle/é.md],
+      '&amp.md' => %w[docs/lifecycle/&amp.md docs/lifecycle/&.md],
+      '&notin;.md' => %w[docs/lifecycle/∉.md docs/lifecycle/&notin;.md],
+      '&period;&period;&sol;x.md' => %w[docs/x.md docs/lifecycle/&period;&period;&sol;x.md] }
+      .each do |href, (real, lookalike)|
+      each_reading("[x](#{href})\n") do |name, found|
+        assert_equal [], rules(found, Set[real]), "#{href} via #{name}"
+        assert_equal [:missing], rules(found, Set[lookalike]), "#{href} via #{name}"
+      end
+      assert_equal 1, merged("[x](#{href})\n").size, "#{href}: both renderers read one link"
+    end
+    files = Set['docs/lifecycle/x.md']
+    each_reading("[x](x.md&num;top)\n") do |name, found|
+      assert_equal [], rules(found, files, headings: { 'docs/lifecycle/x.md' => ['top'] }), name
+      assert_equal [:fragment], rules(found, files, headings: { 'docs/lifecycle/x.md' => ['x'] }), name
+    end
+    each_reading("[x](&sol;docs/ghost.md)\n") { |name, found| assert_empty found, "an absolute target via #{name}" }
+  end
+
+  # Both renderers' copies of one link that names nothing are one broken link: they agree on the decoded target
+  # (`&amp;` is `&` on both pages) though kramdown's source text and cmark's url differ.
+  def test_one_unnamed_link_is_reported_once
+    files = Set["docs/lifecycle/&\uFFFD.md", "docs/lifecycle/&amp;\uFFFD.md"]
+    assert_equal [:missing], rules(merged("[x](&amp;%FF.md)\n"), files)
+    assert_equal %i[missing missing], rules(merged("[a](&amp;%FF.md) [b](&amp;%FE.md)\n"), files),
+                 'two unnamed targets are still two broken links'
+  end
+
   def test_empty_fragment_is_not_a_fragment
     assert_nil links('[top](quality-gates.md#)').first.fragment
   end

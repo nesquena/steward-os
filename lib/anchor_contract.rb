@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'set'
-require 'cgi'
 require 'yaml'
 require 'pathname'
 require 'kramdown'
@@ -167,6 +166,8 @@ module AnchorContract
       parse: { smart: false },
       render: { unsafe: true }
     }.freeze
+    # kramdown's own attribute escaper, the one its HTML converter writes every href and src with.
+    KRAMDOWN_HTML = Object.new.extend(Kramdown::Utils::Html).freeze
 
     module_function
 
@@ -341,7 +342,8 @@ module AnchorContract
     # that resolve alike, are one broken (or fine) target, not two diagnostics.
     def dedup_links(links)
       seen = {}
-      # A nil path names nothing, so two such links don't resolve alike: they are kept apart by href.
+      # A nil path names nothing, so two such links don't resolve alike: they are kept apart by href. Every
+      # extractor stores the href as its page carries it, so the two renderers' copies of one link still merge.
       links.each { |link| seen[[link.source, link.path || [:unnamed, link.href], link.fragment]] ||= link }
       seen.values
     end
@@ -365,23 +367,30 @@ module AnchorContract
       out = []
       walk(document(text).root) do |el|
         href = link_target(el)
-        # kramdown resolves the references in a markdown link itself, but keeps a
-        # raw tag's attribute as written.
-        raw = el.type == :html_element
-        href = decode_attribute(href) if raw && href
-        next if href.nil? || href.empty? || href.match?(EXTERNAL)
+        next if href.nil?
 
-        out << build_link(href, source, dir, el.options[:location] || 1, decoded: raw)
+        href = site_href(href)
+        next if href.empty? || href.match?(EXTERNAL)
+
+        out << build_link(href, source, dir, el.options[:location] || 1)
       end
       out
+    end
+
+    # The href a reader of the site follows. kramdown keeps a target as written, in a markdown link and a raw tag
+    # alike, and writes it out through its own attribute escaper: a well-formed character reference is left for
+    # the browser and any other `&` becomes `&amp;`. The browser then reads it with HTML5 rules, so `&eacute;.md`
+    # is `é.md`, the unterminated `&eacute.md` is itself, and a reference to a surrogate is one U+FFFD.
+    def site_href(value)
+      decode_attribute(KRAMDOWN_HTML.escape_html(value, :attribute))
     end
 
     # The cmark-gfm oracle. commonmarker (comrak) resolves reference links,
     # character references, and nested/image-wrapped links exactly as GitHub's
     # renderer does, so its link set is what a reader on the GitHub file view can
     # actually click. Its urls arrive already entity-decoded (`a&sol;b.md` ->
-    # `a/b.md`), so skip build_link's entity pass: a second pass would turn the
-    # literal `a&amp;b.md` from a double-encoded destination into `a&b.md`.
+    # `a/b.md`), and are used as they are: a second pass would turn the literal
+    # `a&amp;b.md` from a double-encoded destination into `a&b.md`.
     # Raw <a>/<img> tags are markdown-inert to comrak's link nodes but live links
     # on the GitHub page, so their targets are pulled from the raw HTML too.
     def links_cmark(text, source:)
@@ -399,7 +408,7 @@ module AnchorContract
         next if href.empty? || href.match?(EXTERNAL)
 
         line = (node.source_position || {})[:start_line] || 1
-        out << build_link(href, source, dir, line, decoded: true)
+        out << build_link(href, source, dir, line)
       end
       out
     end
@@ -412,7 +421,7 @@ module AnchorContract
       raw_html_targets(node).filter_map do |href, line|
         next if href.empty? || href.match?(EXTERNAL)
 
-        build_link(href, source, dir, line, decoded: true)
+        build_link(href, source, dir, line)
       end
     end
 
@@ -451,15 +460,11 @@ module AnchorContract
       end
     end
 
-    def build_link(href, source, dir, line, decoded: false)
-      # Character references are resolved by the renderer, not the browser, so
-      # they are undone before the URL is read: `foo&amp;bar.md` is the file
-      # `foo&bar.md` — unless the HTML parser has resolved them already. Percent
-      # escapes are the browser's and are decoded per component below, after `#`
-      # has done its splitting.
-      # Split on the bytes: a character reference to a surrogate leaves invalid UTF-8, and only an
-      # invalid path names nothing. The query and fragment are not the file's name.
-      target, fragment = (decoded ? href : CGI.unescapeHTML(href)).b.split('#', 2)
+    # href is the URL as the page carries it, character references already resolved by each extractor
+    # (`foo&amp;bar.md` is the file `foo&bar.md`). Percent escapes are the browser's and are decoded per
+    # component below, after `#` has done its splitting.
+    def build_link(href, source, dir, line)
+      target, fragment = href.split('#', 2)
       # A query string is stripped by every renderer before the path is resolved,
       # and percent escapes are decoded, so `foo%20bar.md?v=1` is the tracked
       # file `foo bar.md`.
