@@ -52,9 +52,14 @@ module AnchorContract
 
   # A report line can carry a NUL or another control character (a decoded href or fragment, a tracked file
   # name, a parser's message). It is printed escaped (`\u0000`, `\e`), the way String#inspect writes it, so the
-  # report stays one readable line.
+  # report stays one readable line. A format character (a bidi override, a zero-width space), which inspect
+  # leaves as it is, is written `\u202E`, so it cannot reorder or hide the text around it.
   def self.printable(str)
-    str.gsub(/[^[:print:]]/) { |char| char.inspect[1..-2] }
+    str.gsub(/[^[:print:]]|\p{Cf}/) do |char|
+      next char.inspect[1..-2] unless char.match?(/\p{Cf}/)
+
+      char.ord > 0xFFFF ? format('\\u{%X}', char.ord) : format('\\u%04X', char.ord)
+    end
   end
 
   # A construct that is not itself a broken link, but takes one out of reach of
@@ -161,8 +166,10 @@ module AnchorContract
     RAW_HTML_MESSAGE = 'raw <a>/<img> tag the site and GitHub read differently — usually an unquoted ' \
                        'attribute value, which renders as literal text on the site and as a live ' \
                        'link on GitHub, leaving its target unchecked'
-    BOM_MESSAGE = 'byte-order mark before the front matter — Jekyll then leaves the front matter ' \
-                  'unstripped and renders it as body text; delete the BOM'
+    BOM_MESSAGE = 'byte-order mark before the front matter — Jekyll then doesn\'t see the front matter and ' \
+                  'copies the page unrendered; delete the BOM'
+    # Jekyll's own test for a page it renders (Utils.has_yaml_header?): an opening `---` line, closed or not.
+    JEKYLL_YAML_HEADER = /\A---\s*\r?\n/.freeze
 
     # cmark-gfm options mirroring GitHub's own render pipeline (GFM extensions on,
     # footnotes on, smart punctuation off) so the second oracle sees links and
@@ -175,6 +182,43 @@ module AnchorContract
     }.freeze
     # kramdown's own attribute escaper, the one its HTML converter writes every href and src with.
     KRAMDOWN_HTML = Object.new.extend(Kramdown::Utils::Html).freeze
+    # What kramdown-parser-gfm raises on a heading or definition term it cannot build: TypeError gathering its text
+    # when a reference is at or past 2**31 (`&#x80000000;`, `&#99999999999999999999;`), in either parse;
+    # ArgumentError slugging a heading that holds a surrogate or a code point past U+10FFFF, in the parse with ids.
+    SITE_PARSE_ERRORS = [ArgumentError, TypeError].freeze
+    # Prepended to one parser instance: the two steps of kramdown's own parse that raise those errors record the
+    # line of the element they were working on. Nothing is restated, so the line is the parser's own.
+    # ceiling: the hooks name gem methods (update_raw_text, generate_gfm_header_id); if they are renamed, the
+    # page is still reported, on line 1, and the line test fails.
+    module SiteParseLocator
+      attr_reader :failed_line
+
+      def update_raw_text(item)
+        super
+      rescue *SITE_PARSE_ERRORS
+        @failed_line ||= item.options[:location]
+        raise
+      end
+
+      def generate_gfm_header_id(text)
+        super
+      rescue *SITE_PARSE_ERRORS
+        @failed_line ||= steward_header_location(root, text)
+        raise
+      end
+
+      private
+
+      # The heading whose own raw_text is being slugged (update_elements passes that very object).
+      def steward_header_location(element, text)
+        return element.options[:location] if element.type == :header && element.options[:raw_text].equal?(text)
+
+        element.children.each { |child| (line = steward_header_location(child, text)) && (return line) }
+        nil
+      end
+    end
+    INVALID_UTF8_MESSAGE = 'not valid UTF-8 — both renderers read the file as UTF-8, so its text and anchors ' \
+                           'are not what was written; save it as UTF-8'
 
     module_function
 
@@ -234,6 +278,18 @@ module AnchorContract
       Nokogiri::HTML5.fragment(html).css(HEADING_TAGS).filter_map { |el| el['id'] }.reject(&:empty?)
     end
 
+    # A file that isn't valid UTF-8, on the line of its first bad byte. Every reader below needs valid text, and
+    # neither renderer reads it as written, so it is reported before any of them runs.
+    def invalid_encoding(text, source:)
+      return if text.valid_encoding?
+
+      # counted on bytes, with a lone CR as a line end, the way the renderers count lines
+      line = text.b.gsub(/\r\n?/n, "\n").each_line.find_index do |l|
+        !l.dup.force_encoding(Encoding::UTF_8).valid_encoding?
+      end
+      Rejection.new(source: source, line: line + 1, message: INVALID_UTF8_MESSAGE)
+    end
+
     # Constructs the two renderers disagree about. Each one hides a link or an
     # anchor from the gate, so the document is rejected rather than scanned.
     #
@@ -245,9 +301,12 @@ module AnchorContract
       out = []
       out << Rejection.new(source: source, line: 1, message: BOM_MESSAGE) if text.start_with?(BOM)
       # Every check below parses the page with kramdown, so a page that parse fails on is reported alone.
-      root = document(text, auto_ids: false).root
-      unbuildable = site_parse_failure(text, root, source: source)
-      return out << unbuildable if unbuildable
+      begin
+        root = document(text, auto_ids: false).root
+        document(text)
+      rescue *SITE_PARSE_ERRORS => e
+        return out << site_parse_failure(text, e, source: source)
+      end
 
       line = 1
       declined = []
@@ -264,32 +323,30 @@ module AnchorContract
       out
     end
 
-    # A page the site's parser raises on. kramdown-parser-gfm cannot slug a heading whose text holds a character
-    # reference to a surrogate (`&#xD800;`) or past U+10FFFF. Jekyll renders with the same parser, so its build
-    # fails on the page (one with front matter; Jekyll copies a page without it as it is), while GitHub slugs the
-    # heading. No anchor into it holds on both, so the page is reported, on the line of the first heading the
-    # parser fails on by itself.
+    # A page the site's parser raises on. kramdown-parser-gfm cannot build a heading or definition term whose text
+    # holds a character reference to a surrogate (`&#xD800;`) or past U+10FFFF. Jekyll builds a page with front
+    # matter through the same parser, so its build fails on this one (a page without front matter it copies as it
+    # is), while GitHub renders it. No anchor into it holds on both, so the page is reported, on the line the
+    # parser records for the element it failed on.
     #
-    # ceiling: only an ArgumentError from the id-generating parse is reported, the error kramdown raises here;
-    # any other parse error still stops the lint with its backtrace. Add its class here if one turns up.
-    # root is the page parsed without ids, which parses: only the id-generating parse is rescued.
-    def site_parse_failure(text, root, source:)
-      document(text)
-      nil
-    rescue ArgumentError => e
-      line = nil
-      walk(root) do |el|
-        next unless el.type == :header
+    # ceiling: only SITE_PARSE_ERRORS are reported; any other parse error still stops the lint with its
+    # backtrace. Add its class there if one turns up.
+    def site_parse_failure(text, error, source:)
+      site = text.match?(JEKYLL_YAML_HEADER) ? "so Jekyll's build fails on it" : 'so the site cannot render it'
+      Rejection.new(source: source, line: site_parse_failure_line(text) || 1,
+                    message: "the site's markdown parser fails on this page (#{error.class}: #{error.message}), " \
+                             "#{site} — a heading or definition term holding a character reference to a surrogate " \
+                             '(&#xD800;) or past U+10FFFF is the known cause; replace or drop the reference')
+    end
 
-        document("# #{el.options[:raw_text]}\n")
-      rescue ArgumentError
-        line = el.options[:location]
-        break
-      end
-      Rejection.new(source: source, line: line || 1,
-                    message: "the site's markdown parser fails on this page (#{e.message}), so the Jekyll " \
-                             'build fails on it too — a heading holding a character reference to a surrogate ' \
-                             'such as &#xD800; is the known cause; replace or drop the reference')
+    # The same parse document runs, on a parser that records where it raised.
+    def site_parse_failure_line(text)
+      parser = Kramdown::Parser::GFM.send(:new, strip_front_matter(text), {})
+      parser.singleton_class.prepend(SiteParseLocator)
+      parser.parse
+      nil
+    rescue *SITE_PARSE_ERRORS
+      parser&.failed_line
     end
 
     # The renderer comparison names the tag's own line, so it is preferred. The
@@ -385,7 +442,8 @@ module AnchorContract
     def dedup_links(links)
       seen = {}
       # A nil path names nothing, so two such links don't resolve alike: they are kept apart by href. Every
-      # extractor stores the href as its page carries it, so the two renderers' copies of one link still merge.
+      # extractor stores the href as its page carries it, so the two renderers' copies of one link merge when
+      # both pages carry it alike.
       links.each { |link| seen[[link.source, link.path || [:unnamed, link.href], link.fragment]] ||= link }
       seen.values
     end

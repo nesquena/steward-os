@@ -362,6 +362,15 @@ class LinksTest < Minitest::Test
                          dirs: Set['docs', 'docs/lifecycle']).map(&:rule)
   end
 
+  # A raw tag's unterminated reference: the site's page escapes the `&`, so its reader follows `&eacute.md`, while
+  # GitHub decodes it to `é.md`. Both are links on a page, so a tracked `é.md` alone leaves the site's broken.
+  def test_a_raw_tag_is_read_the_way_each_page_carries_it
+    [%(<a href="&eacute.md">x</a>\n), %(<img src="&eacute.md">\n)].each do |text|
+      assert_equal ['&eacute.md', 'é.md'], merged(text).map(&:href).sort, text
+      assert_equal [:missing], rules(merged(text), Set['docs/lifecycle/é.md']), text
+    end
+  end
+
   # Each renderer's reading of the one link in a document.
   def each_reading(text)
     yield 'links', links(text)
@@ -804,12 +813,14 @@ class CheckTest < Minitest::Test
              check(link(path: 'docs/ghost.md', href: "ghost\u0001.md")),
              check(link(path: "docs/gh\eost.md", source: "in\edex.md"))].map { |found| found.first.to_line }
     lines << AnchorContract::Rejection.new(source: "a\e[2J.md", line: 1, message: "write d\u0000/x.md").to_line
+    lines << check(link(path: 'docs/ghost.md', href: "a\u202Edm.ghost\u{E0001}")).first.to_line
     lines.each { |line| refute_match(/[^[:print:]]/, line) }
     assert_includes lines[0], 'produces the anchor #a\u0000b'
     assert_includes lines[1], '#\e[2J on directory docs/reference'
     assert_includes lines[2], '-> ghost\u0001.md'
     assert_includes lines[3], 'in\edex.md:1'
     assert_includes lines[4], 'a\e[2J.md:1 — write d\u0000/x.md'
+    assert_includes lines[5], '-> a\u202Edm.ghost\u{E0001}'
   end
 end
 
@@ -1027,13 +1038,62 @@ class UnportableTest < Minitest::Test
     assert_empty rejections(%(# Real\n\n```html\n<h2 id="phantom">x</h2>\n```\n))
   end
 
-  # kramdown-parser-gfm raises slugging a heading that holds a reference to a surrogate, and Jekyll renders with
-  # it, so the Jekyll build fails on the page while GitHub slugs it `a--b`. No anchor holds on both: the heading is
-  # reported on its own line.
-  def test_a_heading_the_site_parser_cannot_slug_is_rejected
-    found = rejections("# Fine\n\n## a &#xD800; b\n")
-    assert_equal [3], found.map(&:line)
-    assert_match(/Jekyll build fails/, found.first.message)
+  # kramdown-parser-gfm raises building a heading that holds a reference to a surrogate or past U+10FFFF, and
+  # Jekyll renders with it, so Jekyll cannot build the page while GitHub renders the heading. No anchor holds on
+  # both: the heading is reported on its own line, ATX or Setext, after front matter or not.
+  def test_a_heading_the_site_parser_cannot_build_is_rejected
+    pages = { "# Fine\n\n## a &#xD800; b\n" => 3,
+              "# Fine\n\n## a &#99999999999999999999; b\n" => 3,
+              "---\nt: 1\n---\n# Fine\n\na &#x110000; b\n---\n" => 6,
+              "# Fine\n\n```\n# a &#xD800; b\n```\n\n# b &#xD800;\n" => 7,
+              "# L\n\n- item\n\n  ## a &#xD800; b\n" => 5,
+              "- a\n\n  b &#xD800;\n  ---\n" => 3,
+              "# Fine\r\r## a &#xD800; b\r" => 3,
+              "---\rt: 1\r---\r# Fine\r\r## a &#xD800; b\r" => 6,
+              "# Fine\n\n{::comment}\n## a &#xD800;\n{:/comment}\n\n## b &#xD800;\n" => 7,
+              "# Fine\n\n$$\n## a &#xD800;\n$$\n\n## b &#xD800;\n" => 7,
+              "# Fine\n\nterm\n: ## a &#xD800; b\n" => 4,
+              "# Fine\n\n## `&#xD800;` code\n\n## b &#xD800;\n" => 5,
+              "# Fine\n\n## a &amp;#xD800; b\n\n## b &#xD800;\n" => 5,
+              "# Fine\n\n<div markdown=\"1\">\n## a &#xD800;\n</div>\n\n## b &#xD800;\n" => 7,
+              "# Fine\n\n## a &#xD800; {#x}\n\n## b &#xD800;\n" => 5,
+              "# Fine\n\n## a &#xD800;\n{: #x}\n\n## b &#xD800;\n" => 6,
+              "# Fine\n\n<div markdown=\"1\">\n## a &#99999999999999999999;\n</div>\n\n## b\n" => 4,
+              "# Fine\n\n{::comment}\n## a &#xD800;\n{:/comment}\n\n## b &#x80000000;\n" => 7,
+              "# Fine\n\n$$\n## a &#99999999999999999999;\n$$\n\n## b &#99999999999999999999;\n" => 7,
+              "# Fine\n\nterm\n: ## a &#99999999999999999999; b\n" => 4 }
+    pages.each do |text, line|
+      found = rejections(text)
+      assert_equal [line], found.map(&:line), text.inspect
+      assert_match(/site's markdown parser fails/, found.first.message)
+    end
+  end
+
+  # A definition term fails the same way, in both parses; the parser records it on its definition's line.
+  def test_a_definition_term_the_site_parser_cannot_build_is_rejected
+    found = rejections("# Fine\n\nterm &#99999999999999999999;\n: def\n")
+    assert_equal [4], found.map(&:line)
+    assert_match(/heading or definition term/, found.first.message)
+  end
+
+  # Jekyll builds a page with front matter through kramdown and copies one without it as it is, so only the first
+  # fails the build.
+  def test_the_parse_failure_message_names_what_happens_to_the_page
+    ["---\nt: 1\n---\n## a &#xD800; b\n", "---\n\n# Title\n\n## a &#xD800; b\n"].each do |text|
+      assert_match(/Jekyll's build fails on it/, messages(text).first, text)
+    end
+    ["## a &#xD800; b\n", "---\rt: 1\r---\r## a &#xD800; b\r"].each do |text|
+      assert_match(/the site cannot render it/, messages(text).first, text.inspect)
+    end
+  end
+
+  def test_a_file_that_is_not_utf8_is_rejected_on_its_first_bad_line
+    text = "# Fine\n\na \xFF b\n".dup.force_encoding('UTF-8')
+    found = AnchorContract::Extract.invalid_encoding(text, source: 'docs/bad.md')
+    assert_equal [3, AnchorContract::Extract::INVALID_UTF8_MESSAGE], [found.line, found.message]
+    assert_nil AnchorContract::Extract.invalid_encoding("# Fine\n", source: 'docs/ok.md')
+    cr = "# Fine\r\ra \xFE b\r".dup.force_encoding('UTF-8')
+    assert_equal 3, AnchorContract::Extract.invalid_encoding(cr, source: 'docs/cr.md').line
   end
 end
 
@@ -1303,10 +1363,12 @@ class DiscoveryTest < Minitest::Test
       assert_includes out, '1 relative links, 1 anchors'
 
       write(dir, 'page.md', "# Fine\n\n## a &#xD800; b\n")
+      File.binwrite(File.join(dir, 'bad.md'), "# Fine\n\na \xFF b\n")
       add_all(dir)
       out = lint(dir)
       assert_equal 1, $?.exitstatus, out
-      assert_match(/page\.md:3 — .*Jekyll build fails/, out)
+      assert_match(/page\.md:3 — .*the site cannot render it/, out)
+      assert_match(/bad\.md:3 — not valid UTF-8/, out)
       refute_match(/input string invalid \(ArgumentError\)|\.rb:\d+:in /, out, 'a report, not a backtrace')
     end
   end

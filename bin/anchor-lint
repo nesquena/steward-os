@@ -54,6 +54,10 @@ links = []
 rejections = []
 docs.each do |rel|
   text = File.read(File.join(ROOT, rel), encoding: 'UTF-8')
+  if (unreadable = AnchorContract::Extract.invalid_encoding(text, source: rel))
+    rejections << unreadable
+    next
+  end
 
   if excluded.include?(rel)
     # GitHub is the only renderer. Its link set and its heading ids, full stop.
@@ -82,7 +86,7 @@ end
 # where extraction and the page part ways, so every link and id read out of the
 # same document is suspect until they are gone.
 unless rejections.empty?
-  warn "FAILED — #{rejections.size} construct(s) the site and GitHub render differently:"
+  warn "FAILED — #{rejections.size} problem(s) that keep links or anchors from being checked:"
   rejections.each { |r| warn r.to_line }
   exit 1
 end
