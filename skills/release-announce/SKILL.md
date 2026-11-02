@@ -33,7 +33,7 @@ the agent prepares and a human keys the post. Steward role.
 > skill *renders* an announcement from the changelog; it never composes original prose. If there's
 > no changelog entry and release tag for this release, stop — there is nothing to announce. Whether
 > `release-pipeline` step 5 has passed is something the job can't see, so it proposes anyway: the
-> human checks it before step 6, and a row for a release step 5 hasn't passed waits.
+> human checks it before this skill's step 6, and a row for a release that step hasn't passed waits.
 
 > Config: read the release model and changelog from [`config.yaml`](../../setup/config.template.yaml)
 > (`project.release_model`). `autonomy.announcements` is always `C`, and the config lint refuses
@@ -91,12 +91,14 @@ decision row carries a key unique to it, and its decision record names that key.
    release has failed posts (step 1), the new row names the failed records it retries. The row takes
    no edits: to change the text, change the changelog, which changes the stamp and re-proposes.
 6. **Approve: the post step.** The human runs it on an open row, and only once `release-pipeline`
-   step 5 has passed for the release. The human takes that from the live version and, for an
-   artifact step 4 covers, from the digest step 4 kept and any comparison receipt step 5 kept,
-   outside anything a contributor can write; never from a PR thread, the changelog or the row. The
-   job can't see step 5, so a row it proposes before then waits. It refuses on a closed row, or a
-   row that already has a decision record: a row takes one
-   decision. It re-renders and compares against the stamp, and refuses on a mismatch or on a
+   step 5 has passed for the release, checked as that step says: the running version where the
+   project deploys and, for an artifact `release-pipeline` step 4 covers, the digest users get now
+   against the tested candidate's kept digest, plus any comparison receipt that step requires. Read
+   the kept digest and receipt from where `release-pipeline` keeps them, outside anything a
+   contributor can write; never from a PR thread, the changelog or the row. The job can't see
+   `release-pipeline` step 5, so a row it proposes before then waits. It refuses on a closed row,
+   or a row that already has a decision record: a row takes one decision. It re-renders and compares
+   against the stamp, and refuses on a mismatch or on a
    rejection at that stamp. Immediately before sending, it refuses when the release is announced or
    the fixed channel holds a bot announcement of it, whatever the stamp. If the channel holds any
    other post naming the tag since the tag was cut, it shows those posts and sends only once the

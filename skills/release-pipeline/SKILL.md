@@ -96,7 +96,8 @@ pulled or deployed, so a merge isn't
    real **and** (if you deploy) the running version serves the change **and** (for an artifact of
    the kind step 4 covers) the artifact is the tested candidate, or differs from it only as the
    check below allows. Re-derive the live version; never claim shipped from a passed gate alone.
-   For an artifact of the kind step 4 covers, take its digest from what users actually get: the digest the registry serves and clients verify, or else
+   For an artifact of the kind step 4 covers, take its
+   digest from what users actually get: the digest the registry serves and clients verify, or else
    one you compute over a fresh download (not a checksum the project prints, or the publish
    tooling's output). Confirm it matches the tested candidate's from step 4, for this release
    commit, with the same algorithm (recomputing the kept candidate's digest in the published
