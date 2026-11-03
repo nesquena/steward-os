@@ -167,5 +167,6 @@ trailer exists; it does **not** prove the *name* is right.
 - A published artifact of the kind step 4 covers is the candidate that was tested, or differs from it
   only as step 5 allows.
 - The author is credited identically on every surface, and the handle is the real author of the work.
-- The PR and its issues are closed with version + thanks; the trust ledger has one terminal event. With `trust` listed under `not_applicable`, no ledger event was written.
+- The PR and its issues are closed with version + thanks; the trust ledger has one terminal event.
+  With `trust` listed under `not_applicable`, no ledger event was written.
 - No branch/worktree left dangling.

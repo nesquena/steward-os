@@ -76,8 +76,8 @@ steward-os ships no adapter and names no tracker.
 - **Skills already say what they need.** Each `SKILL.md` names the facts it reads.
 - **A missing fact stays missing.** If your tracker cannot supply a fact, the skill reports it as missing
   and never treats it as zero.
-- **Write gates don't move.** Every write keeps its band, from `autonomy:` or from the skill that makes it, whatever the tool.
-  A private tracker doesn't lower a band.
+- **Write gates don't move.** Every write keeps its band, from `autonomy:` or from the skill that
+  makes it, whatever the tool. A private tracker doesn't lower a band.
 
 ## 4. Prove it with one supervised loop (Level 1)
 
