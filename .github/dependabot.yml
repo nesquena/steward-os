@@ -1,7 +1,8 @@
 version: 2
 updates:
   # Workflow actions are pinned to commit SHAs with a version comment;
-  # Dependabot bumps both. One grouped PR a week at most.
+  # Dependabot bumps both. Version updates come as one grouped PR a week, with
+  # at most two open; security updates are separate and not limited by this.
   - package-ecosystem: github-actions
     directory: /
     schedule:

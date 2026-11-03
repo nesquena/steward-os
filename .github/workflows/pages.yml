@@ -11,7 +11,8 @@ on:
 permissions:
   contents: read
 
-# Allow one concurrent deployment; cancel in-progress runs for the same ref.
+# One deployment at a time. A running deploy is never cancelled; a newer push
+# replaces a run that is still pending.
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -27,11 +28,12 @@ jobs:
     needs: [ci, lint]
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # configure-pages with enablement needs pages: write. The OIDC token that
+    # configure-pages only reads the existing Pages site, for base_path. Creating
+    # a site would need a token other than GITHUB_TOKEN. The OIDC token that
     # deploys stays with the deploy job.
     permissions:
       contents: read
-      pages: write
+      pages: read
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1.336.0
@@ -40,8 +42,6 @@ jobs:
           bundler-cache: true
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
         id: pages
-        with:
-          enablement: true
       - name: Build with Jekyll
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
