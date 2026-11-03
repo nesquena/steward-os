@@ -1,5 +1,8 @@
 name: Build and deploy docs site
 
+# Deploys only after the same gates a pull request runs (ci.yml and lint.yml)
+# pass on this commit. A manual dispatch runs them too.
+
 on:
   push:
     branches: [main]
@@ -7,8 +10,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # Allow one concurrent deployment; cancel in-progress runs for the same ref.
 concurrency:
@@ -16,15 +17,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  lint:
+    uses: ./.github/workflows/lint.yml
+
   build:
+    needs: [ci, lint]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # configure-pages with enablement needs pages: write. The OIDC token that
+    # deploys stays with the deploy job.
+    permissions:
+      contents: read
+      pages: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1.336.0
         with:
           ruby-version: "3.3"
           bundler-cache: true
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
         id: pages
         with:
           enablement: true
@@ -32,14 +46,18 @@ jobs:
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
           JEKYLL_ENV: production
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

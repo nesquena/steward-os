@@ -1,0 +1,12 @@
+version: 2
+updates:
+  # Workflow actions are pinned to commit SHAs with a version comment;
+  # Dependabot bumps both. One grouped PR a week at most.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    open-pull-requests-limit: 2
