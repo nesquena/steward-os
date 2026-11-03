@@ -100,6 +100,8 @@ labels:                         # declared taxonomy for the deterministic `label
   # Issues: area/type from structured issue-template fields (never the free-text body); size is N/A.
   # The allowlist label-sync may apply is exactly the label values named below.
   size: { by: diff_lines,   buckets: { S: 50, M: 200, L: 500, XL: null } }  # PRs only; null = open-ended top bucket
+  # These maps are steward-os's own: replace their entries with your paths and title prefixes,
+  # or use `map: {}`.
   area: { by: paths,        map: { "skills/**": "area:skills", "docs/**": "area:docs", "setup/**": "area:setup" } }
   type: { by: title_prefix, map: { feat: "type:feature", fix: "type:bug", docs: "type:docs", chore: "type:chore" } }
 

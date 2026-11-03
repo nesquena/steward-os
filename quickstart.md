@@ -54,6 +54,11 @@ Your agent picks these up on next launch. (Using a different runtime? Drop them 
 skills, or point its rules file at them — the `SKILL.md` bodies are the same.) They're the
 procedures the setup interview and the lifecycle playbooks tell the agent to load.
 
+Keep the steward-os checkout in place and tell your agent where it is (for example in your rules
+file). The skills link to its
+`setup/` and `docs/` with paths written for the checkout's layout (like
+`../../setup/setup-interview.md`), so from `.claude/skills/` the agent reads them in the checkout.
+
 ## 3. Wire it to your project
 
 Have your agent load the **`project-system-setup`** skill and tell it:
@@ -63,6 +68,10 @@ Have your agent load the **`project-system-setup`** skill and tell it:
 The agent works through the [setup interview](setup/setup-interview.md) — your repos, scope anchors,
 CI, review tools, autonomy posture — and writes a `config.yaml` for your project. It asks only what
 it needs, accepts "skip" for anything optional, and never guesses.
+
+Keep `config.yaml` on your trunk or outside the repo, and have the agent read it from there, never
+from a pull request's checkout: the gates read it
+([operator-controlled](docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)).
 
 To see a finished one, read Steward's own
 [`setup/config.yaml`](https://github.com/nesquena/steward-os/blob/main/setup/config.yaml), which
@@ -84,9 +93,18 @@ steward-os ships no adapter and names no tracker.
 Pick an open issue or PR. Ask the agent to run the matching playbook **in a supervised session** —
 you watch, it proposes, you approve every public write:
 
-- An issue → load `issue-triage`, ask it to triage that issue and draft (not post) a reply.
+- An issue → load `issue-triage`, ask it to triage that issue and draft (not post) a reply. Pick
+  one no one has answered yet: the skill drafts replies only for those (an answered issue is still
+  triaged).
 - A PR → load `pr-triage`, ask it to run the [fit screen](docs/lifecycle/pr-lifecycle.md#0-fit--scope-screen)
   and summarize.
+
+`issue-triage` judges issues opened after its first run, plus any you name in your request, so your
+practice issue is triaged too (judged, or halted or escalated as the skill says). The skills record
+judgments on a scoreboard and keep marks in their own state. Until you've set those up, tell the
+agent where to keep them (state somewhere private that only you and your agent write; the board no
+more visible than your issues), or to show them in the session, in which case nothing carries over
+to later runs.
 
 Nothing is posted without your say-so. That's Level 1: the playbooks run in supervised sessions, so
 you get value on day one without handing over any autonomy.
