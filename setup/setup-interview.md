@@ -41,7 +41,8 @@ config can't both say a block doesn't apply and configure it.
 Rules for the marker:
 - Shape answers never skip question 20 (the security contact) or question 22 (the alarms route).
   Marking `issue_capture` exempts nothing from the vulnerability divert, which always needs a
-  private destination.
+  private destination. The lint then warns that `security_contact` and `alarms_to` can't be
+  verified as private: confirm each with the human.
 - "Doesn't apply" is for a block the project never used. A block with history stays disabled, not
   marked: deleting it would lose its paths and state, and capture state is the audit trail for
   diverted vulnerabilities.
@@ -51,8 +52,9 @@ Rules for the marker:
   then stands, and that is expected: warnings don't fail the lint.
 - The shape answers are not stored. A re-run asks them again. The marker keeps the outcome.
 - Ask where the scoreboard lands when A (public) or D (separate tracker) makes it a real question.
-  The board and any digest of its rows go only where they are no more visible than the issues they list. If no acceptable
-  location exists, or the question is skipped, set `scoreboard-refresh` to `enabled: false` and
+  The board, its machine-readable artifact and any digest of its rows go only where they are no
+  more visible than the issues they list; history counts, so re-check before any visibility change.
+  If no acceptable location exists, or the question is skipped, set `scoreboard-refresh` to `enabled: false` and
   leave a TODO naming the location, since no config key holds it. Nothing mechanical checks this
   rule. On a triage-only config, the divert's level-3 fallback index is not guarded by
   `index_not_public`: tell the human.
@@ -158,8 +160,8 @@ The system can't screen PRs/issues for fit without knowing what "fits."
     heartbeat.) Start with a few; add as you climb the autonomy ladder. →
     [scheduled jobs](../docs/playbooks/scheduled-jobs.md). `chat-monitor` and `mentions-sweep` have
     no skill yet; the config lint refuses them enabled.
-    If the scoreboard has no acceptable location (Section 0), set `scoreboard-refresh` to
-    `enabled: false`.
+    If the scoreboard has no acceptable location, or that question was skipped (Section 0), set
+    `scoreboard-refresh` to `enabled: false`.
 22. **How does steward output reach you?** Default is a pull-based index you check (discovery);
     pushing a digest to a chat channel is an optional add-on. Also: where should watchdog alarms go?
     → [the output loop](../docs/playbooks/output-loop.md).

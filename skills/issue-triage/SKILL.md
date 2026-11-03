@@ -137,6 +137,6 @@ no judgment. "New" keeps its meaning in a judgment-only run: it adds no backfill
   more than ten edited and ten rubric-only-stale issues were re-judged. A re-judge that wrote
   nothing left only an attempt record, in this skill's state.
 - Every new issue this run finished carries a handled mark; one it didn't finish carries none.
-- Un-replied issues got a grounded reply or a deliberate skip.
+- Un-replied issues got a grounded reply or a deliberate skip (a judgment-only run skips every reply).
 - Labels are add-only and didn't override humans.
 - The dropped-ball list was surfaced (not acted on).

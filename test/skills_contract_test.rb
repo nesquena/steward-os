@@ -328,11 +328,21 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_board_location_has_a_fallback
     assert_includes section0, 'set `scoreboard-refresh` to `enabled: false` and leave a TODO naming the location'
+    assert_includes read('setup', 'setup-interview.md'),
+                    'or that question was skipped (Section 0), set `scoreboard-refresh` to `enabled: false`.'
+    assert_includes setup_step(5), 'If Section 0 left `scoreboard-refresh` disabled for want of a location, keep it ' \
+                                   'disabled and carry the TODO.'
+  end
+
+  def test_lint_warns_the_divert_destinations_are_unverified
+    assert_includes section0, "The lint then warns that `security_contact` and `alarms_to` can't be verified as " \
+                              'private: confirm each with the human.'
   end
 
   def test_board_goes_only_where_the_issues_are_as_private
-    assert_includes section0, 'The board and any digest of its rows go only where they are no more visible than ' \
-                              'the issues they list.'
+    assert_includes section0, 'The board, its machine-readable artifact and any digest of its rows go only where ' \
+                              'they are no more visible than the issues they list; history counts, so re-check ' \
+                              'before any visibility change.'
   end
 
   def test_setup_verification_checks_the_marker
@@ -367,6 +377,7 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_judgment_only_run_keeps_the_divert
     t = read('skills', 'issue-triage', 'SKILL.md')
+    t = t[t.index('## Steps')...t.index(' 1. **')]
     assert_includes t, 'A judgment-only run is a person\'s supervised run: it records judgments and skips steps 3, 5 ' \
                        'and 6 (the reply, the labels and milestone, the sprint-candidate mark).'
     assert_includes t, 'Step 2, the vulnerability check, always runs: skipping the public steps never skips step 2, ' \
@@ -379,9 +390,14 @@ class ProjectShapeContractTest < Minitest::Test
                     'If `labels` is listed under `not_applicable`, skip this step and apply no label or milestone.'
   end
 
+  # Like skill_step, but stops at the next `## ` heading so a sentence moved out of the step fails the pin.
+  def skill_step_only(skill, num)
+    skill_step(skill, num).split(/ ## /).first
+  end
+
   def test_marked_trust_means_no_ledger_update
     marked = 'If `trust` is listed under `not_applicable`, skip the ledger update and record no trust event.'
-    assert_includes skill_step('release-pipeline', 6), marked
+    assert_includes skill_step_only('release-pipeline', 6), marked
     verification = read('skills', 'release-pipeline', 'SKILL.md').split('## Verification').last
     assert_includes verification, 'With `trust` listed under `not_applicable`, no ledger event was written.'
   end
@@ -409,13 +425,14 @@ class ProjectShapeContractTest < Minitest::Test
     sentence = 'The board, its machine-readable artifact and any digest of its rows go only where they are no more ' \
                'visible than the issues they list; history counts, so re-check before any visibility change. ' \
                'Nothing mechanical enforces this rule.'
-    assert_includes skill_step('triage-scoreboard', 7), sentence
+    assert_includes skill_step_only('triage-scoreboard', 7), sentence
     assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'), sentence
   end
 
   def test_a_fact_missing_on_some_items_is_no_zero
     pitfalls = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Pitfalls').last.split('## Verification').first
-    assert_includes pitfalls, 'a fact missing on some items, not all, is reported and never treated as zero. ' \
+    assert_includes pitfalls, '**A missing fact is not a zero.** A fact missing on some items, not all, is reported ' \
+                              'and never treated as zero. ' \
                               'The inert-dimension rule covers a fact missing on every item.'
   end
 
@@ -437,7 +454,7 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_tracker_section_keeps_the_bands
     s = tracker_section
-    assert_includes s, 'Every write keeps its band in `autonomy:`, whatever tool makes it. ' \
+    assert_includes s, 'Every write keeps its band, from `autonomy:` or from the skill that makes it, whatever the tool. ' \
                        "A private tracker doesn't lower a band."
     assert_includes s, 'steward-os ships no adapter and names no tracker.'
   end
@@ -458,14 +475,15 @@ class ProjectShapeContractTest < Minitest::Test
     cols = lines[head].split('|').map(&:strip)[1..]
     skills_at = cols.index('Skills') or flunk('Skills column missing')
     assert_includes cols, 'Blocks usually marked'
-    lines[(head + 2)..].take_while { |l| l.start_with?('|') }.map { |l| l.split('|').map(&:strip)[1..] }
+    lines[(head + 1)..].reject { |l| l =~ /\A\|\s*-/ }.take_while { |l| l.start_with?('|') }.map { |l| l.split('|').map(&:strip)[1..] }
                        .each { |r| r.define_singleton_method(:skills) { self[skills_at] } }
   end
 
   def test_shape_table_has_three_shapes
     t = read('docs', 'reference', 'adoption-levels.md')
+    labels = shape_rows.map(&:first)
     ['public with outside reporters and tags', 'private team with a separate tracker', 'private solo'].each do |s|
-      assert_includes t, s
+      assert_includes labels, s
     end
     assert_operator shape_rows.size, :>=, 3
     assert_operator t.index('| Shape '), :<, t.index('_Related:')
@@ -486,8 +504,10 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes row.skills, '`triage-scoreboard`'
     assert_includes row.skills, '`issue-triage`'
     %w[community issue_capture labels trust].each { |b| assert_includes row.join(' '), "`#{b}`" }
+    levels = read('docs', 'reference', 'adoption-levels.md')
+    assert_includes levels, 'That run writes judgments and skips replies, labels and sprint-candidate marks.'
+    assert_includes levels, 'The vulnerability divert still runs.'
   end
-
 end
 
 # --- Injection guard: the block every untrusted-reading skill opens with ---

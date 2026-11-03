@@ -28,7 +28,8 @@ and produces the project's `config.yaml` from the
    name the checkout path). The lint needs Ruby. A lint that can't run becomes a TODO, never a pass.
 5. **Emit a TODO list** of skipped sections and a **recommended starting job set** based on the
    autonomy posture (conservative default: scoreboard + digests at Level 2; nothing public-writing
-   until a watchdog exists).
+   until a watchdog exists). If Section 0 left `scoreboard-refresh` disabled for want of a location,
+   keep it disabled and carry the TODO.
 6. **Point the human to** [adoption levels](../../docs/reference/adoption-levels.md) so they pick a
    starting level and know how to climb.
 

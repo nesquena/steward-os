@@ -260,11 +260,13 @@ Presence ≠ clean — it means the evidence *exists to review*; the authoritati
 ## Make it self-refreshing
 Run the generation on a schedule ([scheduled-jobs](scheduled-jobs.md) rules apply): pull live
 metadata, recompute mechanical dims, merge in persisted judgment dims, stamp and mark stale ones,
-render, commit. The board, its machine-readable artifact and any digest of its rows go only where they
-are no more visible than the issues they list; history counts, so re-check before any visibility
-change. Nothing mechanical enforces this rule. The maintainer never has to ask for a fresh scan — the board is current when
-they open it. A companion "review these first" curated short-list can ride on top for the
-highest-priority handful.
+render, commit. The maintainer never has to ask for a fresh scan — the board is current when they
+open it. A companion "review these first" curated short-list can ride on top for the highest-priority
+handful.
+
+The board, its machine-readable artifact and any digest of its rows go only where they are no more
+visible than the issues they list; history counts, so re-check before any visibility change. Nothing
+mechanical enforces this rule.
 
 ## Why it works
 - It **separates ranking from doing** — the agent ranks continuously and cheaply; the human (or a

@@ -72,4 +72,7 @@ The first job for a private team is `triage-scoreboard`, plus `issue-triage` run
 person, at Level 2. That run writes judgments and skips replies, labels and sprint-candidate marks.
 The vulnerability divert still runs.
 
+A team with pull requests adds `coding-principles`, `pr-triage` and `pr-deep-review` once Level 2 is
+steady.
+
 _Related: [autonomy ladder](../playbooks/autonomy-ladder.md) · [setup interview](../../setup/setup-interview.md)._

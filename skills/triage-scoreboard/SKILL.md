@@ -53,9 +53,9 @@ Pitfalls). Ideal as a scheduled job.
    your project uses ([the default](../../docs/playbooks/triage-scoreboard.md#the-default-rubric),
    or its replacement). With no weights in config, weight an issue's judgment dimensions (`scope_fit`,
    `criticality`, `risk`) equally and use the mechanical dimensions only to break ties; weights in
-   config override this. The default covers issues only. Rank PRs and issues separately; sort issues on the judgment dimensions'
-   weighted sum first, and on the mechanical dimensions only between equal sums. An item with no
-   judgment at all leaves the
+   config override this. The default covers issues only.
+   Rank PRs and issues separately; sort issues on the judgment dimensions' weighted sum first, and
+   on the mechanical dimensions only between equal sums. An item with no judgment at all leaves the
    ranking for the [not yet judged](../../docs/playbooks/triage-scoreboard.md#not-yet-judged)
    section; an item with some judgment ranks, and an empty dimension counts as unjudged for that
    dimension. Promote items carrying the
@@ -85,7 +85,7 @@ Pitfalls). Ideal as a scheduled job.
 - **An out-of-range value is an error, not a number to clamp** — surface it. In range means an
   integer in the rubric's range, the bypass marker in `scope_fit`, or an empty cell. A clamped
   value hides a judge scoring on a different rubric.
-- **A missing fact is not a zero** — a fact missing on some items, not all, is reported and never
+- **A missing fact is not a zero.** A fact missing on some items, not all, is reported and never
   treated as zero. The inert-dimension rule covers a fact missing on every item.
 - **Evidence presence is not a verdict** — `✓` means the evidence exists to review, not that it's
   clean. The authoritative gate still runs at merge.
