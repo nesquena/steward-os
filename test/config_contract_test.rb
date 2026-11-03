@@ -1620,6 +1620,55 @@ class MarkerTest < Minitest::Test
     check(config).select { |v| v.rule == rule }.map(&:key)
   end
 
+  # Setup Section 0: a block with history is turned off, not marked, together with whatever depends on it.
+  def job_off(config, name)
+    config['scheduled_jobs']['jobs'].each { |j| j['enabled'] = false if j['name'] == name }
+    config
+  end
+
+  def capture_off(config, job: true, chat: true)
+    config['issue_capture']['enabled'] = false
+    job_off(config, 'issue-capture') if job
+    config['community']['chat']['monitor'] = false if chat
+    config
+  end
+
+  # Deterministic chat-monitor and mentions-sweep jobs, which the lint accepts enabled (no agent, no skill needed).
+  def with_chat_jobs(config)
+    %w[chat-monitor mentions-sweep].each do |n|
+      config['scheduled_jobs']['jobs'] << { 'name' => n, 'every' => '1h', 'enabled' => true, 'agent' => false }
+    end
+    config['community']['mentions_sweep']['enabled'] = true
+    config
+  end
+
+  def errors(config)
+    check(config).select { |v| v.severity == :error }.map(&:to_line)
+  end
+
+  def test_capture_turned_off_with_its_dependents_lints_clean
+    assert_empty errors(capture_off(cfg))
+    assert_empty errors(with_chat_jobs(cfg))
+    assert_empty errors(job_off(capture_off(with_chat_jobs(cfg)), 'chat-monitor'))
+    assert_includes rules(capture_off(with_chat_jobs(cfg))), :job_flag_agree
+  end
+
+  def test_community_turned_off_with_its_jobs_lints_clean
+    off = lambda do |c|
+      c['community']['chat']['monitor'] = false
+      c['community']['mentions_sweep']['enabled'] = false
+      c
+    end
+    assert_empty errors(job_off(job_off(off.call(with_chat_jobs(cfg)), 'chat-monitor'), 'mentions-sweep'))
+    assert_includes rules(job_off(off.call(with_chat_jobs(cfg)), 'mentions-sweep')), :job_flag_agree
+  end
+
+  def test_capture_flag_alone_does_not_turn_capture_off
+    assert_includes rules(capture_off(cfg, job: false, chat: false)), :job_flag_agree
+    assert_includes rules(capture_off(cfg, job: false, chat: false)), :chat_needs_capture_core
+    assert_includes rules(capture_off(cfg, chat: false)), :chat_needs_capture_core
+  end
+
   def test_absent_marker_changes_nothing
     absent = cfg
     absent.delete('not_applicable')

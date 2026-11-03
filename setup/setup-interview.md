@@ -22,6 +22,55 @@ documented TODO, not an assumption.
 
 ---
 
+## Section 0 — Project shape *(required)*
+Four short questions, lettered A-D so the numbered questions keep their numbers. The answers route
+the rest of the interview.
+- **A. Public or private?** Is any repository public?
+- **B. Who files issues?** Outside reporters, your own team and stakeholders, or just you?
+- **C. Do you tag releases?** This confirms question 4's model early.
+- **D. Do issues live on the code host or in a separate tracker?**
+
+From the answers, the agent proposes which blocks don't apply: `community`, `issue_capture`,
+`labels`, `trust`, starting from
+[which skills fit which shape](../docs/reference/adoption-levels.md#which-skills-fit-which-shape).
+A human confirms each block. The agent never marks a block on its own.
+
+"Skip / not yet" and "doesn't apply" are different answers. "Skip / not yet" is an unanswered
+question: a documented TODO with blank values. "Doesn't apply" is a decision: list the block under
+`not_applicable` in the config. Marking a block means deleting it or leaving it `{}`, because the
+config can't both say a block doesn't apply and configure it.
+
+Rules for the marker:
+- Shape answers never skip question 20 (the security contact) or question 22 (the alarms route).
+  Marking `issue_capture` exempts nothing from the vulnerability divert, which always needs a
+  private destination. The lint then warns about each of the two it can't verify as private (a
+  blank value, or the `github-advisory` contact, gets no warning): confirm each destination with the
+  human. When `issue_capture` is off or marked and no announcements or autoclose job is enabled, the
+  lint doesn't check that the pull index (the divert's last fallback) is private: tell the human.
+- "Doesn't apply" is for a block the project never used. A block with history isn't marked: deleting
+  it would lose its paths and state, and capture state is the audit trail for diverted
+  vulnerabilities. Turn it off instead, with whatever depends on it, so the config still lints. For
+  `issue_capture`: `issue_capture.enabled: false`, the `issue-capture` job `enabled: false`, and
+  `chat.monitor: false` with any `chat-monitor` job `enabled: false`, since chat monitoring needs
+  capture. For `community`: `chat.monitor: false`, `mentions_sweep.enabled: false`, and any
+  `chat-monitor` and `mentions-sweep` jobs `enabled: false`. `labels` has no flag of its own:
+  disable the `label-sync` job and keep the taxonomy, since the watchdog checks each ledger'd label
+  against it. `issue-triage` step 5 still applies that taxonomy on a full run; tell the human.
+  `trust` turns off only by blanking `ledger_path`, which drops the path but not the ledger file:
+  keep the path in a TODO.
+- A skill reads nothing from a marked block and infers no default for it. Only the part of a step
+  that needs the block is skipped; the rest of that step still runs.
+- With a separate tracker (question D), question 2 says when its host-closing change applies.
+- The shape answers are not stored. A re-run asks them again. The marker keeps the outcome.
+- Ask where the scoreboard lands when A (public) or D (separate tracker) makes it a real question.
+  The board, its machine-readable artifact and any digest of its rows go only where they are no
+  more visible than the issues they list; history counts, so re-check before any visibility change.
+  If no acceptable location exists, or the question is skipped, set `scoreboard-refresh` to
+  `enabled: false` and leave a TODO naming the location, since no config key holds it. Nothing
+  mechanical checks this rule.
+
+---
+
 ## Section 1 — Identity & repositories *(required)*
 1. **What is the project?** One-line description. (Used in every public-facing template.)
 2. **Which repositories does it span?** For each: host/owner/name, role (primary app, desktop,
@@ -49,6 +98,14 @@ documented TODO, not an assumption.
    enforces nothing on a self-managed GitLab or GitHub Enterprise instance, and the watchdog can't
    observe closes there or on Gitea and Forgejo: record what the instance actually does.
    `host` is a bare host name, such as `github.com` (a port is allowed; a URL isn't).
+   With a separate tracker (Section 0, question D), ask whether the code host still takes issues. If
+   it doesn't (issues are turned off on the repository), the settings change doesn't apply: record
+   `host_closes_on_merge: false` and skip it. The `host_closing_unwatched` warning then stands, and
+   that is expected: warnings don't fail the lint. If it still takes issues, ask this question as
+   written. Either way, unless every merge is the release, ask whether the tracker's own integration
+   closes or moves an issue when a linked PR merges, and turn that off where it can be. Where it
+   can't, the release names the version on those issues as `release-pipeline` step 6 says.
+   `host_closes_on_merge` describes only the code host.
 3. **What's the default branch / trunk?** (e.g. `main`.)
 4. **What's the release model?** Tag-per-release? A changelog file? How does "shipped" get verified
    (a tag, a deploy, a running version)? Do you publish an artifact others install or pull (a
@@ -120,6 +177,8 @@ The system can't screen PRs/issues for fit without knowing what "fits."
     heartbeat.) Start with a few; add as you climb the autonomy ladder. →
     [scheduled jobs](../docs/playbooks/scheduled-jobs.md). `chat-monitor` and `mentions-sweep` have
     no skill yet; the config lint refuses them enabled.
+    If the scoreboard has no acceptable location, or that question was skipped (Section 0), set
+    `scoreboard-refresh` to `enabled: false`.
 22. **How does steward output reach you?** Default is a pull-based index you check (discovery);
     pushing a digest to a chat channel is an optional add-on. Also: where should watchdog alarms go?
     → [the output loop](../docs/playbooks/output-loop.md).

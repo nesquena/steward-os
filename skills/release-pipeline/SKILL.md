@@ -131,9 +131,12 @@ pulled or deployed, so a merge isn't
 6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
    version and **thanking the author by handle.** On a repository whose `host_closes_on_merge` is
    `true`, the host closed those issues at merge: comment on them, close any it left open (an
-   absorbed PR never merges, so the host closes nothing for it), and don't reopen them. Update the
+   absorbed PR never merges, so the host closes nothing for it), and don't reopen them. Treat an
+   issue a separate tracker's own integration closed or moved at merge the same way. Update the
    [trust ledger](../../docs/lifecycle/contributor-recognition.md) with one terminal outcome for the
-   PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
+   PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger). If `trust` is listed under
+   `not_applicable`, or `trust.ledger_path` is blank, skip the ledger update and record no trust
+   event.
    Clean up the branch/worktree.
 
 ## The attribution-verification gate
@@ -167,4 +170,5 @@ trailer exists; it does **not** prove the *name* is right.
   only as step 5 allows.
 - The author is credited identically on every surface, and the handle is the real author of the work.
 - The PR and its issues are closed with version + thanks; the trust ledger has one terminal event.
+  With `trust` listed under `not_applicable`, or a blank `trust.ledger_path`, no ledger event was written.
 - No branch/worktree left dangling.

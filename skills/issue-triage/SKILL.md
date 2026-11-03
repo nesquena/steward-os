@@ -28,6 +28,13 @@ make commitments.
 
 ## Steps
 
+A judgment-only run is a person's supervised run: it records judgments and skips steps 3, 5 and 6
+(the reply, the labels and milestone, the sprint-candidate mark). Step 2, the vulnerability check,
+always runs: skipping the public steps never skips step 2, and a suspected vulnerability still gets
+no judgment. "New" keeps its meaning in a judgment-only run: it adds no backfill. A judgment-only
+run marks an issue handled like any other run; the mark gates only step 4's "new", so a later full
+run still runs steps 3, 5 and 6 on it.
+
 1. **Read `config.yaml`** — repos, the scope settings (`scope.anchors`, `scope.philosophy_veto`,
    `scope.bypass_scope_gate`), the maintainer handle(s) (for the dropped-ball check), the
    vulnerability destinations, and the issue-label settings.
@@ -82,7 +89,7 @@ make commitments.
    such case.
 5. **Label + milestone.** Apply mechanical, reversible metadata. Prefer a deterministic
    label-sync (size/area/type) on a tight allowlist that is **add-only and never overrides a human's
-   label.**
+   label.** If `labels` is listed under `not_applicable`, apply no taxonomy label.
 6. **Sprint-candidate.** Mark confirmed bugs that have a fix starting.
 7. **Dropped-ball surfacer.** Find open issues where a maintainer replied, the reporter answered
    *after* that, and no PR exists — sorted by days-waiting. **Surface only** (never auto-reply); it
@@ -131,6 +138,6 @@ make commitments.
   more than ten edited and ten rubric-only-stale issues were re-judged. A re-judge that wrote
   nothing left only an attempt record, in this skill's state.
 - Every new issue this run finished carries a handled mark; one it didn't finish carries none.
-- Un-replied issues got a grounded reply or a deliberate skip.
+- Un-replied issues got a grounded reply or a deliberate skip (a judgment-only run skips every reply).
 - Labels are add-only and didn't override humans.
 - The dropped-ball list was surfaced (not acted on).

@@ -265,6 +265,289 @@ class HostClosingContractTest < Minitest::Test
   end
 end
 
+class ProjectShapeContractTest < Minitest::Test
+  # Section 0 of the setup interview, the setup skill and the template header. Read with whitespace
+  # folded, so a re-wrap doesn't break the pin.
+  def read(*path)
+    File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
+  end
+
+  def section0
+    setup = read('setup', 'setup-interview.md')
+    from = setup.index('## Section 0 ')
+    upto = setup.index('## Section 1 ')
+    assert from && upto && from < upto, 'Section 0 must come before Section 1'
+    setup[from...upto]
+  end
+
+  def setup_step(num)
+    skill = read('skills', 'project-system-setup', 'SKILL.md')
+    skill[/ #{num}\. \*\*.*?(?= #{num + 1}\. \*\*|\z)/m] or flunk("step #{num} missing")
+  end
+
+  def test_interview_asks_shape_first
+    s = section0
+    ['**A. Public or private?**', '**B. Who files issues?**', '**C. Do you tag releases?**',
+     '**D. Do issues live on the code host or in a separate tracker?**'].each { |q| assert_includes s, q }
+    assert_includes s, "lettered A-D so the numbered questions keep their numbers"
+    full = read('setup', 'setup-interview.md')
+    (1..22).each { |n| assert_match(/ #{n}\. \*\*/, full, "question #{n} lost its number") }
+    # Section 0 cites question 20 as the security contact and question 22 as the alarms route.
+    assert_includes full[/ 20\. \*\*.*?(?= 21\. \*\*)/m].to_s, '`security.security_contact`'
+    assert_includes full[/ 22\. \*\*.*?(?=---| 23\. \*\*|\z)/m].to_s, 'where should watchdog alarms go?'
+  end
+
+  def test_a_human_confirms_each_marked_block
+    assert_includes section0, 'A human confirms each block. The agent never marks a block on its own.'
+  end
+
+  def test_a_marked_block_is_deleted_or_empty
+    assert_includes section0, "Marking a block means deleting it or leaving it `{}`, because the config can't both " \
+                              "say a block doesn't apply and configure it."
+  end
+
+  def test_shape_never_skips_the_divert_questions
+    assert_includes section0, 'Shape answers never skip question 20 (the security contact) or question 22 ' \
+                              '(the alarms route).'
+  end
+
+  def test_a_block_with_history_stays_disabled
+    assert_includes section0, "A block with history isn't marked: deleting it would lose its paths and state, and " \
+                              'capture state is the audit trail for diverted vulnerabilities. Turn it off instead'
+    assert_includes section0, 'Turn it off instead, with whatever depends on it, so the config still lints. For ' \
+                              '`issue_capture`: `issue_capture.enabled: false`, the `issue-capture` job ' \
+                              '`enabled: false`, and `chat.monitor: false` with any `chat-monitor` job ' \
+                              '`enabled: false`, since chat monitoring needs capture.'
+    assert_includes section0, 'For `community`: `chat.monitor: false`, `mentions_sweep.enabled: false`, and any ' \
+                              '`chat-monitor` and `mentions-sweep` jobs `enabled: false`.'
+    assert_includes section0, '`labels` has no flag of its own: disable the `label-sync` job and keep the taxonomy'
+    assert_includes section0, '`issue-triage` step 5 still applies that taxonomy on a full run; tell the human.'
+    assert_includes section0, '`trust` turns off only by blanking `ledger_path`, which drops the path but not the ' \
+                              'ledger file: keep the path in a TODO.'
+  end
+
+  def test_a_marked_block_skips_only_the_part_that_needs_it
+    assert_includes section0, 'A skill reads nothing from a marked block and infers no default for it. Only the part ' \
+                              'of a step that needs the block is skipped; the rest of that step still runs.'
+  end
+
+  def test_shape_answers_are_re_asked
+    assert_includes section0, 'The shape answers are not stored. A re-run asks them again. The marker keeps the outcome.'
+  end
+
+  def test_separate_tracker_warning_is_expected
+    assert_includes section0, 'With a separate tracker (question D), question 2 says when its host-closing change applies.'
+    q2 = read('setup', 'setup-interview.md')[/ 2\. \*\*.*?(?= 3\. \*\*)/m]
+    assert_includes q2, "If it doesn't (issues are turned off on the repository), the settings change doesn't " \
+                        'apply: record `host_closes_on_merge: false` and skip it. The `host_closing_unwatched` ' \
+                        'warning then stands, and that is expected'
+    assert_includes q2, 'If it still takes issues, ask this question as written.'
+    assert_includes q2, 'Either way, unless every merge is the release, ask whether the tracker\'s own integration ' \
+                        'closes or moves an issue when a linked PR merges'
+    assert_includes q2, "Where it can't, the release names the version on those issues as `release-pipeline` step 6 says."
+    assert_includes q2, '`host_closes_on_merge` describes only the code host.'
+  end
+
+  def test_board_location_has_a_fallback
+    assert_includes section0, 'set `scoreboard-refresh` to `enabled: false` and leave a TODO naming the location'
+    assert_includes read('setup', 'setup-interview.md'),
+                    'or that question was skipped (Section 0), set `scoreboard-refresh` to `enabled: false`.'
+    assert_includes setup_step(5), 'If Section 0 left `scoreboard-refresh` disabled for want of a location, keep it ' \
+                                   'disabled and carry the TODO.'
+  end
+
+  def test_lint_warns_the_divert_destinations_are_unverified
+    assert_includes section0, "The lint then warns about each of the two it can't verify as private (a blank " \
+                              'value, or the `github-advisory` contact, gets no warning): confirm each destination ' \
+                              'with the human.'
+  end
+
+  def test_board_goes_only_where_the_issues_are_as_private
+    assert_includes section0, 'The board, its machine-readable artifact and any digest of its rows go only where ' \
+                              'they are no more visible than the issues they list; history counts, so re-check ' \
+                              'before any visibility change.'
+  end
+
+  def test_setup_verification_checks_the_marker
+    verification = read('skills', 'project-system-setup', 'SKILL.md').split('## Verification').last
+    assert_includes verification, 'Every block the human confirmed as not applicable is listed under ' \
+                                  '`not_applicable` and is deleted or `{}`.'
+    assert_includes verification, 'or its failure to run is a TODO'
+  end
+
+  def test_fallback_index_limit_is_stated
+    assert_includes section0, "When `issue_capture` is off or marked and no announcements or autoclose job is " \
+                              "enabled, the lint doesn't check that the pull index (the divert's last fallback) " \
+                              'is private: tell the human.'
+  end
+
+  def test_template_header_separates_blank_from_marked
+    tpl = File.read(File.join(ROOT, 'setup', 'config.template.yaml'), encoding: 'UTF-8').gsub(/\s*\n#\s*/, ' ')
+    assert_includes tpl, 'A blank or "skip" optional section is unanswered: it stays disabled and becomes a TODO. ' \
+                         "A block that doesn't apply is a decision: list it under `not_applicable`."
+  end
+
+  def test_setup_skill_runs_the_lint
+    step = setup_step(4)
+    assert_includes step, 'run `bin/config-lint` on it from the steward-os checkout'
+    assert_includes step, "A lint that can't run becomes a TODO, never a pass."
+    assert_includes read('skills', 'project-system-setup', 'SKILL.md'), 'project shape (Section 0)'
+  end
+
+  # The numbered step `num` of a skill, whitespace-folded, up to the next numbered step.
+  def skill_step(skill, num)
+    text = read('skills', skill, 'SKILL.md')
+    text[/ #{num}\. \*\*.*?(?= #{num + 1}\. \*\*|\z)/m] or flunk("#{skill} step #{num} missing")
+  end
+
+  def test_judgment_only_run_keeps_the_divert
+    t = read('skills', 'issue-triage', 'SKILL.md')
+    t = t[t.index('## Steps')...t.index(' 1. **')]
+    assert_includes t, 'A judgment-only run is a person\'s supervised run: it records judgments and skips steps 3, 5 ' \
+                       'and 6 (the reply, the labels and milestone, the sprint-candidate mark).'
+    assert_includes t, 'Step 2, the vulnerability check, always runs: skipping the public steps never skips step 2, ' \
+                       'and a suspected vulnerability still gets no judgment.'
+    assert_includes t, '"New" keeps its meaning in a judgment-only run: it adds no backfill.'
+    assert_includes t, 'A judgment-only run marks an issue handled like any other run; the mark gates only step ' \
+                       '4\'s "new", so a later full run still runs steps 3, 5 and 6 on it.'
+  end
+
+  def test_marked_labels_mean_no_labels
+    assert_includes skill_step('issue-triage', 5),
+                    'If `labels` is listed under `not_applicable`, apply no taxonomy label.'
+  end
+
+  # Like skill_step, but stops at the next `## ` heading so a sentence moved out of the step fails the pin.
+  def skill_step_only(skill, num)
+    skill_step(skill, num).split(/ ## /).first
+  end
+
+  def test_marked_trust_means_no_ledger_update
+    marked = 'If `trust` is listed under `not_applicable`, or `trust.ledger_path` is blank, skip the ledger update ' \
+             'and record no trust event.'
+    assert_includes skill_step_only('release-pipeline', 6), marked
+    assert_includes skill_step_only('release-pipeline', 6),
+                    "Treat an issue a separate tracker's own integration closed or moved at merge the same way."
+    verification = read('skills', 'release-pipeline', 'SKILL.md').split('## Verification').last
+    assert_includes verification, 'With `trust` listed under `not_applicable`, or a blank `trust.ledger_path`, no ' \
+                                  'ledger event was written.'
+  end
+
+  def test_marked_community_means_no_chat_source
+    assert_includes skill_step('issue-capture', 1),
+                    'If `community` is listed under `not_applicable`, there is no chat source: skip chat reads and ' \
+                    'infer no chat default.'
+  end
+
+  def test_default_weights_are_for_issues
+    step = skill_step('triage-scoreboard', 4)
+    assert_includes step, 'With no weights set by the project, weight an issue\'s judgment dimensions equally (the ' \
+                          'default rubric\'s `scope_fit`, `criticality` and `risk`, or a replacement\'s own) and use ' \
+                          'the mechanical dimensions only to break ties. ' \
+                          'Weights the project sets replace the equal weights. The default covers issues only.'
+    assert_includes step, 'Rank PRs and issues separately; sort issues on the judgment dimensions\' weighted sum first'
+    playbook = read('docs', 'playbooks', 'triage-scoreboard.md')
+    assert_includes playbook, 'With no weights set by the project, an issue\'s judgment dimensions weigh equally and ' \
+                              'the mechanical dimensions only break ties. Weights the project sets replace the equal ' \
+                              'weights. The default covers issues only.'
+    assert_includes playbook, 'Judgment dimensions should outweigh mechanical ones'
+  end
+
+  def test_board_rule_covers_every_output
+    sentence = 'The board, its machine-readable artifact and any digest of its rows go only where they are no more ' \
+               'visible than the issues they list; history counts, so re-check before any visibility change. ' \
+               'Nothing mechanical enforces this rule.'
+    assert_includes skill_step_only('triage-scoreboard', 7), sentence
+    assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'), sentence
+  end
+
+  def test_a_fact_missing_on_some_items_is_no_zero
+    pitfalls = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Pitfalls').last.split('## Verification').first
+    assert_includes pitfalls, '**A missing fact is not a zero.** A fact missing on some items, not all, is reported ' \
+                              'and never treated as zero. ' \
+                              'The inert-dimension rule covers a fact missing on every item.'
+  end
+
+  def test_quickstart_does_not_require_github
+    q = read('quickstart.md')
+    refute_includes q, 'A **GitHub repository**'
+    assert_includes q, 'The examples use a GitHub repository and the `gh` CLI. Your tracker and host can differ.'
+  end
+
+  def test_quickstart_names_ruby_for_the_lint
+    assert_includes read('quickstart.md'), 'Ruby, to run `bin/config-lint` from the steward-os checkout.'
+  end
+
+  def tracker_section
+    q = read('quickstart.md')
+    from = q.index('## Your tracker is your wiring') or flunk('tracker section missing')
+    q[from..].split(/ ## \d\. /).first
+  end
+
+  def test_tracker_section_keeps_the_bands
+    s = tracker_section
+    assert_includes s, 'Every write keeps its band, from `autonomy:` or from the skill that makes it, whatever the tool. ' \
+                       "A private tracker doesn't lower a band."
+    assert_includes s, 'steward-os ships no adapter and names no tracker.'
+  end
+
+  def test_missing_fact_is_never_zero
+    assert_includes tracker_section, 'If your tracker cannot supply a fact, the skill reports it as missing ' \
+                                     'and never treats it as zero.'
+  end
+
+  def test_skills_already_say_what_they_need
+    assert_includes tracker_section, 'Each `SKILL.md` names the facts it reads.'
+  end
+
+  def shape_rows
+    t = File.read(File.join(ROOT, 'docs', 'reference', 'adoption-levels.md'), encoding: 'UTF-8')
+    lines = t.lines.map(&:strip)
+    head = lines.index { |l| l.start_with?('| Shape ') } or flunk('shape table missing')
+    cols = lines[head].split('|').map(&:strip)[1..]
+    skills_at = cols.index('Skills') or flunk('Skills column missing')
+    assert_includes cols, 'Blocks usually marked'
+    lines[(head + 1)..].reject { |l| l =~ /\A\|\s*-/ }.take_while { |l| l.start_with?('|') }.map { |l| l.split('|').map(&:strip)[1..] }
+                       .each { |r| r.define_singleton_method(:skills) { self[skills_at] } }
+  end
+
+  def test_shape_table_has_three_shapes
+    t = read('docs', 'reference', 'adoption-levels.md')
+    labels = shape_rows.map(&:first)
+    ['public with outside reporters and tags', 'private team with a separate tracker', 'private solo'].each do |s|
+      assert_includes labels, s
+    end
+    assert_operator shape_rows.size, :>=, 3
+    assert_operator t.index('| Shape '), :<, t.index('_Related:')
+    assert_operator t.index('| Level | What'), :<, t.index('| Shape ')
+  end
+
+  def test_every_skill_in_the_table_exists
+    shape_rows.each do |r|
+      names = r.skills.scan(/`([^`]+)`/).flatten
+      assert_equal r.skills.gsub(/`[^`]+`|[ ,]/, ''), '', "Skills cell holds more than skill names: #{r.skills}"
+      refute_empty names, "row has no skills: #{r.first}"
+      names.each { |n| assert File.directory?(File.join(ROOT, 'skills', n)), "no skills/#{n}/" }
+    end
+  end
+
+  def test_private_team_row_names_the_first_job
+    row = shape_rows.find { |r| r.first.include?('private team') }
+    assert_includes row.skills, '`triage-scoreboard`'
+    assert_includes row.skills, '`issue-triage`'
+    %w[community issue_capture labels trust].each { |b| assert_includes row.join(' '), "`#{b}`" }
+    levels = read('docs', 'reference', 'adoption-levels.md')
+    assert_includes levels, 'That run writes judgments and skips replies, labels and sprint-candidate marks.'
+    assert_includes levels, 'The vulnerability divert still runs.'
+    assert_includes levels, '`issue-triage` does no backfill, so that run reaches the existing backlog only for the ' \
+                            'issues a person names.'
+    solo = shape_rows.find { |r| r.first == 'private solo' }
+    assert_includes solo.skills, '`release-pipeline`' # pr-deep-review hands off to it
+    assert_includes levels, 'A team with pull requests adds `coding-principles`, `pr-triage`, `pr-deep-review` and ' \
+                            '`release-pipeline` once Level 2 is steady.'
+  end
+end
+
 # --- Injection guard: the block every untrusted-reading skill opens with ---
 class GuardCheckerTest < Minitest::Test
   def guards(**over)

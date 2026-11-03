@@ -18,15 +18,18 @@ and produces the project's `config.yaml` from the
    question script; the template is the output shape.
 2. **Interview the human, section by section.** Ask only what's needed; explain *why* each section
    matters (cite the playbook it feeds). Accept "skip / not yet" for any optional section.
-   - Required: identity & repos, scope anchors, CI/tests, autonomy posture, secrets (if any public
-     write).
+   - Required: project shape (Section 0), identity & repos, scope anchors, CI/tests, autonomy
+     posture, secrets (if any public write).
    - Optional: chat/community, mentions, scheduled jobs.
 3. **Confirm each answer** before writing it. Never guess — an unanswered question becomes a
    documented TODO in the output, not an assumption.
-4. **Write `config.yaml`** from the template with the collected answers. Validate it parses.
+4. **Write `config.yaml`** from the template with the collected answers. Validate it parses, then run
+   `bin/config-lint` on it from the steward-os checkout (the quickstart copies only `skills/`, so
+   name the checkout path). The lint needs Ruby. A lint that can't run becomes a TODO, never a pass.
 5. **Emit a TODO list** of skipped sections and a **recommended starting job set** based on the
    autonomy posture (conservative default: scoreboard + digests at Level 2; nothing public-writing
-   until a watchdog exists).
+   until a watchdog exists). If Section 0 left `scoreboard-refresh` disabled for want of a location,
+   keep it disabled and carry the TODO.
 6. **Point the human to** [adoption levels](../../docs/reference/adoption-levels.md) so they pick a
    starting level and know how to climb.
 
@@ -42,5 +45,8 @@ and produces the project's `config.yaml` from the
 
 ## Verification
 - `config.yaml` exists and parses.
+- `bin/config-lint` exits 0 on it, or its failure to run is a TODO.
+- Every block the human confirmed as not applicable is listed under `not_applicable` and is deleted
+  or `{}`.
 - Every required section is filled or explicitly marked TODO.
 - The human knows their starting adoption level and the next rung.

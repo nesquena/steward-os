@@ -57,4 +57,23 @@ to be *grown into*, and to stay safe at every height.
 | 3 | + mechanical reversible actions (watchdogged) | judgment, merges, public voice |
 | 4 | + the routine pipeline | decisions, taste, the irreversible calls |
 
+## Which skills fit which shape
+
+Shape comes from the first questions of the setup interview. The table lists where each shape usually
+starts. A person confirms every block marked as not applicable.
+
+| Shape | Skills | Blocks usually marked |
+|---|---|---|
+| public with outside reporters and tags | `action-watchdog`, `coding-principles`, `contributor-trust`, `issue-autoclose`, `issue-capture`, `issue-close-proposal`, `issue-triage`, `label-sync`, `pr-deep-review`, `pr-triage`, `project-system-setup`, `release-announce`, `release-pipeline`, `triage-scoreboard` | none |
+| private team with a separate tracker | `project-system-setup`, `triage-scoreboard`, `issue-triage` | `community`, `issue_capture`, `labels`, `trust` |
+| private solo | `project-system-setup`, `coding-principles`, `pr-deep-review`, `release-pipeline` | `community`, `issue_capture`, `trust` |
+
+The first job for a private team is `triage-scoreboard`, plus `issue-triage` run judgment-only by a
+person, at Level 2. That run writes judgments and skips replies, labels and sprint-candidate marks.
+The vulnerability divert still runs. `issue-triage` does no backfill, so that run reaches the
+existing backlog only for the issues a person names.
+
+A team with pull requests adds `coding-principles`, `pr-triage`, `pr-deep-review` and
+`release-pipeline` once Level 2 is steady.
+
 _Related: [autonomy ladder](../playbooks/autonomy-ladder.md) · [setup interview](../../setup/setup-interview.md)._
