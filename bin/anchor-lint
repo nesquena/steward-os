@@ -44,8 +44,8 @@ files, dirs = AnchorContract::Extract.repo_entries(ROOT)
 # The files _config.yml keeps out of the built site. GitHub renders them with
 # cmark-gfm and the site renders them with nothing, so they are checked against
 # the cmark oracle alone; a kramdown reading would judge them by a parser that
-# never publishes them (an undecoded `dir&sol;target.md`, a differently-slugged
-# heading id). Every other doc renders on both the site and GitHub, so its links
+# never publishes them (a differently-slugged heading id, a reference label
+# folded another way). Every other doc renders on both the site and GitHub, so its links
 # and ids have to hold under both.
 excluded = AnchorContract::Extract.site_excluded_markdown(ROOT, config_path)
 
@@ -54,6 +54,10 @@ links = []
 rejections = []
 docs.each do |rel|
   text = File.read(File.join(ROOT, rel), encoding: 'UTF-8')
+  if (unreadable = AnchorContract::Extract.invalid_encoding(text, source: rel))
+    rejections << unreadable
+    next
+  end
 
   if excluded.include?(rel)
     # GitHub is the only renderer. Its link set and its heading ids, full stop.
@@ -67,7 +71,12 @@ docs.each do |rel|
     # are the deduped union of both renderers so a link either one produces is
     # checked, and heading ids come from the site's parser (whose slugger mirrors
     # github-slugger for the docs GitHub also renders directly).
-    rejections.concat(AnchorContract::Extract.unportable(text, source: rel))
+    rejected = AnchorContract::Extract.unportable(text, source: rel)
+    rejections.concat(rejected)
+    # Any rejection stops the lint before links are checked, and a page the site's parser fails on has no
+    # ids or links to read.
+    next unless rejected.empty?
+
     headings[rel] = AnchorContract::Extract.heading_ids(text)
     links.concat(AnchorContract::Extract.merged_links(text, source: rel))
   end
@@ -77,7 +86,7 @@ end
 # where extraction and the page part ways, so every link and id read out of the
 # same document is suspect until they are gone.
 unless rejections.empty?
-  warn "FAILED — #{rejections.size} construct(s) the site and GitHub render differently:"
+  warn "FAILED — #{rejections.size} problem(s) that keep links or anchors from being checked:"
   rejections.each { |r| warn r.to_line }
   exit 1
 end

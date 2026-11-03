@@ -355,6 +355,75 @@ class LinksTest < Minitest::Test
     assert_equal %w[%00.md %FF.md], two.map(&:href).sort, 'two unnamed targets are two broken links, not one'
   end
 
+  def merged(text) = AnchorContract::Extract.merged_links(text, source: 'docs/lifecycle/pr-lifecycle.md')
+
+  def rules(links, files, headings: {})
+    AnchorContract.check(links: links, headings: headings, files: files,
+                         dirs: Set['docs', 'docs/lifecycle']).map(&:rule)
+  end
+
+  # A raw tag's unterminated reference: the site's page escapes the `&`, so its reader follows `&eacute.md`, while
+  # GitHub decodes it to `é.md`. Both are links on a page, so a tracked `é.md` alone leaves the site's broken.
+  def test_a_raw_tag_is_read_the_way_each_page_carries_it
+    [%(<a href="&eacute.md">x</a>\n), %(<img src="&eacute.md">\n)].each do |text|
+      assert_equal ['&eacute.md', 'é.md'], merged(text).map(&:href).sort, text
+      assert_equal [:missing], rules(merged(text), Set['docs/lifecycle/é.md']), text
+    end
+  end
+
+  # Each renderer's reading of the one link in a document.
+  def each_reading(text)
+    yield 'links', links(text)
+    yield 'links_cmark', AnchorContract::Extract.links_cmark(text, source: 'docs/lifecycle/pr-lifecycle.md')
+  end
+
+  # The page reads a character reference the HTML5 way, on the site and on GitHub alike: a reference to a surrogate
+  # is one U+FFFD. So the link names the tracked `a\uFFFD.md`, and not the three-character lookalike a bytewise
+  # scrub would give.
+  def test_a_surrogate_reference_names_the_file_html5_decodes_it_to
+    lookalikes = Set["docs/lifecycle/a\uFFFD\uFFFD\uFFFD.md", 'docs/lifecycle/a.md']
+    real = lookalikes | ["docs/lifecycle/a\uFFFD.md"]
+    each_reading("[x](a&#xD800;.md)\n") do |name, found|
+      assert_equal [], rules(found, real), name
+      assert_equal [:missing], rules(found, lookalikes), name
+    end
+    assert_equal [], rules(merged("[x](a&#xD800;.md)\n"), real)
+    assert_equal [:missing], rules(merged("[x](a&#xD800;.md)\n"), lookalikes), 'one link, so one report'
+  end
+
+  # kramdown writes a link's href through its own escaper, which leaves a well-formed reference for the browser to
+  # decode and escapes any other `&`. So `&eacute;.md` asks for `é.md`, and the unterminated `&eacute.md` asks for
+  # itself, on both renderers.
+  def test_a_named_reference_names_the_file_the_page_requests
+    { '&eacute;.md' => %w[docs/lifecycle/é.md docs/lifecycle/&eacute;.md],
+      '&eacute.md' => %w[docs/lifecycle/&eacute.md docs/lifecycle/é.md],
+      '&amp.md' => %w[docs/lifecycle/&amp.md docs/lifecycle/&.md],
+      '&notin;.md' => %w[docs/lifecycle/∉.md docs/lifecycle/&notin;.md],
+      '&period;&period;&sol;x.md' => %w[docs/x.md docs/lifecycle/&period;&period;&sol;x.md] }
+      .each do |href, (real, lookalike)|
+      each_reading("[x](#{href})\n") do |name, found|
+        assert_equal [], rules(found, Set[real]), "#{href} via #{name}"
+        assert_equal [:missing], rules(found, Set[lookalike]), "#{href} via #{name}"
+      end
+      assert_equal 1, merged("[x](#{href})\n").size, "#{href}: both renderers read one link"
+    end
+    files = Set['docs/lifecycle/x.md']
+    each_reading("[x](x.md&num;top)\n") do |name, found|
+      assert_equal [], rules(found, files, headings: { 'docs/lifecycle/x.md' => ['top'] }), name
+      assert_equal [:fragment], rules(found, files, headings: { 'docs/lifecycle/x.md' => ['x'] }), name
+    end
+    each_reading("[x](&sol;docs/ghost.md)\n") { |name, found| assert_empty found, "an absolute target via #{name}" }
+  end
+
+  # Both renderers' copies of one link that names nothing are one broken link: they agree on the decoded target
+  # (`&amp;` is `&` on both pages) though kramdown's source text and cmark's url differ.
+  def test_one_unnamed_link_is_reported_once
+    files = Set["docs/lifecycle/&\uFFFD.md", "docs/lifecycle/&amp;\uFFFD.md"]
+    assert_equal [:missing], rules(merged("[x](&amp;%FF.md)\n"), files)
+    assert_equal %i[missing missing], rules(merged("[a](&amp;%FF.md) [b](&amp;%FE.md)\n"), files),
+                 'two unnamed targets are still two broken links'
+  end
+
   def test_empty_fragment_is_not_a_fragment
     assert_nil links('[top](quality-gates.md#)').first.fragment
   end
@@ -382,8 +451,7 @@ end
 # links_cmark reads links through commonmarker (comrak), the renderer GitHub uses
 # for README/CONTRIBUTING/SECURITY/skills. It exists to catch the links kramdown
 # and cmark-gfm disagree about — a reference label they case-fold differently, a
-# target GitHub decodes a character reference in — which the site-only kramdown
-# walk drops. bin/anchor-lint unions this set with the kramdown one.
+# raw tag only one parses — which the site-only kramdown walk drops. bin/anchor-lint unions this set with the kramdown one.
 class LinksCmarkTest < Minitest::Test
   def paths(text, source: 'docs/lifecycle/pr-lifecycle.md')
     AnchorContract::Extract.links_cmark(text, source: source).map(&:path)
@@ -736,6 +804,24 @@ class CheckTest < Minitest::Test
     assert_match(/index\.md:42/, v.to_line)
     assert_match(%r{docs/ghost\.md}, v.to_line)
   end
+
+  # A decoded fragment or href, or a tracked file name, can hold a control character. The report prints it
+  # escaped, so a NUL or an escape sequence never reaches the terminal and the line stays readable.
+  def test_a_control_character_is_printed_escaped
+    lines = [check(link(path: 'docs/reference/glossary.md', fragment: "a\u0000b", href: 'glossary.md#a%00b')),
+             check(link(path: 'docs/reference', fragment: "\e[2J", href: 'docs/reference/#%1B%5B2J')),
+             check(link(path: 'docs/ghost.md', href: "ghost\u0001.md")),
+             check(link(path: "docs/gh\eost.md", source: "in\edex.md"))].map { |found| found.first.to_line }
+    lines << AnchorContract::Rejection.new(source: "a\e[2J.md", line: 1, message: "write d\u0000/x.md").to_line
+    lines << check(link(path: 'docs/ghost.md', href: "a\u202Edm.ghost\u{E0001}")).first.to_line
+    lines.each { |line| refute_match(/[^[:print:]]/, line) }
+    assert_includes lines[0], 'produces the anchor #a\u0000b'
+    assert_includes lines[1], '#\e[2J on directory docs/reference'
+    assert_includes lines[2], '-> ghost\u0001.md'
+    assert_includes lines[3], 'in\edex.md:1'
+    assert_includes lines[4], 'a\e[2J.md:1 — write d\u0000/x.md'
+    assert_includes lines[5], '-> a\u202Edm.ghost\u{E0001}'
+  end
 end
 
 # --- The rendering assumptions the whole slugger rests on ---
@@ -897,8 +983,10 @@ class UnportableTest < Minitest::Test
     assert_equal [4], found.map(&:line)
   end
 
-  def test_a_quoted_html_link_with_a_character_reference_is_not_rejected
-    assert_empty rejections(%(<a href="a&amp;b.md?x&sol;y">x</a>\n))
+  def test_a_quoted_html_link_with_a_character_reference_is_not_a_raw_html_rejection
+    # Only the raw-HTML rule: its .md path holds `&` and a query, which unmatchable_page_link? rejects.
+    found = rejections(%(<a href="a&amp;b.md?x&sol;y">x</a>\n)).map(&:message)
+    refute_includes found, AnchorContract::Extract::RAW_HTML_MESSAGE
   end
 
   def test_a_commented_out_link_tag_is_not_rejected
@@ -950,6 +1038,122 @@ class UnportableTest < Minitest::Test
 
   def test_a_raw_heading_tag_inside_a_fence_is_not_rejected
     assert_empty rejections(%(# Real\n\n```html\n<h2 id="phantom">x</h2>\n```\n))
+  end
+
+  # The site's relative-links plugin and Jekyll get some forms of a link to a Markdown page wrong (a character
+  # reference, a bare `&` in a raw tag, `+`, a query, an image, a decoded `?`, `&` or parenthesis, a decomposed
+  # name), and others depend on which pass catches them. So on a page the site builds, a link is allowed only in
+  # the plain form both passes always rewrite, and anything else is rejected as unverified, wherever it is (a
+  # reference definition, a raw tag, a footnote): its path ends in `.md`, has no query, and decodes to letters,
+  # digits and `. _ - ~ /` only, in NFC. Non-ASCII letters, those characters in the fragment, and a non-Markdown or
+  # external target are fine.
+  def test_a_markdown_page_link_the_plugin_cannot_always_match_is_rejected
+    message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
+    ['[x](&eacute;.md)', '[x](&#233;.md#real)', '[x](a&amp;b.md)', '[x](x.md&num;top)', '[x](a&b.md)',
+     '[x](&period;&period;&sol;x.md)', '[x](&eacute;.MD)', '[x](&eacute;.markdown)', '[x](&eacute;%FF.md)',
+     '[x](a&amp;b/../x.md)', '[x](<a&b.md>)', "[x](a&b.md 't')", '[x](a+b.md)', '[x](plain.md?v=1)',
+     "[x][r]\n\n[r]:  a&b.md", "[x][r]\n\n[r]: &eacute;.md", '<a href="&eacute;.md">x</a>',
+     '<a href="a&b.md">x</a>', '<a href="a&amp;b.md#x">x</a>', '<a href="plain.md/">x</a>', '[x](<plain.md/>)',
+     "[x](plain.md/ 't')", '<a href="plain.md/.">x</a>', '[x](<plain.md/?v=1>)', '<a href="plain.md%2F">x</a>',
+     '<a href="plain.m%64">x</a>', '[x](<plain.m%64>)', '<a href="plain%2Emd">x</a>', '[x](plain.md/)',
+     '<img src="plain.md">', '![x](<plain.md>)', '![x](plain.md)', '[x](a%3Fb.md)', '[x](a%26eacute%3B.md)',
+     '[x](a%26b.md)', '<a href="a%26b.md">x</a>', '[x](a%29b.md)', '[x](a%28b.md)', '[x](<a(b).md>)',
+     '[x](a(b).md)', '[x](a%20b.md)', '[x](a%23b.md)', '[x](a%27b.md)', '[x](a%25b.md)',
+     '[x](a%2Bb.md)', '[x](%25.md)', '[x](e%CC%81x.md)', '<a href="e%CC%81x.md">x</a>', '<a href="a<b.md">x</a>',
+     '<a href="a>b.md">x</a>', '[x](<a"b.md>)', '[x](plain.MD)', '[x](&sol;docs/x.md)', '[x](~missing.md#real)',
+     '[x](%2Fx.md#sub)', '[x](a..b.md#first)', '[x](sub/a..b.md)', '[x](_x.md)', '[x](.x.md)', '[x](.md)',
+     '[x](_d/y.md)', '[x](v~/plain.md)', '[x](%7E/x.md)', '<a href="~x.md">x</a>'].each do |link|
+      found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
+      assert_equal [[3, message]], found.map { |r| [r.line, r.message] }, link
+    end
+    ['[x](plain.md)', '[x](%C3%A9.md#real)', '[x](é.md)', '[x](a_b-c~d.md)', '[x](plain.md#r&eacute;al)',
+     '[x](&eacute;.png)', '[x](a&b.png?v=1)', '[x](https://e.example/&eacute;.md)', '[x](#&eacute;)',
+     '[x](/docs/x.md)', '<a href="plain.md#x">x</a>', '[x](v1.2/plain.md)', '[x](%E6%96%87.md)',
+     '[x](%E0%A4%95%E0%A4%BF.md)', '[x](%C3%A9x.md)', '[x](कि.md)', '[x](½.md)', '[x](%C2%BD.md)', '[x](٣.md)',
+     '[x](%D9%A3.md)', '[x](../x.md#real)', '[x](sub/../x.md)', '[x](x~1.md)', '[x](-x-.md)', '[x](x_.md)',
+     '[x](x~.md)',
+     '<a href="&eacute;.png">x</a>', '[x](./plain.md)', '[x](sub/../plain.md)', '[x](sub%2Fplain.md)',
+     '[x](%C3%A9.md)', '<a href="%C3%A9.md#x">x</a>', '![x](a.png)', '[x](a%00.md)'].each do |link|
+      found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
+      assert_empty found.select { |r| r.message == message }, link
+    end
+  end
+
+  # The target's whole path must be NFC, its directories included: Jekyll builds the link NFC but keeps a
+  # decomposed directory's bytes, so a plain link from a page in such a directory is broken.
+  def test_a_link_from_a_decomposed_directory_is_rejected
+    message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
+    found = AnchorContract::Extract.unportable("# T\n\n[x](plain.md#real)\n", source: "docs/e\u0301/index.md")
+    assert_equal [message], found.map(&:message)
+    assert_empty AnchorContract::Extract.unportable("# T\n\n[x](plain.md#real)\n", source: "docs/\u00e9/index.md")
+  end
+
+  # A footnote's definition is rendered once at the foot of the page, so a link in it is checked once.
+  def test_a_link_in_a_footnote_is_checked_once
+    message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
+    found = AnchorContract::Extract.unportable("# T\n\na[^1] b[^1]\n\n[^1]: see [x](&eacute;.md)\n",
+                                               source: 'docs/p.md')
+    assert_equal [message], found.map(&:message)
+    assert_empty AnchorContract::Extract.unportable(%(# T\n\na[^1]\n\n[^1]: see <a href="plain.md">x</a>\n),
+                                                    source: 'docs/p.md')
+  end
+
+  # kramdown-parser-gfm raises building a heading that holds a reference to a surrogate or past U+10FFFF, and
+  # Jekyll renders with it, so Jekyll cannot build the page while GitHub renders the heading. No anchor holds on
+  # both: the heading is reported on its own line, ATX or Setext, after front matter or not.
+  def test_a_heading_the_site_parser_cannot_build_is_rejected
+    pages = { "# Fine\n\n## a &#xD800; b\n" => 3,
+              "# Fine\n\n## a &#99999999999999999999; b\n" => 3,
+              "---\nt: 1\n---\n# Fine\n\na &#x110000; b\n---\n" => 6,
+              "# Fine\n\n```\n# a &#xD800; b\n```\n\n# b &#xD800;\n" => 7,
+              "# L\n\n- item\n\n  ## a &#xD800; b\n" => 5,
+              "- a\n\n  b &#xD800;\n  ---\n" => 3,
+              "# Fine\r\r## a &#xD800; b\r" => 3,
+              "---\rt: 1\r---\r# Fine\r\r## a &#xD800; b\r" => 6,
+              "# Fine\n\n{::comment}\n## a &#xD800;\n{:/comment}\n\n## b &#xD800;\n" => 7,
+              "# Fine\n\n$$\n## a &#xD800;\n$$\n\n## b &#xD800;\n" => 7,
+              "# Fine\n\nterm\n: ## a &#xD800; b\n" => 4,
+              "# Fine\n\n## `&#xD800;` code\n\n## b &#xD800;\n" => 5,
+              "# Fine\n\n## a &amp;#xD800; b\n\n## b &#xD800;\n" => 5,
+              "# Fine\n\n<div markdown=\"1\">\n## a &#xD800;\n</div>\n\n## b &#xD800;\n" => 7,
+              "# Fine\n\n## a &#xD800; {#x}\n\n## b &#xD800;\n" => 5,
+              "# Fine\n\n## a &#xD800;\n{: #x}\n\n## b &#xD800;\n" => 6,
+              "# Fine\n\n<div markdown=\"1\">\n## a &#99999999999999999999;\n</div>\n\n## b\n" => 4,
+              "# Fine\n\n{::comment}\n## a &#xD800;\n{:/comment}\n\n## b &#x80000000;\n" => 7,
+              "# Fine\n\n$$\n## a &#99999999999999999999;\n$$\n\n## b &#99999999999999999999;\n" => 7,
+              "# Fine\n\nterm\n: ## a &#99999999999999999999; b\n" => 4 }
+    pages.each do |text, line|
+      found = rejections(text)
+      assert_equal [line], found.map(&:line), text.inspect
+      assert_match(/site's markdown parser fails/, found.first.message)
+    end
+  end
+
+  # A definition term fails the same way, in both parses; the parser records it on its definition's line.
+  def test_a_definition_term_the_site_parser_cannot_build_is_rejected
+    found = rejections("# Fine\n\nterm &#99999999999999999999;\n: def\n")
+    assert_equal [4], found.map(&:line)
+    assert_match(/heading or definition term/, found.first.message)
+  end
+
+  # Jekyll builds a page with front matter through kramdown and copies one without it as it is, so only the first
+  # fails the build.
+  def test_the_parse_failure_message_names_what_happens_to_the_page
+    ["---\nt: 1\n---\n## a &#xD800; b\n", "---\n\n# Title\n\n## a &#xD800; b\n"].each do |text|
+      assert_match(/Jekyll's build fails on it/, messages(text).first, text)
+    end
+    ["## a &#xD800; b\n", "---\rt: 1\r---\r## a &#xD800; b\r"].each do |text|
+      assert_match(/the site cannot render it/, messages(text).first, text.inspect)
+    end
+  end
+
+  def test_a_file_that_is_not_utf8_is_rejected_on_its_first_bad_line
+    text = "# Fine\n\na \xFF b\n".dup.force_encoding('UTF-8')
+    found = AnchorContract::Extract.invalid_encoding(text, source: 'docs/bad.md')
+    assert_equal [3, AnchorContract::Extract::INVALID_UTF8_MESSAGE], [found.line, found.message]
+    assert_nil AnchorContract::Extract.invalid_encoding("# Fine\n", source: 'docs/ok.md')
+    cr = "# Fine\r\ra \xFE b\r".dup.force_encoding('UTF-8')
+    assert_equal 3, AnchorContract::Extract.invalid_encoding(cr, source: 'docs/cr.md').line
   end
 end
 
@@ -1181,21 +1385,70 @@ class DiscoveryTest < Minitest::Test
     end
   end
 
+  # The real bin, copied into the fixture repo, under a POSIX locale.
+  def lint(dir)
+    %w[bin lib].each do |d|
+      FileUtils.cp_r(File.expand_path("../#{d}", __dir__), dir) unless File.exist?(File.join(dir, d))
+    end
+    IO.popen({ 'LANG' => 'C', 'LC_ALL' => 'C' }, [File.join(dir, 'bin', 'anchor-lint')],
+             err: [:child, :out], encoding: 'UTF-8', &:read)
+  end
+
   # The real bin under a POSIX locale, where Ruby's default external encoding
   # is US-ASCII: tracked names, headings and links outside ASCII still resolve,
   # in a file both renderers publish and in one only GitHub does.
   def test_the_lint_passes_under_a_posix_locale
     with_repo do |dir|
-      %w[bin lib].each { |d| FileUtils.cp_r(File.expand_path("../#{d}", __dir__), dir) }
       write(dir, 'café.md', "# Café — menu\n\n[readme](README.md#read--me)\n")
       write(dir, 'README.md', "# Read — me\n\n[menu](café.md#café--menu)\n")
       File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
       add_all(dir)
-      out = IO.popen({ 'LANG' => 'C', 'LC_ALL' => 'C' }, [File.join(dir, 'bin', 'anchor-lint')],
-                     err: [:child, :out], encoding: 'UTF-8', &:read)
+      out = lint(dir)
       assert_equal 0, $?.exitstatus, out
       assert_includes out, 'OK — every link resolves.'
       assert_match(/2 relative links, 2 anchors/, out, 'both non-ASCII links were checked')
+    end
+  end
+
+  # The real page exists and GitHub resolves `&eacute;.md` to it, but the built site keeps it a `.md` link it
+  # does not serve, so the lint fails while the percent-encoded link beside it passes.
+  def test_a_character_reference_link_to_a_tracked_page_still_fails_the_lint
+    with_repo do |dir|
+      File.write(File.join(dir, '_config.yml'), "exclude: []\n")
+      write(dir, 'docs/é.md', "---\ntitle: e\n---\n\n# Real\n")
+      write(dir, 'docs/index.md', "---\ntitle: i\n---\n\n[ok](%C3%A9.md#real)\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 0, $?.exitstatus, out
+
+      write(dir, 'docs/index.md', "---\ntitle: i\n---\n\n[ok](%C3%A9.md#real) [n](&eacute;.md#real)\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(/docs\/index\.md:5 — a link to a Markdown page that the site.s relative-links plugin/, out)
+    end
+  end
+
+  # A heading the site's parser cannot slug fails the Jekyll build, so a page both renderers publish is reported,
+  # never a crash of the lint. GitHub slugs the same heading `a--b`, so in a file only GitHub renders the anchor
+  # still resolves.
+  def test_a_heading_the_site_cannot_slug_is_reported_not_a_crash
+    with_repo do |dir|
+      write(dir, 'README.md', "# a &#xD800; b\n\n[self](#a--b)\n")
+      File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 0, $?.exitstatus, out
+      assert_includes out, '1 relative links, 1 anchors'
+
+      write(dir, 'page.md', "# Fine\n\n## a &#xD800; b\n")
+      File.binwrite(File.join(dir, 'bad.md'), "# Fine\n\na \xFF b\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(/page\.md:3 — .*the site cannot render it/, out)
+      assert_match(/bad\.md:3 — not valid UTF-8/, out)
+      refute_match(/input string invalid \(ArgumentError\)|\.rb:\d+:in /, out, 'a report, not a backtrace')
     end
   end
 end

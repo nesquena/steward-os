@@ -15,8 +15,7 @@ gem "kramdown-parser-gfm", "~> 1.1"
 # The cmark-gfm renderer GitHub uses for the files _config.yml excludes from the
 # built site (README/CONTRIBUTING/SECURITY/skills). bin/anchor-lint reads their
 # links from this second oracle so a reference label the two renderers case-fold
-# differently, or a target GitHub decodes a character reference in, is still
-# checked. Ships as a precompiled platform gem, so CI needs no C/Rust toolchain.
+# differently is still checked. Ships as a precompiled platform gem, so CI needs no C/Rust toolchain.
 gem "commonmarker", "~> 2.0"
 
 # The HTML5 tokenizer bin/anchor-lint reads raw <a>/<img>/<hN> tags with, so a

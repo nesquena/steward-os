@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'set'
-require 'cgi'
 require 'yaml'
 require 'pathname'
 require 'kramdown'
@@ -47,7 +46,19 @@ module AnchorContract
 
   Violation = Struct.new(:rule, :link, :message, keyword_init: true) do
     def to_line
-      "  x #{link.source}:#{link.line} -> #{link.href} — #{message}"
+      AnchorContract.printable("  x #{link.source}:#{link.line} -> #{link.href} — #{message}")
+    end
+  end
+
+  # A report line can carry a NUL or another control character (a decoded href or fragment, a tracked file
+  # name, a parser's message). It is printed escaped (`\u0000`, `\e`), the way String#inspect writes it, so the
+  # report stays one readable line. A format character (a bidi override, a zero-width space), which inspect
+  # leaves as it is, is written `\u202E`, so it cannot reorder or hide the text around it.
+  def self.printable(str)
+    str.gsub(/[^[:print:]]|\p{Cf}/) do |char|
+      next char.inspect[1..-2] unless char.match?(/\p{Cf}/)
+
+      char.ord > 0xFFFF ? format('\\u{%X}', char.ord) : format('\\u%04X', char.ord)
     end
   end
 
@@ -56,7 +67,7 @@ module AnchorContract
   # which always names a link.
   Rejection = Struct.new(:source, :line, :message, keyword_init: true) do
     def to_line
-      "  x #{source}:#{line} — #{message}"
+      AnchorContract.printable("  x #{source}:#{line} — #{message}")
     end
   end
 
@@ -155,8 +166,10 @@ module AnchorContract
     RAW_HTML_MESSAGE = 'raw <a>/<img> tag the site and GitHub read differently — usually an unquoted ' \
                        'attribute value, which renders as literal text on the site and as a live ' \
                        'link on GitHub, leaving its target unchecked'
-    BOM_MESSAGE = 'byte-order mark before the front matter — Jekyll then leaves the front matter ' \
-                  'unstripped and renders it as body text; delete the BOM'
+    BOM_MESSAGE = 'byte-order mark before the front matter — Jekyll then doesn\'t see the front matter and ' \
+                  'copies the page unrendered; delete the BOM'
+    # Jekyll's own test for a page it renders (Utils.has_yaml_header?): an opening `---` line, closed or not.
+    JEKYLL_YAML_HEADER = /\A---\s*\r?\n/.freeze
 
     # cmark-gfm options mirroring GitHub's own render pipeline (GFM extensions on,
     # footnotes on, smart punctuation off) so the second oracle sees links and
@@ -167,6 +180,58 @@ module AnchorContract
       parse: { smart: false },
       render: { unsafe: true }
     }.freeze
+    # kramdown's own attribute escaper, the one its HTML converter writes every href and src with.
+    KRAMDOWN_HTML = Object.new.extend(Kramdown::Utils::Html).freeze
+    # What kramdown-parser-gfm raises on a heading or definition term it cannot build: TypeError gathering its text
+    # when a reference is at or past 2**31 (`&#x80000000;`, `&#99999999999999999999;`), in either parse;
+    # ArgumentError slugging a heading that holds a surrogate or a code point past U+10FFFF, in the parse with ids.
+    SITE_PARSE_ERRORS = [ArgumentError, TypeError].freeze
+    # Prepended to one parser instance: the two steps of kramdown's own parse that raise those errors record the
+    # line of the element they were working on. Nothing is restated, so the line is the parser's own.
+    # ceiling: the hooks name gem methods (update_raw_text, generate_gfm_header_id); if they are renamed, the
+    # page is still reported, on line 1, and the line test fails.
+    module SiteParseLocator
+      attr_reader :failed_line
+
+      def update_raw_text(item)
+        super
+      rescue *SITE_PARSE_ERRORS
+        @failed_line ||= item.options[:location]
+        raise
+      end
+
+      def generate_gfm_header_id(text)
+        super
+      rescue *SITE_PARSE_ERRORS
+        @failed_line ||= steward_header_location(root, text)
+        raise
+      end
+
+      private
+
+      # The heading whose own raw_text is being slugged (update_elements passes that very object).
+      def steward_header_location(element, text)
+        return element.options[:location] if element.type == :header && element.options[:raw_text].equal?(text)
+
+        element.children.each { |child| (line = steward_header_location(child, text)) && (return line) }
+        nil
+      end
+    end
+    MARKDOWN_LINK_PATH_MESSAGE = 'a link to a Markdown page that the site\'s relative-links plugin can\'t ' \
+                                 'always rewrite — the built page then keeps a broken link; link a page, not an ' \
+                                 'image, end the path in a literal .md with no query, and keep the path to ' \
+                                 'letters, digits and . _ - ~ / in NFC form, with no leading / and no .. inside a ' \
+                                 'name, and no name starting with . _ or ~ or ending with ~ (non-ASCII letters ' \
+                                 'may be percent-encoded); write a character reference as the character itself ' \
+                                 'or percent-encoded (é or %C3%A9, not &eacute;), and rename a page whose name ' \
+                                 'needs anything else'
+    # The page paths the lint allows a link to: `/`-separated names of letters, marks and digits in any script and
+    # `. _ - ~`, where no name starts with `.`, `_` or `~` or ends with `~` (Jekyll never builds those), plus `.`
+    # and `..` segments.
+    PLAIN_SEGMENT = %r{(?:\.\.?|[\p{L}\p{M}\p{N}-](?:[\p{L}\p{M}\p{N}._~-]*[\p{L}\p{M}\p{N}._-])?)}.freeze
+    PLAIN_PAGE_PATH = %r{\A(?:#{PLAIN_SEGMENT}?/)*#{PLAIN_SEGMENT}\z}.freeze
+    INVALID_UTF8_MESSAGE = 'not valid UTF-8 — both renderers read the file as UTF-8, so its text and anchors ' \
+                           'are not what was written; save it as UTF-8'
 
     module_function
 
@@ -226,6 +291,18 @@ module AnchorContract
       Nokogiri::HTML5.fragment(html).css(HEADING_TAGS).filter_map { |el| el['id'] }.reject(&:empty?)
     end
 
+    # A file that isn't valid UTF-8, on the line of its first bad byte. Every reader below needs valid text, and
+    # neither renderer reads it as written, so it is reported before any of them runs.
+    def invalid_encoding(text, source:)
+      return if text.valid_encoding?
+
+      # counted on bytes, with a lone CR as a line end, the way the renderers count lines
+      line = text.b.gsub(/\r\n?/n, "\n").each_line.find_index do |l|
+        !l.dup.force_encoding(Encoding::UTF_8).valid_encoding?
+      end
+      Rejection.new(source: source, line: line + 1, message: INVALID_UTF8_MESSAGE)
+    end
+
     # Constructs the two renderers disagree about. Each one hides a link or an
     # anchor from the gate, so the document is rejected rather than scanned.
     #
@@ -236,12 +313,23 @@ module AnchorContract
     def unportable(text, source:)
       out = []
       out << Rejection.new(source: source, line: 1, message: BOM_MESSAGE) if text.start_with?(BOM)
+      # Every check below parses the page with kramdown, so a page that parse fails on is reported alone.
+      begin
+        root = document(text, auto_ids: false).root
+        document(text)
+      rescue *SITE_PARSE_ERRORS => e
+        return out << site_parse_failure(text, e, source: source)
+      end
+
       line = 1
       declined = []
-      walk(document(text, auto_ids: false).root) do |el|
+      walk(root) do |el|
         line = el.options[:location] || line
         message = unportable_message(el)
         out << Rejection.new(source: source, line: line, message: message) if message
+        if unmatchable_page_link?(el, source)
+          out << Rejection.new(source: source, line: line, message: MARKDOWN_LINK_PATH_MESSAGE)
+        end
         next unless el.type == :text && el.value.match?(RAW_HTML_TAG)
 
         declined << Rejection.new(source: source, line: line, message: RAW_HTML_MESSAGE)
@@ -249,6 +337,70 @@ module AnchorContract
       out.concat(raw_link_rejections(text, declined, source: source))
       out.concat(divergent_heading_ids(text, source: source))
       out
+    end
+
+    # jekyll-relative-links turns a link to a Markdown page into one to the built page, in two passes: one over the
+    # markdown source, keyed by the path as written (percent-decoded), and one over the rendered HTML, which only
+    # rewrites `<a href="….md">` and `<a href="….md#…">`. It then writes the page's decoded name into the built
+    # link, leaving some characters decoded (`?`, `&`, a parenthesis), which then break it again. A
+    # link that goes wrong stays a .md link or a broken one. Which forms fail depends on both passes' regexes, so
+    # rather than model them the rule allows one plain form, which the HTML pass always rewrites intact: a link
+    # whose path as written ends in a literal `.md`, has no query, and decodes to letters, marks, digits and
+    # `. _ - ~ /` only (PLAIN_PAGE_PATH), in NFC (Jekyll NFC-normalizes the href it builds but keeps a decomposed
+    # name's bytes in the file it writes). Anything else is rejected as unverified. An image of a Markdown page is
+    # rejected too: rewritten or not, an image whose source is a page is broken.
+    def unmatchable_page_link?(element, source)
+      href = link_target(element)
+      return false if href.nil? || href.empty?
+
+      # external or root-relative as written: the lint leaves those to other checks, as it always has; one only a
+      # character reference makes root-relative (`&sol;docs/x.md`) is still judged here
+      return false if href.match?(EXTERNAL)
+
+      rendered = site_href(href)
+
+      target = decode(rendered.split(/[?#]/, 2).first.to_s).scrub
+      # a NUL can't be a path (Pathname raises on it); build_link reports such a link as missing
+      return false if target.include?("\0")
+      return false unless Pathname.new(target).cleanpath.to_s.match?(MARKDOWN_EXT)
+      return true if element.type == :img || (element.type == :html_element && element.value == 'img')
+
+      path, query = href.split('#', 2).first.to_s.split('?', 2)
+      name = decode(path).scrub
+      return true if !query.nil? || !path.end_with?('.md') || !name.match?(PLAIN_PAGE_PATH)
+
+      # Where it points, too: a decoded leading `/` (the plugin roots it), `..` inside a name (`a..b.md` and
+      # `a/b.md` build to one page), and a target path, its directories included, not in NFC. PLAIN_PAGE_PATH has
+      # already refused a name starting with `~`, which the plugin's File.expand_path would expand or fail on.
+      full = Pathname.new(File.join(File.dirname(source), name)).cleanpath.to_s
+      name.start_with?('/') || name.split('/').any? { |seg| seg != '..' && seg.include?('..') } ||
+        !full.unicode_normalized?(:nfc)
+    end
+
+    # A page the site's parser raises on. kramdown-parser-gfm cannot build a heading or definition term whose text
+    # holds a character reference to a surrogate (`&#xD800;`) or past U+10FFFF. Jekyll builds a page with front
+    # matter through the same parser, so its build fails on this one (a page without front matter it copies as it
+    # is), while GitHub renders it. No anchor into it holds on both, so the page is reported, on the line the
+    # parser records for the element it failed on.
+    #
+    # ceiling: only SITE_PARSE_ERRORS are reported; any other parse error still stops the lint with its
+    # backtrace. Add its class there if one turns up.
+    def site_parse_failure(text, error, source:)
+      site = text.match?(JEKYLL_YAML_HEADER) ? "so Jekyll's build fails on it" : 'so the site cannot render it'
+      Rejection.new(source: source, line: site_parse_failure_line(text) || 1,
+                    message: "the site's markdown parser fails on this page (#{error.class}: #{error.message}), " \
+                             "#{site} — a heading or definition term holding a character reference to a surrogate " \
+                             '(&#xD800;) or past U+10FFFF is the known cause; replace or drop the reference')
+    end
+
+    # The same parse document runs, on a parser that records where it raised.
+    def site_parse_failure_line(text)
+      parser = Kramdown::Parser::GFM.send(:new, strip_front_matter(text), {})
+      parser.singleton_class.prepend(SiteParseLocator)
+      parser.parse
+      nil
+    rescue *SITE_PARSE_ERRORS
+      parser&.failed_line
     end
 
     # The renderer comparison names the tag's own line, so it is preferred. The
@@ -286,6 +438,8 @@ module AnchorContract
     # [href/src, source line] for every raw <a>/<img> kramdown parsed as an HTML element.
     # kramdown keeps the attribute value as written, so it is run through the
     # same HTML5 parser the cmark side uses to resolve its character references.
+    # This is the source read the way cmark reads it, to pair the two renderers'
+    # raw tags, not the href a site reader follows (that is site_href).
     def site_raw_targets(text)
       out = []
       walk(document(text).root) do |el|
@@ -330,8 +484,8 @@ module AnchorContract
 
     # Both renderers' link sets for one document, deduped by resolved identity so
     # a link they agree on is counted once while one only cmark sees (a reference
-    # label they case-fold differently, a raw-HTML target, a decoded character
-    # reference) or resolves elsewhere is kept and checked.
+    # label they case-fold differently, a raw-HTML target) or resolves elsewhere
+    # is kept and checked.
     def merged_links(text, source:)
       dedup_links(links(text, source: source) + links_cmark(text, source: source))
     end
@@ -341,7 +495,9 @@ module AnchorContract
     # that resolve alike, are one broken (or fine) target, not two diagnostics.
     def dedup_links(links)
       seen = {}
-      # A nil path names nothing, so two such links don't resolve alike: they are kept apart by href.
+      # A nil path names nothing, so two such links don't resolve alike: they are kept apart by href. Every
+      # extractor stores the href as its page carries it, so the two renderers' copies of one link merge when
+      # both pages carry it alike.
       links.each { |link| seen[[link.source, link.path || [:unnamed, link.href], link.fragment]] ||= link }
       seen.values
     end
@@ -358,30 +514,37 @@ module AnchorContract
     # Read from BOTH renderers and unioned by the caller: kramdown is exact for
     # the site, and cmark-gfm (links_cmark) is exact for the files GitHub renders
     # directly. A link only one of them sees — a reference label they case-fold
-    # differently, a target GitHub decodes a character reference in — is still a
-    # link on the page it renders, so the gate has to check it.
+    # differently, a raw tag one parses and the other doesn't — is still a link on
+    # the page it renders, so the gate has to check it.
     def links(text, source:)
       dir = File.dirname(source)
       out = []
       walk(document(text).root) do |el|
         href = link_target(el)
-        # kramdown resolves the references in a markdown link itself, but keeps a
-        # raw tag's attribute as written.
-        raw = el.type == :html_element
-        href = decode_attribute(href) if raw && href
-        next if href.nil? || href.empty? || href.match?(EXTERNAL)
+        next if href.nil?
 
-        out << build_link(href, source, dir, el.options[:location] || 1, decoded: raw)
+        href = site_href(href)
+        next if href.empty? || href.match?(EXTERNAL)
+
+        out << build_link(href, source, dir, el.options[:location] || 1)
       end
       out
+    end
+
+    # The href a reader of the site follows. kramdown keeps a target as written, in a markdown link and a raw tag
+    # alike, and writes it out through its own attribute escaper: a well-formed character reference is left for
+    # the browser and any other `&` becomes `&amp;`. The browser then reads it with HTML5 rules, so `&eacute;.md`
+    # is `é.md`, the unterminated `&eacute.md` is itself, and a reference to a surrogate is one U+FFFD.
+    def site_href(value)
+      decode_attribute(KRAMDOWN_HTML.escape_html(value, :attribute))
     end
 
     # The cmark-gfm oracle. commonmarker (comrak) resolves reference links,
     # character references, and nested/image-wrapped links exactly as GitHub's
     # renderer does, so its link set is what a reader on the GitHub file view can
     # actually click. Its urls arrive already entity-decoded (`a&sol;b.md` ->
-    # `a/b.md`), so skip build_link's entity pass: a second pass would turn the
-    # literal `a&amp;b.md` from a double-encoded destination into `a&b.md`.
+    # `a/b.md`), and are used as they are: a second pass would turn the literal
+    # `a&amp;b.md` from a double-encoded destination into `a&b.md`.
     # Raw <a>/<img> tags are markdown-inert to comrak's link nodes but live links
     # on the GitHub page, so their targets are pulled from the raw HTML too.
     def links_cmark(text, source:)
@@ -399,7 +562,7 @@ module AnchorContract
         next if href.empty? || href.match?(EXTERNAL)
 
         line = (node.source_position || {})[:start_line] || 1
-        out << build_link(href, source, dir, line, decoded: true)
+        out << build_link(href, source, dir, line)
       end
       out
     end
@@ -412,7 +575,7 @@ module AnchorContract
       raw_html_targets(node).filter_map do |href, line|
         next if href.empty? || href.match?(EXTERNAL)
 
-        build_link(href, source, dir, line, decoded: true)
+        build_link(href, source, dir, line)
       end
     end
 
@@ -438,9 +601,15 @@ module AnchorContract
       node.each { |child| walk_cmark(child, &block) }
     end
 
-    def walk(element, &block)
+    # kramdown keeps a footnote's definition as the :footnote element's value, not as its children, and renders
+    # it once at the foot of the page, so it is walked once, however often it is referenced.
+    def walk(element, seen = {}, &block)
       yield element
-      element.children.each { |child| walk(child, &block) }
+      element.children.each { |child| walk(child, seen, &block) }
+      return unless element.type == :footnote && element.value && !seen.key?(element.value.object_id)
+
+      seen[element.value.object_id] = true
+      walk(element.value, seen, &block)
     end
 
     def link_target(element)
@@ -451,15 +620,11 @@ module AnchorContract
       end
     end
 
-    def build_link(href, source, dir, line, decoded: false)
-      # Character references are resolved by the renderer, not the browser, so
-      # they are undone before the URL is read: `foo&amp;bar.md` is the file
-      # `foo&bar.md` — unless the HTML parser has resolved them already. Percent
-      # escapes are the browser's and are decoded per component below, after `#`
-      # has done its splitting.
-      # Split on the bytes: a character reference to a surrogate leaves invalid UTF-8, and only an
-      # invalid path names nothing. The query and fragment are not the file's name.
-      target, fragment = (decoded ? href : CGI.unescapeHTML(href)).b.split('#', 2)
+    # href is the URL as the page carries it, character references already resolved by each extractor
+    # (`foo&amp;bar.md` is the file `foo&bar.md`). Percent escapes are the browser's and are decoded per
+    # component below, after `#` has done its splitting.
+    def build_link(href, source, dir, line)
+      target, fragment = href.split('#', 2)
       # A query string is stripped by every renderer before the path is resolved,
       # and percent escapes are decoded, so `foo%20bar.md?v=1` is the tracked
       # file `foo bar.md`.
