@@ -25,6 +25,7 @@ module ConfigContract
   BOOLEAN_KEYS = %w[
     issue_capture.enabled
     community.chat.monitor
+    community.mentions_sweep.enabled
     secrets.execute_contributor_code
     secrets.sandbox_available
   ].freeze
@@ -877,8 +878,8 @@ module ConfigContract
     flag = JOB_FLAGS[name]
     if flag && fetch_path(config, flag) != true
       found << err(:job_flag_agree, "scheduled_jobs.jobs[#{index}]",
-                   "job '#{job['name']}' is enabled but #{flag} is not true: the job runs with its " \
-                   "feature turned off, and any rules that guard the feature don't run")
+                   "job '#{job['name']}' is enabled but #{flag} is not true; set #{flag} to true or " \
+                   'disable the job')
     end
     found
   end
