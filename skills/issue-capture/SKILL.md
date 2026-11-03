@@ -43,7 +43,8 @@ by the watchdog.
    path, pull index, or alarm route also fails before scanning. No invalid setup marks an item captured.
    `bin/config-lint` checks the statically decidable subset of this preflight deterministically; run
    it first, but it does not replace this step, which still owns writability, reachability, and the
-   privacy of any destination outside the repo.
+   privacy of any destination outside the repo. If `community` is listed under `not_applicable`,
+   there is no chat source: skip chat reads and infer no chat default.
 2. **Normalize, key, and lock each run.** Every adapter supplies its name, a stable source item id,
    the target repository, the untrusted body, and its source-specific marker. Build the capture key
    from **adapter + stable source item id + target repository**. Take one exclusive lock for the

@@ -358,6 +358,66 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes step, "A lint that can't run becomes a TODO, never a pass."
     assert_includes read('skills', 'project-system-setup', 'SKILL.md'), 'project shape (Section 0)'
   end
+
+  # The numbered step `num` of a skill, whitespace-folded, up to the next numbered step.
+  def skill_step(skill, num)
+    text = read('skills', skill, 'SKILL.md')
+    text[/ #{num}\. \*\*.*?(?= #{num + 1}\. \*\*|\z)/m] or flunk("#{skill} step #{num} missing")
+  end
+
+  def test_judgment_only_run_keeps_the_divert
+    t = read('skills', 'issue-triage', 'SKILL.md')
+    assert_includes t, 'A judgment-only run is a person\'s supervised run: it records judgments and skips steps 3, 5 ' \
+                       'and 6 (the reply, the labels and milestone, the sprint-candidate mark).'
+    assert_includes t, 'Step 2, the vulnerability check, always runs: skipping the public steps never skips step 2, ' \
+                       'and a suspected vulnerability still gets no judgment.'
+    assert_includes t, '"New" keeps its meaning in a judgment-only run: it adds no backfill.'
+  end
+
+  def test_marked_labels_mean_no_labels
+    assert_includes skill_step('issue-triage', 5),
+                    'If `labels` is listed under `not_applicable`, skip this step and apply no label or milestone.'
+  end
+
+  def test_marked_trust_means_no_ledger_update
+    marked = 'If `trust` is listed under `not_applicable`, skip the ledger update and record no trust event.'
+    assert_includes skill_step('release-pipeline', 6), marked
+    verification = read('skills', 'release-pipeline', 'SKILL.md').split('## Verification').last
+    assert_includes verification, 'With `trust` listed under `not_applicable`, no ledger event was written.'
+  end
+
+  def test_marked_community_means_no_chat_source
+    assert_includes skill_step('issue-capture', 1),
+                    'If `community` is listed under `not_applicable`, there is no chat source: skip chat reads and ' \
+                    'infer no chat default.'
+  end
+
+  def test_default_weights_are_for_issues
+    step = skill_step('triage-scoreboard', 4)
+    assert_includes step, 'With no weights in config, weight an issue\'s judgment dimensions (`scope_fit`, ' \
+                          '`criticality`, `risk`) equally and use the mechanical dimensions only to break ties; ' \
+                          'weights in config override this. The default covers issues only.'
+    assert_includes step, 'Rank PRs and issues separately; sort issues on the judgment dimensions\' weighted sum first'
+    playbook = read('docs', 'playbooks', 'triage-scoreboard.md')
+    assert_includes playbook, 'With no weights in config, an issue\'s judgment dimensions weigh equally and the ' \
+                              'mechanical dimensions only break ties; weights in config override this. The default ' \
+                              'covers issues only.'
+    assert_includes playbook, 'Judgment dimensions should outweigh mechanical ones'
+  end
+
+  def test_board_rule_covers_every_output
+    sentence = 'The board, its machine-readable artifact and any digest of its rows go only where they are no more ' \
+               'visible than the issues they list; history counts, so re-check before any visibility change. ' \
+               'Nothing mechanical enforces this rule.'
+    assert_includes skill_step('triage-scoreboard', 7), sentence
+    assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'), sentence
+  end
+
+  def test_a_fact_missing_on_some_items_is_no_zero
+    pitfalls = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Pitfalls').last.split('## Verification').first
+    assert_includes pitfalls, 'a fact missing on some items, not all, is reported and never treated as zero. ' \
+                              'The inert-dimension rule covers a fact missing on every item.'
+  end
 end
 
 # --- Injection guard: the block every untrusted-reading skill opens with ---

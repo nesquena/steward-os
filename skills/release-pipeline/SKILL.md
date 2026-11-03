@@ -133,7 +133,8 @@ pulled or deployed, so a merge isn't
    `true`, the host closed those issues at merge: comment on them, close any it left open (an
    absorbed PR never merges, so the host closes nothing for it), and don't reopen them. Update the
    [trust ledger](../../docs/lifecycle/contributor-recognition.md) with one terminal outcome for the
-   PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger).
+   PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger). If `trust` is listed under
+   `not_applicable`, skip the ledger update and record no trust event.
    Clean up the branch/worktree.
 
 ## The attribution-verification gate
@@ -166,5 +167,5 @@ trailer exists; it does **not** prove the *name* is right.
 - A published artifact of the kind step 4 covers is the candidate that was tested, or differs from it
   only as step 5 allows.
 - The author is credited identically on every surface, and the handle is the real author of the work.
-- The PR and its issues are closed with version + thanks; the trust ledger has one terminal event.
+- The PR and its issues are closed with version + thanks; the trust ledger has one terminal event. With `trust` listed under `not_applicable`, no ledger event was written.
 - No branch/worktree left dangling.
