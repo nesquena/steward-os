@@ -220,8 +220,9 @@ module AnchorContract
     MARKDOWN_LINK_PATH_MESSAGE = 'a link to a Markdown page that the site\'s relative-links plugin can\'t ' \
                                  'always rewrite — the built page then keeps a broken link; link a page, not an ' \
                                  'image, end the path in a literal .md with no query, and keep the path to ' \
-                                 'letters, digits and . _ - ~ / (non-ASCII letters may be percent-encoded); ' \
-                                 'rename a page whose name needs anything else'
+                                 'letters, digits and . _ - ~ / in NFC form (non-ASCII letters may be percent-' \
+                                 'encoded); write a character reference as the character itself or percent-encoded ' \
+                                 '(é or %C3%A9, not &eacute;), and rename a page whose name needs anything else'
     # The page paths the plugin always rewrites intact: letters, marks and digits in any script, and `. _ - ~ /`.
     PLAIN_PAGE_PATH = %r{\A[\p{L}\p{M}\p{N}._~/-]+\z}.freeze
     INVALID_UTF8_MESSAGE = 'not valid UTF-8 — both renderers read the file as UTF-8, so its text and anchors ' \
@@ -338,14 +339,20 @@ module AnchorContract
     # rewrites `<a href="….md">` and `<a href="….md#…">`. It then writes the page's decoded name into the built
     # link, where a character that means something there (`?`, `&`, a parenthesis in markdown) breaks it again. A
     # link that goes wrong stays a .md link or a broken one. Which forms fail depends on both passes' regexes, so
-    # rather than model them the rule allows one plain form: a link, not an image, whose path as written ends in a
-    # literal `.md`, has no query, and decodes to letters, marks, digits and `. _ - ~ /` only (PLAIN_PAGE_PATH).
+    # rather than model them the rule allows one plain form, which the HTML pass always rewrites intact: a link
+    # whose path as written ends in a literal `.md`, has no query, and decodes to letters, marks, digits and
+    # `. _ - ~ /` only (PLAIN_PAGE_PATH), in NFC (Jekyll NFC-normalizes the href it builds but keeps a decomposed
+    # name's bytes in the file it writes). Anything else is rejected as unverified. An image of a Markdown page is
+    # rejected too: rewritten or not, an image whose source is a page is broken.
     def unmatchable_page_link?(element)
       href = link_target(element)
       return false if href.nil? || href.empty?
 
+      # external or root-relative as written: the lint leaves those to other checks, as it always has; one only a
+      # character reference makes root-relative (`&sol;docs/x.md`) is still judged here
+      return false if href.match?(EXTERNAL)
+
       rendered = site_href(href)
-      return false if rendered.match?(EXTERNAL)
 
       target = decode(rendered.split(/[?#]/, 2).first.to_s).scrub
       # a NUL can't be a path (Pathname raises on it); build_link reports such a link as missing
@@ -354,7 +361,8 @@ module AnchorContract
       return true if element.type == :img || (element.type == :html_element && element.value == 'img')
 
       path, query = href.split('#', 2).first.to_s.split('?', 2)
-      !query.nil? || !path.end_with?('.md') || !decode(path).scrub.match?(PLAIN_PAGE_PATH)
+      name = decode(path).scrub
+      !query.nil? || !path.end_with?('.md') || !name.match?(PLAIN_PAGE_PATH) || !name.unicode_normalized?(:nfc)
     end
 
     # A page the site's parser raises on. kramdown-parser-gfm cannot build a heading or definition term whose text

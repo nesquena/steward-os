@@ -983,7 +983,7 @@ class UnportableTest < Minitest::Test
     assert_equal [4], found.map(&:line)
   end
 
-  def test_a_quoted_html_link_with_a_character_reference_is_not_rejected
+  def test_a_quoted_html_link_with_a_character_reference_is_not_a_raw_html_rejection
     # Only the raw-HTML rule: its .md path holds `&` and a query, which unmatchable_page_link? rejects.
     found = rejections(%(<a href="a&amp;b.md?x&sol;y">x</a>\n)).map(&:message)
     refute_includes found, AnchorContract::Extract::RAW_HTML_MESSAGE
@@ -1040,13 +1040,13 @@ class UnportableTest < Minitest::Test
     assert_empty rejections(%(# Real\n\n```html\n<h2 id="phantom">x</h2>\n```\n))
   end
 
-  # The site's relative-links plugin misses some forms of a link to a Markdown page (a character reference, a bare
-  # `&` in a raw tag, an angle-bracket destination, a title, `+`, a query, a path not ending in a literal `.md`, an
-  # image, a decoded `?`, `&` or parenthesis), and such a link is broken on the site. So on a page the site
-  # builds, only a plain link is allowed, wherever it is (a reference definition, a raw tag, a footnote): its path
-  # ends in `.md`, has no query, and decodes to letters, digits and `. _ - ~ /` only, so a page named with anything
-  # else needs renaming. Non-ASCII letters, those characters in the fragment, and a non-Markdown or external
-  # target are fine.
+  # The site's relative-links plugin and Jekyll get some forms of a link to a Markdown page wrong (a character
+  # reference, a bare `&` in a raw tag, `+`, a query, an image, a decoded `?`, `&` or parenthesis, a decomposed
+  # name), and others depend on which pass catches them. So on a page the site builds, a link is allowed only in
+  # the plain form both passes always rewrite, and anything else is rejected as unverified, wherever it is (a
+  # reference definition, a raw tag, a footnote): its path ends in `.md`, has no query, and decodes to letters,
+  # digits and `. _ - ~ /` only, in NFC. Non-ASCII letters, those characters in the fragment, and a non-Markdown or
+  # external target are fine.
   def test_a_markdown_page_link_the_plugin_cannot_always_match_is_rejected
     message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
     ['[x](&eacute;.md)', '[x](&#233;.md#real)', '[x](a&amp;b.md)', '[x](x.md&num;top)', '[x](a&b.md)',
@@ -1059,13 +1059,15 @@ class UnportableTest < Minitest::Test
      '<img src="plain.md">', '![x](<plain.md>)', '![x](plain.md)', '[x](a%3Fb.md)', '[x](a%26eacute%3B.md)',
      '[x](a%26b.md)', '<a href="a%26b.md">x</a>', '[x](a%29b.md)', '[x](a%28b.md)', '[x](<a(b).md>)',
      '[x](a(b).md)', '[x](a%20b.md)', '[x](a%23b.md)', '[x](a%27b.md)', '[x](a%25b.md)',
-     '[x](a%2Bb.md)', '[x](%25.md)'].each do |link|
+     '[x](a%2Bb.md)', '[x](%25.md)', '[x](e%CC%81x.md)', '<a href="e%CC%81x.md">x</a>', '<a href="a<b.md">x</a>',
+     '<a href="a>b.md">x</a>', '[x](<a"b.md>)', '[x](plain.MD)', '[x](&sol;docs/x.md)'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
       assert_equal [[3, message]], found.map { |r| [r.line, r.message] }, link
     end
     ['[x](plain.md)', '[x](%C3%A9.md#real)', '[x](é.md)', '[x](a_b-c~d.md)', '[x](plain.md#r&eacute;al)',
      '[x](&eacute;.png)', '[x](a&b.png?v=1)', '[x](https://e.example/&eacute;.md)', '[x](#&eacute;)',
-     '[x](&sol;docs/x.md)', '<a href="plain.md#x">x</a>', '[x](v1.2/plain.md)', '[x](%E6%96%87.md)',
+     '[x](/docs/x.md)', '<a href="plain.md#x">x</a>', '[x](v1.2/plain.md)', '[x](%E6%96%87.md)',
+     '[x](%E0%A4%95%E0%A4%BF.md)', '[x](%C3%A9x.md)',
      '<a href="&eacute;.png">x</a>', '[x](./plain.md)', '[x](sub/../plain.md)', '[x](sub%2Fplain.md)',
      '[x](%C3%A9.md)', '<a href="%C3%A9.md#x">x</a>', '![x](a.png)', '[x](a%00.md)'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
