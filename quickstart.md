@@ -54,9 +54,8 @@ Your agent picks these up on next launch. (Using a different runtime? Drop them 
 skills, or point its rules file at them — the `SKILL.md` bodies are the same.) They're the
 procedures the setup interview and the lifecycle playbooks tell the agent to load.
 
-Keep the steward-os checkout where it is. The skills link to its `setup/` and `docs/` folders with
-paths like `../../setup/setup-interview.md`, which resolve against the checkout, not against
-`.claude/skills/`. Tell your agent where the checkout is.
+Keep the steward-os checkout in place and tell your agent where it is: the skills' relative links
+(like `../../setup/setup-interview.md`) resolve against it, not against `.claude/skills/`.
 
 ## 3. Wire it to your project
 
@@ -68,12 +67,8 @@ The agent works through the [setup interview](setup/setup-interview.md) — your
 CI, review tools, autonomy posture — and writes a `config.yaml` for your project. It asks only what
 it needs, accepts "skip" for anything optional, and never guesses.
 
-Keep `config.yaml` somewhere you control and pull requests can't change: the gates read it. Then
-check it from the steward-os checkout:
-
-```bash
-bin/config-lint /path/to/config.yaml
-```
+Keep `config.yaml` where you control it and pull requests can't change it: the gates read it
+([operator-controlled](docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)).
 
 To see a finished one, read Steward's own
 [`setup/config.yaml`](https://github.com/nesquena/steward-os/blob/main/setup/config.yaml), which
@@ -95,16 +90,13 @@ steward-os ships no adapter and names no tracker.
 Pick an open issue or PR. Ask the agent to run the matching playbook **in a supervised session** —
 you watch, it proposes, you approve every public write:
 
-- An issue → load `issue-triage`, ask it to triage that issue and draft (not post) a reply. The
-  skill drafts a reply only for an issue no one has answered yet, so pick one of those to see a
-  draft.
+- An issue → load `issue-triage`, ask it to triage that issue and draft (not post) a reply. Pick
+  one no one has answered yet: the skill drafts replies only for those.
 - A PR → load `pr-triage`, ask it to run the [fit screen](docs/lifecycle/pr-lifecycle.md#0-fit--scope-screen)
   and summarize.
 
-Naming the item in your request counts as a human naming it, so the skill judges it even though it
-was opened before you adopted Steward. With no scoreboard or skill state set up yet (those come at
-Level 2), the agent gives you its records and drafts in the session instead of writing them
-anywhere.
+Naming the item in your request counts as a human naming it, so older items get judged too. The
+agent shows its records and drafts in the session; it writes nothing yet.
 
 Nothing is posted without your say-so. That's Level 1: the playbooks run in supervised sessions, so
 you get value on day one without handing over any autonomy.
