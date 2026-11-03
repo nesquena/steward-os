@@ -418,6 +418,76 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes pitfalls, 'a fact missing on some items, not all, is reported and never treated as zero. ' \
                               'The inert-dimension rule covers a fact missing on every item.'
   end
+
+  def test_quickstart_does_not_require_github
+    q = read('quickstart.md')
+    refute_includes q, 'A **GitHub repository**'
+    assert_includes q, 'The examples use a GitHub repository and the `gh` CLI. Your tracker and host can differ.'
+  end
+
+  def test_quickstart_names_ruby_for_the_lint
+    assert_includes read('quickstart.md'), 'Ruby, to run `bin/config-lint` from the steward-os checkout.'
+  end
+
+  def tracker_section
+    q = read('quickstart.md')
+    from = q.index('## Your tracker is your wiring') or flunk('tracker section missing')
+    q[from..].split(/ ## \d\. /).first
+  end
+
+  def test_tracker_section_keeps_the_bands
+    s = tracker_section
+    assert_includes s, 'Every write keeps its band in `autonomy:`, whatever tool makes it. ' \
+                       "A private tracker doesn't lower a band."
+    assert_includes s, 'steward-os ships no adapter and names no tracker.'
+  end
+
+  def test_missing_fact_is_never_zero
+    assert_includes tracker_section, 'If your tracker cannot supply a fact, the skill reports it as missing ' \
+                                     'and never treats it as zero.'
+  end
+
+  def test_skills_already_say_what_they_need
+    assert_includes tracker_section, 'Each `SKILL.md` names the facts it reads.'
+  end
+
+  def shape_rows
+    t = File.read(File.join(ROOT, 'docs', 'reference', 'adoption-levels.md'), encoding: 'UTF-8')
+    lines = t.lines.map(&:strip)
+    head = lines.index { |l| l.start_with?('| Shape ') } or flunk('shape table missing')
+    cols = lines[head].split('|').map(&:strip)[1..]
+    skills_at = cols.index('Skills') or flunk('Skills column missing')
+    assert_includes cols, 'Blocks usually marked'
+    lines[(head + 2)..].take_while { |l| l.start_with?('|') }.map { |l| l.split('|').map(&:strip)[1..] }
+                       .each { |r| r.define_singleton_method(:skills) { self[skills_at] } }
+  end
+
+  def test_shape_table_has_three_shapes
+    t = read('docs', 'reference', 'adoption-levels.md')
+    ['public with outside reporters and tags', 'private team with a separate tracker', 'private solo'].each do |s|
+      assert_includes t, s
+    end
+    assert_operator shape_rows.size, :>=, 3
+    assert_operator t.index('| Shape '), :<, t.index('_Related:')
+    assert_operator t.index('| Level | What'), :<, t.index('| Shape ')
+  end
+
+  def test_every_skill_in_the_table_exists
+    shape_rows.each do |r|
+      names = r.skills.scan(/`([^`]+)`/).flatten
+      assert_equal r.skills.gsub(/`[^`]+`|[ ,]/, ''), '', "Skills cell holds more than skill names: #{r.skills}"
+      refute_empty names, "row has no skills: #{r.first}"
+      names.each { |n| assert File.directory?(File.join(ROOT, 'skills', n)), "no skills/#{n}/" }
+    end
+  end
+
+  def test_private_team_row_names_the_first_job
+    row = shape_rows.find { |r| r.first.include?('private team') }
+    assert_includes row.skills, '`triage-scoreboard`'
+    assert_includes row.skills, '`issue-triage`'
+    %w[community issue_capture labels trust].each { |b| assert_includes row.join(' '), "`#{b}`" }
+  end
+
 end
 
 # --- Injection guard: the block every untrusted-reading skill opens with ---

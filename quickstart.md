@@ -17,7 +17,10 @@ this is the on-ramp: read the model, wire the config, run one loop by hand, then
 
 - **A coding agent that can load skills** — anything that reads a `SKILL.md`-style procedure or a
   project rules file. Examples below use Claude Code, but nothing here depends on it.
-- A **GitHub repository** you maintain, with the **`gh` CLI** authenticated (`gh auth status`).
+- A **repository and an issue tracker** you maintain.
+  The examples use a GitHub repository and the `gh` CLI. Your tracker and host can differ.
+  With `gh`, check that it is authenticated (`gh auth status`).
+- Ruby, to run `bin/config-lint` from the steward-os checkout.
 - **Steward checked out locally** (`git clone https://github.com/nesquena/steward-os`) — you'll copy its skills in step 2.
 - ~15 minutes and an open issue or PR you can practice on.
 
@@ -64,6 +67,17 @@ it needs, accepts "skip" for anything optional, and never guesses.
 To see a finished one, read Steward's own
 [`setup/config.yaml`](https://github.com/nesquena/steward-os/blob/main/setup/config.yaml), which
 configures this repo.
+
+## Your tracker is your wiring
+
+steward-os defines procedures. Your runtime supplies the tools that read and write issues.
+steward-os ships no adapter and names no tracker.
+
+- **Skills already say what they need.** Each `SKILL.md` names the facts it reads.
+- **A missing fact stays missing.** If your tracker cannot supply a fact, the skill reports it as missing
+  and never treats it as zero.
+- **Write gates don't move.** Every write keeps its band in `autonomy:`, whatever tool makes it.
+  A private tracker doesn't lower a band.
 
 ## 4. Prove it with one supervised loop (Level 1)
 
