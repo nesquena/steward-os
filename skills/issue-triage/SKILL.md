@@ -87,8 +87,7 @@ no judgment. "New" keeps its meaning in a judgment-only run: it adds no backfill
    such case.
 5. **Label + milestone.** Apply mechanical, reversible metadata. Prefer a deterministic
    label-sync (size/area/type) on a tight allowlist that is **add-only and never overrides a human's
-   label.** If `labels` is listed under `not_applicable`, skip this step and apply no label or
-   milestone.
+   label.** If `labels` is listed under `not_applicable`, apply no taxonomy label.
 6. **Sprint-candidate.** Mark confirmed bugs that have a fix starting.
 7. **Dropped-ball surfacer.** Find open issues where a maintainer replied, the reporter answered
    *after* that, and no PR exists — sorted by days-waiting. **Surface only** (never auto-reply); it

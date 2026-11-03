@@ -41,23 +41,26 @@ config can't both say a block doesn't apply and configure it.
 Rules for the marker:
 - Shape answers never skip question 20 (the security contact) or question 22 (the alarms route).
   Marking `issue_capture` exempts nothing from the vulnerability divert, which always needs a
-  private destination. The lint then warns that `security_contact` and `alarms_to` can't be
-  verified as private: confirm each with the human.
-- "Doesn't apply" is for a block the project never used. A block with history stays disabled, not
-  marked: deleting it would lose its paths and state, and capture state is the audit trail for
-  diverted vulnerabilities.
-- A skill step that reads a marked block is skipped, and the skill infers no default.
-- With a separate tracker (question D), question 2's host-closing change doesn't apply. Record
-  `host_closes_on_merge: false` and skip the settings change. The `host_closing_unwatched` warning
-  then stands, and that is expected: warnings don't fail the lint.
+  private destination. The lint then warns about each of the two it can't verify as private (a
+  blank value, or the `github-advisory` contact, gets no warning): confirm each destination with the
+  human. When `issue_capture` is off or marked and no announcements or autoclose job is enabled, the
+  lint doesn't check that the pull index (the divert's last fallback) is private: tell the human.
+- "Doesn't apply" is for a block the project never used. A block with history isn't marked: deleting
+  it would lose its paths and state, and capture state is the audit trail for diverted
+  vulnerabilities. Turn it off instead: `issue_capture.enabled: false`, or for `community`,
+  `chat.monitor: false` and `mentions_sweep.enabled: false`. `labels` has no off switch, so a
+  configured one stays in use. `trust` turns off only by blanking `ledger_path`, which drops the
+  path but not the ledger file: keep the path in a TODO.
+- A skill reads nothing from a marked block and infers no default for it. Only the part of a step
+  that needs the block is skipped; the rest of that step still runs.
+- With a separate tracker (question D), question 2 says when its host-closing change applies.
 - The shape answers are not stored. A re-run asks them again. The marker keeps the outcome.
 - Ask where the scoreboard lands when A (public) or D (separate tracker) makes it a real question.
   The board, its machine-readable artifact and any digest of its rows go only where they are no
   more visible than the issues they list; history counts, so re-check before any visibility change.
   If no acceptable location exists, or the question is skipped, set `scoreboard-refresh` to
   `enabled: false` and leave a TODO naming the location, since no config key holds it. Nothing
-  mechanical checks this rule. On a triage-only config, the divert's level-3 fallback index is not guarded by
-  `index_not_public`: tell the human.
+  mechanical checks this rule.
 
 ---
 
@@ -88,7 +91,14 @@ Rules for the marker:
    enforces nothing on a self-managed GitLab or GitHub Enterprise instance, and the watchdog can't
    observe closes there or on Gitea and Forgejo: record what the instance actually does.
    `host` is a bare host name, such as `github.com` (a port is allowed; a URL isn't).
-   With a separate tracker (Section 0, question D), skip the settings change and record `false`.
+   With a separate tracker (Section 0, question D), ask whether the code host still takes issues. If
+   it doesn't (issues are turned off on the repository), the settings change doesn't apply: record
+   `host_closes_on_merge: false` and skip it. The `host_closing_unwatched` warning then stands, and
+   that is expected: warnings don't fail the lint. If it still takes issues, ask this question as
+   written. Either way, unless every merge is the release, ask whether the tracker's own integration
+   closes or moves an issue when a linked PR merges, and turn that off where it can be. Where it
+   can't, the release names the version on those issues by hand. `host_closes_on_merge` describes
+   only the code host.
 3. **What's the default branch / trunk?** (e.g. `main`.)
 4. **What's the release model?** Tag-per-release? A changelog file? How does "shipped" get verified
    (a tag, a deploy, a running version)? Do you publish an artifact others install or pull (a

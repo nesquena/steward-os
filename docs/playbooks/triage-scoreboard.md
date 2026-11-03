@@ -124,9 +124,9 @@ the grade:
 ## The composite
 A weighted sum of the dimensions, tuned so the ranking matches "what a maintainer would actually
 pick up next." Weights are a knob you adjust as you learn what your project values (e.g. how much to
-weight contributor trust vs. raw criticality). With no weights in config, an issue's judgment
-dimensions weigh equally and the mechanical dimensions only break ties; weights in config override
-this. The default covers issues only. Promote items carrying the
+weight contributor trust vs. raw criticality). With no weights set by the project, an issue's
+judgment dimensions weigh equally and the mechanical dimensions only break ties. Weights the project
+sets replace the equal weights. The default covers issues only. Promote items carrying the
 [severity flag](#severity-is-a-flag) to the top regardless of their composite (the severity
 spotlight). A stale flag still promotes, marked stale. Judgment dimensions should outweigh
 mechanical ones: the mechanical dimensions say how an item stands, the judgment says whether it

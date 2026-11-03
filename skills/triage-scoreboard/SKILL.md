@@ -48,12 +48,12 @@ Pitfalls). Ideal as a scheduled job.
    ([the rule](../../docs/playbooks/triage-scoreboard.md#when-a-judgment-goes-stale)); a judgment
    stamp of `stale` never matches. Keep its value. Once the setters mark is written, a value with
    no setter is an error: surface it.
-4. **Compute the composite** = weighted sum of dimensions (weights from config; tune to match "what
+4. **Compute the composite** = weighted sum of dimensions (weights the project sets; tune to match "what
    I'd pick up next"). Read the bypass marker (`bypass`) as the plain in-scope level of the rubric
    your project uses ([the default](../../docs/playbooks/triage-scoreboard.md#the-default-rubric),
-   or its replacement). With no weights in config, weight an issue's judgment dimensions (`scope_fit`,
-   `criticality`, `risk`) equally and use the mechanical dimensions only to break ties; weights in
-   config override this. The default covers issues only.
+   or its replacement). With no weights set by the project, weight an issue's judgment dimensions
+   (`scope_fit`, `criticality`, `risk`) equally and use the mechanical dimensions only to break ties.
+   Weights the project sets replace the equal weights. The default covers issues only.
    Rank PRs and issues separately; sort issues on the judgment dimensions' weighted sum first, and
    on the mechanical dimensions only between equal sums. An item with no judgment at all leaves the
    ranking for the [not yet judged](../../docs/playbooks/triage-scoreboard.md#not-yet-judged)

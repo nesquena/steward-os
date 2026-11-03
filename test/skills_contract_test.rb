@@ -292,6 +292,9 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes s, "lettered A-D so the numbered questions keep their numbers"
     full = read('setup', 'setup-interview.md')
     (1..22).each { |n| assert_match(/ #{n}\. \*\*/, full, "question #{n} lost its number") }
+    # Section 0 cites question 20 as the security contact and question 22 as the alarms route.
+    assert_includes full[/ 20\. \*\*.*?(?= 21\. \*\*)/m].to_s, '`security.security_contact`'
+    assert_includes full[/ 22\. \*\*.*?(?=---| 23\. \*\*|\z)/m].to_s, 'where should watchdog alarms go?'
   end
 
   def test_a_human_confirms_each_marked_block
@@ -309,12 +312,17 @@ class ProjectShapeContractTest < Minitest::Test
   end
 
   def test_a_block_with_history_stays_disabled
-    assert_includes section0, 'A block with history stays disabled, not marked: deleting it would lose its paths and ' \
-                              'state, and capture state is the audit trail for diverted vulnerabilities.'
+    assert_includes section0, "A block with history isn't marked: deleting it would lose its paths and state, and " \
+                              'capture state is the audit trail for diverted vulnerabilities. Turn it off instead'
+    assert_includes section0, '`issue_capture.enabled: false`, or for `community`, `chat.monitor: false` and ' \
+                              '`mentions_sweep.enabled: false`. `labels` has no off switch'
+    assert_includes section0, '`trust` turns off only by blanking `ledger_path`, which drops the path but not the ' \
+                              'ledger file: keep the path in a TODO.'
   end
 
   def test_a_step_reading_a_marked_block_is_skipped
-    assert_includes section0, 'A skill step that reads a marked block is skipped, and the skill infers no default.'
+    assert_includes section0, 'A skill reads nothing from a marked block and infers no default for it. Only the part ' \
+                              'of a step that needs the block is skipped; the rest of that step still runs.'
   end
 
   def test_shape_answers_are_re_asked
@@ -322,8 +330,15 @@ class ProjectShapeContractTest < Minitest::Test
   end
 
   def test_separate_tracker_warning_is_expected
-    assert_includes section0, 'Record `host_closes_on_merge: false` and skip the settings change. ' \
-                              'The `host_closing_unwatched` warning then stands, and that is expected'
+    assert_includes section0, 'With a separate tracker (question D), question 2 says when its host-closing change applies.'
+    q2 = read('setup', 'setup-interview.md')[/ 2\. \*\*.*?(?= 3\. \*\*)/m]
+    assert_includes q2, "If it doesn't (issues are turned off on the repository), the settings change doesn't " \
+                        'apply: record `host_closes_on_merge: false` and skip it. The `host_closing_unwatched` ' \
+                        'warning then stands, and that is expected'
+    assert_includes q2, 'If it still takes issues, ask this question as written.'
+    assert_includes q2, 'Either way, unless every merge is the release, ask whether the tracker\'s own integration ' \
+                        'closes or moves an issue when a linked PR merges'
+    assert_includes q2, '`host_closes_on_merge` describes only the code host.'
   end
 
   def test_board_location_has_a_fallback
@@ -335,8 +350,9 @@ class ProjectShapeContractTest < Minitest::Test
   end
 
   def test_lint_warns_the_divert_destinations_are_unverified
-    assert_includes section0, "The lint then warns that `security_contact` and `alarms_to` can't be verified as " \
-                              'private: confirm each with the human.'
+    assert_includes section0, "The lint then warns about each of the two it can't verify as private (a blank " \
+                              'value, or the `github-advisory` contact, gets no warning): confirm each destination ' \
+                              'with the human.'
   end
 
   def test_board_goes_only_where_the_issues_are_as_private
@@ -353,7 +369,9 @@ class ProjectShapeContractTest < Minitest::Test
   end
 
   def test_fallback_index_limit_is_stated
-    assert_includes section0, "the divert's level-3 fallback index is not guarded by `index_not_public`"
+    assert_includes section0, "When `issue_capture` is off or marked and no announcements or autoclose job is " \
+                              "enabled, the lint doesn't check that the pull index (the divert's last fallback) " \
+                              'is private: tell the human.'
   end
 
   def test_template_header_separates_blank_from_marked
@@ -387,7 +405,7 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_marked_labels_mean_no_labels
     assert_includes skill_step('issue-triage', 5),
-                    'If `labels` is listed under `not_applicable`, skip this step and apply no label or milestone.'
+                    'If `labels` is listed under `not_applicable`, apply no taxonomy label.'
   end
 
   # Like skill_step, but stops at the next `## ` heading so a sentence moved out of the step fails the pin.
@@ -410,14 +428,14 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_default_weights_are_for_issues
     step = skill_step('triage-scoreboard', 4)
-    assert_includes step, 'With no weights in config, weight an issue\'s judgment dimensions (`scope_fit`, ' \
-                          '`criticality`, `risk`) equally and use the mechanical dimensions only to break ties; ' \
-                          'weights in config override this. The default covers issues only.'
+    assert_includes step, 'With no weights set by the project, weight an issue\'s judgment dimensions (`scope_fit`, ' \
+                          '`criticality`, `risk`) equally and use the mechanical dimensions only to break ties. ' \
+                          'Weights the project sets replace the equal weights. The default covers issues only.'
     assert_includes step, 'Rank PRs and issues separately; sort issues on the judgment dimensions\' weighted sum first'
     playbook = read('docs', 'playbooks', 'triage-scoreboard.md')
-    assert_includes playbook, 'With no weights in config, an issue\'s judgment dimensions weigh equally and the ' \
-                              'mechanical dimensions only break ties; weights in config override this. The default ' \
-                              'covers issues only.'
+    assert_includes playbook, 'With no weights set by the project, an issue\'s judgment dimensions weigh equally and ' \
+                              'the mechanical dimensions only break ties. Weights the project sets replace the equal ' \
+                              'weights. The default covers issues only.'
     assert_includes playbook, 'Judgment dimensions should outweigh mechanical ones'
   end
 
@@ -507,6 +525,12 @@ class ProjectShapeContractTest < Minitest::Test
     levels = read('docs', 'reference', 'adoption-levels.md')
     assert_includes levels, 'That run writes judgments and skips replies, labels and sprint-candidate marks.'
     assert_includes levels, 'The vulnerability divert still runs.'
+    assert_includes levels, '`issue-triage` does no backfill, so that run reaches the existing backlog only for the ' \
+                            'issues a person names.'
+    solo = shape_rows.find { |r| r.first == 'private solo' }
+    assert_includes solo.skills, '`release-pipeline`' # pr-deep-review hands off to it
+    assert_includes levels, 'A team with pull requests adds `coding-principles`, `pr-triage`, `pr-deep-review` and ' \
+                            '`release-pipeline` once Level 2 is steady.'
   end
 end
 
