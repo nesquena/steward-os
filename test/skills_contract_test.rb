@@ -314,13 +314,15 @@ class ProjectShapeContractTest < Minitest::Test
   def test_a_block_with_history_stays_disabled
     assert_includes section0, "A block with history isn't marked: deleting it would lose its paths and state, and " \
                               'capture state is the audit trail for diverted vulnerabilities. Turn it off instead'
-    assert_includes section0, '`issue_capture.enabled: false`, or for `community`, `chat.monitor: false` and ' \
-                              '`mentions_sweep.enabled: false`. `labels` has no off switch'
+    assert_includes section0, 'Turn it off instead, with whatever depends on it, so the config still lints. For ' \
+                              '`issue_capture`: `issue_capture.enabled: false`, the `issue-capture` job ' \
+                              '`enabled: false`, and `chat.monitor: false`, since chat monitoring needs capture.'
+    assert_includes section0, '`labels` has no flag of its own: disable the `label-sync` job and keep the taxonomy'
     assert_includes section0, '`trust` turns off only by blanking `ledger_path`, which drops the path but not the ' \
                               'ledger file: keep the path in a TODO.'
   end
 
-  def test_a_step_reading_a_marked_block_is_skipped
+  def test_a_marked_block_skips_only_the_part_that_needs_it
     assert_includes section0, 'A skill reads nothing from a marked block and infers no default for it. Only the part ' \
                               'of a step that needs the block is skipped; the rest of that step still runs.'
   end
@@ -338,6 +340,7 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes q2, 'If it still takes issues, ask this question as written.'
     assert_includes q2, 'Either way, unless every merge is the release, ask whether the tracker\'s own integration ' \
                         'closes or moves an issue when a linked PR merges'
+    assert_includes q2, "Where it can't, the release names the version on those issues as `release-pipeline` step 6 says."
     assert_includes q2, '`host_closes_on_merge` describes only the code host.'
   end
 
@@ -401,6 +404,8 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes t, 'Step 2, the vulnerability check, always runs: skipping the public steps never skips step 2, ' \
                        'and a suspected vulnerability still gets no judgment.'
     assert_includes t, '"New" keeps its meaning in a judgment-only run: it adds no backfill.'
+    assert_includes t, 'A judgment-only run marks an issue handled like any other run; the mark gates only step ' \
+                       '4\'s "new", so a later full run still runs steps 3, 5 and 6 on it.'
   end
 
   def test_marked_labels_mean_no_labels
@@ -414,10 +419,14 @@ class ProjectShapeContractTest < Minitest::Test
   end
 
   def test_marked_trust_means_no_ledger_update
-    marked = 'If `trust` is listed under `not_applicable`, skip the ledger update and record no trust event.'
+    marked = 'If `trust` is listed under `not_applicable`, or `trust.ledger_path` is blank, skip the ledger update ' \
+             'and record no trust event.'
     assert_includes skill_step_only('release-pipeline', 6), marked
+    assert_includes skill_step_only('release-pipeline', 6),
+                    "Treat an issue a separate tracker's own integration closed or moved at merge the same way."
     verification = read('skills', 'release-pipeline', 'SKILL.md').split('## Verification').last
-    assert_includes verification, 'With `trust` listed under `not_applicable`, no ledger event was written.'
+    assert_includes verification, 'With `trust` listed under `not_applicable`, or a blank `trust.ledger_path`, no ' \
+                                  'ledger event was written.'
   end
 
   def test_marked_community_means_no_chat_source
@@ -428,8 +437,9 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_default_weights_are_for_issues
     step = skill_step('triage-scoreboard', 4)
-    assert_includes step, 'With no weights set by the project, weight an issue\'s judgment dimensions (`scope_fit`, ' \
-                          '`criticality`, `risk`) equally and use the mechanical dimensions only to break ties. ' \
+    assert_includes step, 'With no weights set by the project, weight an issue\'s judgment dimensions equally (the ' \
+                          'default rubric\'s `scope_fit`, `criticality` and `risk`, or a replacement\'s own) and use ' \
+                          'the mechanical dimensions only to break ties. ' \
                           'Weights the project sets replace the equal weights. The default covers issues only.'
     assert_includes step, 'Rank PRs and issues separately; sort issues on the judgment dimensions\' weighted sum first'
     playbook = read('docs', 'playbooks', 'triage-scoreboard.md')

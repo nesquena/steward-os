@@ -52,7 +52,8 @@ Pitfalls). Ideal as a scheduled job.
    I'd pick up next"). Read the bypass marker (`bypass`) as the plain in-scope level of the rubric
    your project uses ([the default](../../docs/playbooks/triage-scoreboard.md#the-default-rubric),
    or its replacement). With no weights set by the project, weight an issue's judgment dimensions
-   (`scope_fit`, `criticality`, `risk`) equally and use the mechanical dimensions only to break ties.
+   equally (the default rubric's `scope_fit`, `criticality` and `risk`, or a replacement's own) and
+   use the mechanical dimensions only to break ties.
    Weights the project sets replace the equal weights. The default covers issues only.
    Rank PRs and issues separately; sort issues on the judgment dimensions' weighted sum first, and
    on the mechanical dimensions only between equal sums. An item with no judgment at all leaves the

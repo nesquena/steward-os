@@ -31,7 +31,9 @@ make commitments.
 A judgment-only run is a person's supervised run: it records judgments and skips steps 3, 5 and 6
 (the reply, the labels and milestone, the sprint-candidate mark). Step 2, the vulnerability check,
 always runs: skipping the public steps never skips step 2, and a suspected vulnerability still gets
-no judgment. "New" keeps its meaning in a judgment-only run: it adds no backfill.
+no judgment. "New" keeps its meaning in a judgment-only run: it adds no backfill. A judgment-only
+run marks an issue handled like any other run; the mark gates only step 4's "new", so a later full
+run still runs steps 3, 5 and 6 on it.
 
 1. **Read `config.yaml`** — repos, the scope settings (`scope.anchors`, `scope.philosophy_veto`,
    `scope.bypass_scope_gate`), the maintainer handle(s) (for the dropped-ball check), the

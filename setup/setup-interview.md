@@ -31,7 +31,8 @@ the rest of the interview.
 - **D. Do issues live on the code host or in a separate tracker?**
 
 From the answers, the agent proposes which blocks don't apply: `community`, `issue_capture`,
-`labels`, `trust`. A human confirms each block. The agent never marks a block on its own.
+`labels`, `trust`, starting from
+[which skills fit which shape](../docs/reference/adoption-levels.md#which-skills-fit-which-shape). A human confirms each block. The agent never marks a block on its own.
 
 "Skip / not yet" and "doesn't apply" are different answers. "Skip / not yet" is an unanswered
 question: a documented TODO with blank values. "Doesn't apply" is a decision: list the block under
@@ -47,10 +48,13 @@ Rules for the marker:
   lint doesn't check that the pull index (the divert's last fallback) is private: tell the human.
 - "Doesn't apply" is for a block the project never used. A block with history isn't marked: deleting
   it would lose its paths and state, and capture state is the audit trail for diverted
-  vulnerabilities. Turn it off instead: `issue_capture.enabled: false`, or for `community`,
-  `chat.monitor: false` and `mentions_sweep.enabled: false`. `labels` has no off switch, so a
-  configured one stays in use. `trust` turns off only by blanking `ledger_path`, which drops the
-  path but not the ledger file: keep the path in a TODO.
+  vulnerabilities. Turn it off instead, with whatever depends on it, so the config still lints. For
+  `issue_capture`: `issue_capture.enabled: false`, the `issue-capture` job `enabled: false`, and
+  `chat.monitor: false`, since chat monitoring needs capture. For `community`: `chat.monitor: false`
+  and `mentions_sweep.enabled: false`. `labels` has no flag of its own: disable the `label-sync` job
+  and keep the taxonomy, since the watchdog checks each ledger'd label against it. `trust` turns off
+  only by blanking `ledger_path`, which drops the path but not the ledger file: keep the path in a
+  TODO.
 - A skill reads nothing from a marked block and infers no default for it. Only the part of a step
   that needs the block is skipped; the rest of that step still runs.
 - With a separate tracker (question D), question 2 says when its host-closing change applies.
@@ -97,8 +101,8 @@ Rules for the marker:
    that is expected: warnings don't fail the lint. If it still takes issues, ask this question as
    written. Either way, unless every merge is the release, ask whether the tracker's own integration
    closes or moves an issue when a linked PR merges, and turn that off where it can be. Where it
-   can't, the release names the version on those issues by hand. `host_closes_on_merge` describes
-   only the code host.
+   can't, the release names the version on those issues as `release-pipeline` step 6 says.
+   `host_closes_on_merge` describes only the code host.
 3. **What's the default branch / trunk?** (e.g. `main`.)
 4. **What's the release model?** Tag-per-release? A changelog file? How does "shipped" get verified
    (a tag, a deploy, a running version)? Do you publish an artifact others install or pull (a
