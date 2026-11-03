@@ -316,8 +316,12 @@ class ProjectShapeContractTest < Minitest::Test
                               'capture state is the audit trail for diverted vulnerabilities. Turn it off instead'
     assert_includes section0, 'Turn it off instead, with whatever depends on it, so the config still lints. For ' \
                               '`issue_capture`: `issue_capture.enabled: false`, the `issue-capture` job ' \
-                              '`enabled: false`, and `chat.monitor: false`, since chat monitoring needs capture.'
+                              '`enabled: false`, and `chat.monitor: false` with any `chat-monitor` job ' \
+                              '`enabled: false`, since chat monitoring needs capture.'
+    assert_includes section0, 'For `community`: `chat.monitor: false`, `mentions_sweep.enabled: false`, and any ' \
+                              '`chat-monitor` and `mentions-sweep` jobs `enabled: false`.'
     assert_includes section0, '`labels` has no flag of its own: disable the `label-sync` job and keep the taxonomy'
+    assert_includes section0, '`issue-triage` step 5 still applies that taxonomy on a full run; tell the human.'
     assert_includes section0, '`trust` turns off only by blanking `ledger_path`, which drops the path but not the ' \
                               'ledger file: keep the path in a TODO.'
   end

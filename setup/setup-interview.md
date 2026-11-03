@@ -32,7 +32,8 @@ the rest of the interview.
 
 From the answers, the agent proposes which blocks don't apply: `community`, `issue_capture`,
 `labels`, `trust`, starting from
-[which skills fit which shape](../docs/reference/adoption-levels.md#which-skills-fit-which-shape). A human confirms each block. The agent never marks a block on its own.
+[which skills fit which shape](../docs/reference/adoption-levels.md#which-skills-fit-which-shape).
+A human confirms each block. The agent never marks a block on its own.
 
 "Skip / not yet" and "doesn't apply" are different answers. "Skip / not yet" is an unanswered
 question: a documented TODO with blank values. "Doesn't apply" is a decision: list the block under
@@ -50,11 +51,13 @@ Rules for the marker:
   it would lose its paths and state, and capture state is the audit trail for diverted
   vulnerabilities. Turn it off instead, with whatever depends on it, so the config still lints. For
   `issue_capture`: `issue_capture.enabled: false`, the `issue-capture` job `enabled: false`, and
-  `chat.monitor: false`, since chat monitoring needs capture. For `community`: `chat.monitor: false`
-  and `mentions_sweep.enabled: false`. `labels` has no flag of its own: disable the `label-sync` job
-  and keep the taxonomy, since the watchdog checks each ledger'd label against it. `trust` turns off
-  only by blanking `ledger_path`, which drops the path but not the ledger file: keep the path in a
-  TODO.
+  `chat.monitor: false` with any `chat-monitor` job `enabled: false`, since chat monitoring needs
+  capture. For `community`: `chat.monitor: false`, `mentions_sweep.enabled: false`, and any
+  `chat-monitor` and `mentions-sweep` jobs `enabled: false`. `labels` has no flag of its own:
+  disable the `label-sync` job and keep the taxonomy, since the watchdog checks each ledger'd label
+  against it. `issue-triage` step 5 still applies that taxonomy on a full run; tell the human.
+  `trust` turns off only by blanking `ledger_path`, which drops the path but not the ledger file:
+  keep the path in a TODO.
 - A skill reads nothing from a marked block and infers no default for it. Only the part of a step
   that needs the block is skipped; the rest of that step still runs.
 - With a separate tracker (question D), question 2 says when its host-closing change applies.
