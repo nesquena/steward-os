@@ -220,7 +220,8 @@ module AnchorContract
     MARKDOWN_LINK_PATH_MESSAGE = 'a link to a Markdown page that the site\'s relative-links plugin can\'t ' \
                                  'always rewrite — the built page then keeps a broken link; link a page, not an ' \
                                  'image, end the path in a literal .md with no query, and keep the path to ' \
-                                 'letters, digits and . _ - ~ / in NFC form (non-ASCII letters may be percent-' \
+                                 'letters, digits and . _ - ~ / in NFC form, with no leading / or ~ and no .. ' \
+                                 'inside a name (non-ASCII letters may be percent-' \
                                  'encoded); write a character reference as the character itself or percent-encoded ' \
                                  '(é or %C3%A9, not &eacute;), and rename a page whose name needs anything else'
     # The page paths the plugin always rewrites intact: letters, marks and digits in any script, and `. _ - ~ /`.
@@ -322,7 +323,7 @@ module AnchorContract
         line = el.options[:location] || line
         message = unportable_message(el)
         out << Rejection.new(source: source, line: line, message: message) if message
-        if unmatchable_page_link?(el)
+        if unmatchable_page_link?(el, source)
           out << Rejection.new(source: source, line: line, message: MARKDOWN_LINK_PATH_MESSAGE)
         end
         next unless el.type == :text && el.value.match?(RAW_HTML_TAG)
@@ -344,7 +345,7 @@ module AnchorContract
     # `. _ - ~ /` only (PLAIN_PAGE_PATH), in NFC (Jekyll NFC-normalizes the href it builds but keeps a decomposed
     # name's bytes in the file it writes). Anything else is rejected as unverified. An image of a Markdown page is
     # rejected too: rewritten or not, an image whose source is a page is broken.
-    def unmatchable_page_link?(element)
+    def unmatchable_page_link?(element, source)
       href = link_target(element)
       return false if href.nil? || href.empty?
 
@@ -362,7 +363,13 @@ module AnchorContract
 
       path, query = href.split('#', 2).first.to_s.split('?', 2)
       name = decode(path).scrub
-      !query.nil? || !path.end_with?('.md') || !name.match?(PLAIN_PAGE_PATH) || !name.unicode_normalized?(:nfc)
+      return true if !query.nil? || !path.end_with?('.md') || !name.match?(PLAIN_PAGE_PATH)
+
+      # Where it points, too: a decoded leading `/` or `~` (the plugin roots or expands it), `..` inside a name
+      # (`a..b.md` and `a/b.md` build to one page), and a target path, its directories included, not in NFC.
+      full = Pathname.new(File.join(File.dirname(source), name)).cleanpath.to_s
+      name.start_with?('/', '~') || name.split('/').any? { |seg| seg != '..' && seg.include?('..') } ||
+        !full.unicode_normalized?(:nfc)
     end
 
     # A page the site's parser raises on. kramdown-parser-gfm cannot build a heading or definition term whose text

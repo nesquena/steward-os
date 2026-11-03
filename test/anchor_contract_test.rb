@@ -1060,19 +1060,30 @@ class UnportableTest < Minitest::Test
      '[x](a%26b.md)', '<a href="a%26b.md">x</a>', '[x](a%29b.md)', '[x](a%28b.md)', '[x](<a(b).md>)',
      '[x](a(b).md)', '[x](a%20b.md)', '[x](a%23b.md)', '[x](a%27b.md)', '[x](a%25b.md)',
      '[x](a%2Bb.md)', '[x](%25.md)', '[x](e%CC%81x.md)', '<a href="e%CC%81x.md">x</a>', '<a href="a<b.md">x</a>',
-     '<a href="a>b.md">x</a>', '[x](<a"b.md>)', '[x](plain.MD)', '[x](&sol;docs/x.md)'].each do |link|
+     '<a href="a>b.md">x</a>', '[x](<a"b.md>)', '[x](plain.MD)', '[x](&sol;docs/x.md)', '[x](~missing.md#real)',
+     '[x](%2Fx.md#sub)', '[x](a..b.md#first)', '[x](sub/a..b.md)'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
       assert_equal [[3, message]], found.map { |r| [r.line, r.message] }, link
     end
     ['[x](plain.md)', '[x](%C3%A9.md#real)', '[x](é.md)', '[x](a_b-c~d.md)', '[x](plain.md#r&eacute;al)',
      '[x](&eacute;.png)', '[x](a&b.png?v=1)', '[x](https://e.example/&eacute;.md)', '[x](#&eacute;)',
      '[x](/docs/x.md)', '<a href="plain.md#x">x</a>', '[x](v1.2/plain.md)', '[x](%E6%96%87.md)',
-     '[x](%E0%A4%95%E0%A4%BF.md)', '[x](%C3%A9x.md)',
+     '[x](%E0%A4%95%E0%A4%BF.md)', '[x](%C3%A9x.md)', '[x](कि.md)', '[x](½.md)', '[x](%C2%BD.md)', '[x](٣.md)',
+     '[x](%D9%A3.md)', '[x](../x.md#real)', '[x](sub/../x.md)', '[x](x~1.md)',
      '<a href="&eacute;.png">x</a>', '[x](./plain.md)', '[x](sub/../plain.md)', '[x](sub%2Fplain.md)',
      '[x](%C3%A9.md)', '<a href="%C3%A9.md#x">x</a>', '![x](a.png)', '[x](a%00.md)'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
       assert_empty found.select { |r| r.message == message }, link
     end
+  end
+
+  # The target's whole path must be NFC, its directories included: Jekyll builds the link NFC but keeps a
+  # decomposed directory's bytes, so a plain link from a page in such a directory is broken.
+  def test_a_link_from_a_decomposed_directory_is_rejected
+    message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
+    found = AnchorContract::Extract.unportable("# T\n\n[x](plain.md#real)\n", source: "docs/e\u0301/index.md")
+    assert_equal [message], found.map(&:message)
+    assert_empty AnchorContract::Extract.unportable("# T\n\n[x](plain.md#real)\n", source: "docs/\u00e9/index.md")
   end
 
   # A footnote's definition is rendered once at the foot of the page, so a link in it is checked once.
