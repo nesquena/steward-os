@@ -1061,7 +1061,8 @@ class UnportableTest < Minitest::Test
      '[x](a(b).md)', '[x](a%20b.md)', '[x](a%23b.md)', '[x](a%27b.md)', '[x](a%25b.md)',
      '[x](a%2Bb.md)', '[x](%25.md)', '[x](e%CC%81x.md)', '<a href="e%CC%81x.md">x</a>', '<a href="a<b.md">x</a>',
      '<a href="a>b.md">x</a>', '[x](<a"b.md>)', '[x](plain.MD)', '[x](&sol;docs/x.md)', '[x](~missing.md#real)',
-     '[x](%2Fx.md#sub)', '[x](a..b.md#first)', '[x](sub/a..b.md)'].each do |link|
+     '[x](%2Fx.md#sub)', '[x](a..b.md#first)', '[x](sub/a..b.md)', '[x](_x.md)', '[x](.x.md)', '[x](.md)',
+     '[x](_d/y.md)', '[x](v~/plain.md)', '[x](%7E/x.md)', '<a href="~x.md">x</a>'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
       assert_equal [[3, message]], found.map { |r| [r.line, r.message] }, link
     end
@@ -1069,7 +1070,8 @@ class UnportableTest < Minitest::Test
      '[x](&eacute;.png)', '[x](a&b.png?v=1)', '[x](https://e.example/&eacute;.md)', '[x](#&eacute;)',
      '[x](/docs/x.md)', '<a href="plain.md#x">x</a>', '[x](v1.2/plain.md)', '[x](%E6%96%87.md)',
      '[x](%E0%A4%95%E0%A4%BF.md)', '[x](%C3%A9x.md)', '[x](कि.md)', '[x](½.md)', '[x](%C2%BD.md)', '[x](٣.md)',
-     '[x](%D9%A3.md)', '[x](../x.md#real)', '[x](sub/../x.md)', '[x](x~1.md)',
+     '[x](%D9%A3.md)', '[x](../x.md#real)', '[x](sub/../x.md)', '[x](x~1.md)', '[x](-x-.md)', '[x](x_.md)',
+     '[x](x~.md)',
      '<a href="&eacute;.png">x</a>', '[x](./plain.md)', '[x](sub/../plain.md)', '[x](sub%2Fplain.md)',
      '[x](%C3%A9.md)', '<a href="%C3%A9.md#x">x</a>', '![x](a.png)', '[x](a%00.md)'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')

@@ -220,12 +220,16 @@ module AnchorContract
     MARKDOWN_LINK_PATH_MESSAGE = 'a link to a Markdown page that the site\'s relative-links plugin can\'t ' \
                                  'always rewrite — the built page then keeps a broken link; link a page, not an ' \
                                  'image, end the path in a literal .md with no query, and keep the path to ' \
-                                 'letters, digits and . _ - ~ / in NFC form, with no leading / or ~ and no .. ' \
-                                 'inside a name (non-ASCII letters may be percent-' \
-                                 'encoded); write a character reference as the character itself or percent-encoded ' \
-                                 '(é or %C3%A9, not &eacute;), and rename a page whose name needs anything else'
-    # The page paths the plugin always rewrites intact: letters, marks and digits in any script, and `. _ - ~ /`.
-    PLAIN_PAGE_PATH = %r{\A[\p{L}\p{M}\p{N}._~/-]+\z}.freeze
+                                 'letters, digits and . _ - ~ / in NFC form, with no leading / and no .. inside a ' \
+                                 'name, and no name starting with . _ or ~ or ending with ~ (non-ASCII letters ' \
+                                 'may be percent-encoded); write a character reference as the character itself ' \
+                                 'or percent-encoded (é or %C3%A9, not &eacute;), and rename a page whose name ' \
+                                 'needs anything else'
+    # The page paths the lint allows a link to: `/`-separated names of letters, marks and digits in any script and
+    # `. _ - ~`, where no name starts with `.`, `_` or `~` or ends with `~` (Jekyll never builds those), plus `.`
+    # and `..` segments.
+    PLAIN_SEGMENT = %r{(?:\.\.?|[\p{L}\p{M}\p{N}-](?:[\p{L}\p{M}\p{N}._~-]*[\p{L}\p{M}\p{N}._-])?)}.freeze
+    PLAIN_PAGE_PATH = %r{\A(?:#{PLAIN_SEGMENT}?/)*#{PLAIN_SEGMENT}\z}.freeze
     INVALID_UTF8_MESSAGE = 'not valid UTF-8 — both renderers read the file as UTF-8, so its text and anchors ' \
                            'are not what was written; save it as UTF-8'
 
@@ -338,7 +342,7 @@ module AnchorContract
     # jekyll-relative-links turns a link to a Markdown page into one to the built page, in two passes: one over the
     # markdown source, keyed by the path as written (percent-decoded), and one over the rendered HTML, which only
     # rewrites `<a href="….md">` and `<a href="….md#…">`. It then writes the page's decoded name into the built
-    # link, where a character that means something there (`?`, `&`, a parenthesis in markdown) breaks it again. A
+    # link, leaving some characters decoded (`?`, `&`, a parenthesis), which then break it again. A
     # link that goes wrong stays a .md link or a broken one. Which forms fail depends on both passes' regexes, so
     # rather than model them the rule allows one plain form, which the HTML pass always rewrites intact: a link
     # whose path as written ends in a literal `.md`, has no query, and decodes to letters, marks, digits and
@@ -365,10 +369,11 @@ module AnchorContract
       name = decode(path).scrub
       return true if !query.nil? || !path.end_with?('.md') || !name.match?(PLAIN_PAGE_PATH)
 
-      # Where it points, too: a decoded leading `/` or `~` (the plugin roots or expands it), `..` inside a name
-      # (`a..b.md` and `a/b.md` build to one page), and a target path, its directories included, not in NFC.
+      # Where it points, too: a decoded leading `/` (the plugin roots it), `..` inside a name (`a..b.md` and
+      # `a/b.md` build to one page), and a target path, its directories included, not in NFC. PLAIN_PAGE_PATH has
+      # already refused a name starting with `~`, which the plugin's File.expand_path would expand or fail on.
       full = Pathname.new(File.join(File.dirname(source), name)).cleanpath.to_s
-      name.start_with?('/', '~') || name.split('/').any? { |seg| seg != '..' && seg.include?('..') } ||
+      name.start_with?('/') || name.split('/').any? { |seg| seg != '..' && seg.include?('..') } ||
         !full.unicode_normalized?(:nfc)
     end
 
