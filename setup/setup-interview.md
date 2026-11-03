@@ -50,12 +50,12 @@ Rules for the marker:
   `host_closes_on_merge: false` and skip the settings change. The `host_closing_unwatched` warning
   then stands, and that is expected: warnings don't fail the lint.
 - The shape answers are not stored. A re-run asks them again. The marker keeps the outcome.
-- Where the scoreboard lands is a real question when A or D applies. The board and any digest of
-  its rows go only where they are no more visible than the issues they list. If no acceptable
+- Ask where the scoreboard lands when A (public) or D (separate tracker) makes it a real question.
+  The board and any digest of its rows go only where they are no more visible than the issues they list. If no acceptable
   location exists, or the question is skipped, set `scoreboard-refresh` to `enabled: false` and
   leave a TODO naming the location, since no config key holds it. Nothing mechanical checks this
   rule. On a triage-only config, the divert's level-3 fallback index is not guarded by
-  `index_not_public`: say so.
+  `index_not_public`: tell the human.
 
 ---
 

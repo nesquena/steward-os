@@ -309,7 +309,8 @@ class ProjectShapeContractTest < Minitest::Test
   end
 
   def test_a_block_with_history_stays_disabled
-    assert_includes section0, 'A block with history stays disabled, not marked'
+    assert_includes section0, 'A block with history stays disabled, not marked: deleting it would lose its paths and ' \
+                              'state, and capture state is the audit trail for diverted vulnerabilities.'
   end
 
   def test_a_step_reading_a_marked_block_is_skipped
@@ -327,6 +328,18 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_board_location_has_a_fallback
     assert_includes section0, 'set `scoreboard-refresh` to `enabled: false` and leave a TODO naming the location'
+  end
+
+  def test_board_goes_only_where_the_issues_are_as_private
+    assert_includes section0, 'The board and any digest of its rows go only where they are no more visible than ' \
+                              'the issues they list.'
+  end
+
+  def test_setup_verification_checks_the_marker
+    verification = read('skills', 'project-system-setup', 'SKILL.md').split('## Verification').last
+    assert_includes verification, 'Every block the human confirmed as not applicable is listed under ' \
+                                  '`not_applicable` and is deleted or `{}`.'
+    assert_includes verification, 'or its failure to run is a TODO'
   end
 
   def test_fallback_index_limit_is_stated

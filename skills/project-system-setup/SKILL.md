@@ -18,8 +18,8 @@ and produces the project's `config.yaml` from the
    question script; the template is the output shape.
 2. **Interview the human, section by section.** Ask only what's needed; explain *why* each section
    matters (cite the playbook it feeds). Accept "skip / not yet" for any optional section.
-   - Required: project shape (Section 0), identity & repos, scope anchors, CI/tests, autonomy posture, secrets (if any public
-     write).
+   - Required: project shape (Section 0), identity & repos, scope anchors, CI/tests, autonomy
+     posture, secrets (if any public write).
    - Optional: chat/community, mentions, scheduled jobs.
 3. **Confirm each answer** before writing it. Never guess — an unanswered question becomes a
    documented TODO in the output, not an assumption.
@@ -44,7 +44,7 @@ and produces the project's `config.yaml` from the
 
 ## Verification
 - `config.yaml` exists and parses.
-- `bin/config-lint` exits 0 on it, or its absence is a TODO.
+- `bin/config-lint` exits 0 on it, or its failure to run is a TODO.
 - Every block the human confirmed as not applicable is listed under `not_applicable` and is deleted
   or `{}`.
 - Every required section is filled or explicitly marked TODO.
