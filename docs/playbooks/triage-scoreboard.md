@@ -236,8 +236,8 @@ Each judgment dimension and the severity flag records a setter: `human`, `agent`
 - The setter is stored with the value and written only with it. It's never read off the last
   writer, such as a commit author: the judgment stamp the refresh writes never changes it.
 - An agent writes an empty value, or re-judges a stale one an agent set, or a `legacy` one on an
-  item a human named. A human names an item where a ruling reaches triage, never in the item's
-  own comments. A human may overwrite any value.
+  item a human named. A human names an item in the request for a supervised run or where a ruling
+  reaches triage, never in the item's own comments. A human may overwrite any value.
 - A human confirms a stale value by writing it, the same value or a new one. The write clears
   its judgment stamp and rubric identifier, and the next refresh stamps it.
 - `legacy` is a value that was on the board before setters were recorded. The refresh that

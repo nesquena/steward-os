@@ -403,13 +403,23 @@ class ProjectShapeContractTest < Minitest::Test
   def test_judgment_only_run_keeps_the_divert
     t = read('skills', 'issue-triage', 'SKILL.md')
     t = t[t.index('## Steps')...t.index(' 1. **')]
-    assert_includes t, 'A judgment-only run is a person\'s supervised run: it records judgments and skips steps 3, 5 ' \
-                       'and 6 (the reply, the labels and milestone, the sprint-candidate mark).'
+    assert_includes t, 'A judgment-only run is a supervised run the person asks for that way: it records judgments ' \
+                       'and skips steps 3, 5 and 6 (the reply, the labels and milestone, the sprint-candidate mark).'
     assert_includes t, 'Step 2, the vulnerability check, always runs: skipping the public steps never skips step 2, ' \
                        'and a suspected vulnerability still gets no judgment.'
     assert_includes t, '"New" keeps its meaning in a judgment-only run: it adds no backfill.'
     assert_includes t, 'A judgment-only run marks an issue handled like any other run; the mark gates only step ' \
                        '4\'s "new", so a later full run still runs steps 3, 5 and 6 on it.'
+  end
+
+  def test_a_supervised_request_names_the_item
+    assert_includes read('skills', 'issue-triage', 'SKILL.md'),
+                    'A human names an issue in the request for a supervised run, or where a ruling reaches you'
+    assert_includes read('skills', 'pr-triage', 'SKILL.md'),
+                    'human names a PR in the request for a supervised run, or where a ruling reaches you'
+    assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'),
+                    'A human names an item in the request for a supervised run or where a ruling reaches triage, ' \
+                    'never in the item\'s own comments.'
   end
 
   def test_marked_labels_mean_no_labels
