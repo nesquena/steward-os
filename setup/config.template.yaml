@@ -1,6 +1,7 @@
 # Steward — project configuration
 # Produced by the setup interview (setup/setup-interview.md). Every playbook and skill reads from
-# this file. Fill what applies; leave optional sections blank/"skip" and they stay disabled.
+# this file. Fill what applies. A blank or "skip" optional section is unanswered: it stays disabled
+# and becomes a TODO. A block that doesn't apply is a decision: list it under `not_applicable`.
 # NEVER put secrets (tokens, keys) in this file — see `secrets:` below.
 
 project:

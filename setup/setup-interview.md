@@ -22,6 +22,43 @@ documented TODO, not an assumption.
 
 ---
 
+## Section 0 — Project shape *(required)*
+Four short questions, lettered A-D so the numbered questions keep their numbers. The answers route
+the rest of the interview.
+- **A. Public or private?** Is any repository public?
+- **B. Who files issues?** Outside reporters, your own team and stakeholders, or just you?
+- **C. Do you tag releases?** This confirms question 4's model early.
+- **D. Do issues live on the code host or in a separate tracker?**
+
+From the answers, the agent proposes which blocks don't apply: `community`, `issue_capture`,
+`labels`, `trust`. A human confirms each block. The agent never marks a block on its own.
+
+"Skip / not yet" and "doesn't apply" are different answers. "Skip / not yet" is an unanswered
+question: a documented TODO with blank values. "Doesn't apply" is a decision: list the block under
+`not_applicable` in the config. Marking a block means deleting it or leaving it `{}`, because the
+config can't both say a block doesn't apply and configure it.
+
+Rules for the marker:
+- Shape answers never skip question 20 (the security contact) or question 22 (the alarms route).
+  Marking `issue_capture` exempts nothing from the vulnerability divert, which always needs a
+  private destination.
+- "Doesn't apply" is for a block the project never used. A block with history stays disabled, not
+  marked: deleting it would lose its paths and state, and capture state is the audit trail for
+  diverted vulnerabilities.
+- A skill step that reads a marked block is skipped, and the skill infers no default.
+- With a separate tracker (question D), question 2's host-closing change doesn't apply. Record
+  `host_closes_on_merge: false` and skip the settings change. The `host_closing_unwatched` warning
+  then stands, and that is expected: warnings don't fail the lint.
+- The shape answers are not stored. A re-run asks them again. The marker keeps the outcome.
+- Where the scoreboard lands is a real question when A or D applies. The board and any digest of
+  its rows go only where they are no more visible than the issues they list. If no acceptable
+  location exists, or the question is skipped, set `scoreboard-refresh` to `enabled: false` and
+  leave a TODO naming the location, since no config key holds it. Nothing mechanical checks this
+  rule. On a triage-only config, the divert's level-3 fallback index is not guarded by
+  `index_not_public`: say so.
+
+---
+
 ## Section 1 — Identity & repositories *(required)*
 1. **What is the project?** One-line description. (Used in every public-facing template.)
 2. **Which repositories does it span?** For each: host/owner/name, role (primary app, desktop,
@@ -49,6 +86,7 @@ documented TODO, not an assumption.
    enforces nothing on a self-managed GitLab or GitHub Enterprise instance, and the watchdog can't
    observe closes there or on Gitea and Forgejo: record what the instance actually does.
    `host` is a bare host name, such as `github.com` (a port is allowed; a URL isn't).
+   With a separate tracker (Section 0, question D), skip the settings change and record `false`.
 3. **What's the default branch / trunk?** (e.g. `main`.)
 4. **What's the release model?** Tag-per-release? A changelog file? How does "shipped" get verified
    (a tag, a deploy, a running version)? Do you publish an artifact others install or pull (a
@@ -120,6 +158,8 @@ The system can't screen PRs/issues for fit without knowing what "fits."
     heartbeat.) Start with a few; add as you climb the autonomy ladder. →
     [scheduled jobs](../docs/playbooks/scheduled-jobs.md). `chat-monitor` and `mentions-sweep` have
     no skill yet; the config lint refuses them enabled.
+    If the scoreboard has no acceptable location (Section 0), set `scoreboard-refresh` to
+    `enabled: false`.
 22. **How does steward output reach you?** Default is a pull-based index you check (discovery);
     pushing a digest to a chat channel is an optional add-on. Also: where should watchdog alarms go?
     → [the output loop](../docs/playbooks/output-loop.md).

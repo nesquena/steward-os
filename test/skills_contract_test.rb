@@ -265,6 +265,88 @@ class HostClosingContractTest < Minitest::Test
   end
 end
 
+class ProjectShapeContractTest < Minitest::Test
+  # Section 0 of the setup interview, the setup skill and the template header. Read with whitespace
+  # folded, so a re-wrap doesn't break the pin.
+  def read(*path)
+    File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
+  end
+
+  def section0
+    setup = read('setup', 'setup-interview.md')
+    from = setup.index('## Section 0 ')
+    upto = setup.index('## Section 1 ')
+    assert from && upto && from < upto, 'Section 0 must come before Section 1'
+    setup[from...upto]
+  end
+
+  def setup_step(num)
+    skill = read('skills', 'project-system-setup', 'SKILL.md')
+    skill[/ #{num}\. \*\*.*?(?= #{num + 1}\. \*\*|\z)/m] or flunk("step #{num} missing")
+  end
+
+  def test_interview_asks_shape_first
+    s = section0
+    ['**A. Public or private?**', '**B. Who files issues?**', '**C. Do you tag releases?**',
+     '**D. Do issues live on the code host or in a separate tracker?**'].each { |q| assert_includes s, q }
+    assert_includes s, "lettered A-D so the numbered questions keep their numbers"
+    full = read('setup', 'setup-interview.md')
+    (1..22).each { |n| assert_match(/ #{n}\. \*\*/, full, "question #{n} lost its number") }
+  end
+
+  def test_a_human_confirms_each_marked_block
+    assert_includes section0, 'A human confirms each block. The agent never marks a block on its own.'
+  end
+
+  def test_a_marked_block_is_deleted_or_empty
+    assert_includes section0, "Marking a block means deleting it or leaving it `{}`, because the config can't both " \
+                              "say a block doesn't apply and configure it."
+  end
+
+  def test_shape_never_skips_the_divert_questions
+    assert_includes section0, 'Shape answers never skip question 20 (the security contact) or question 22 ' \
+                              '(the alarms route).'
+  end
+
+  def test_a_block_with_history_stays_disabled
+    assert_includes section0, 'A block with history stays disabled, not marked'
+  end
+
+  def test_a_step_reading_a_marked_block_is_skipped
+    assert_includes section0, 'A skill step that reads a marked block is skipped, and the skill infers no default.'
+  end
+
+  def test_shape_answers_are_re_asked
+    assert_includes section0, 'The shape answers are not stored. A re-run asks them again. The marker keeps the outcome.'
+  end
+
+  def test_separate_tracker_warning_is_expected
+    assert_includes section0, 'Record `host_closes_on_merge: false` and skip the settings change. ' \
+                              'The `host_closing_unwatched` warning then stands, and that is expected'
+  end
+
+  def test_board_location_has_a_fallback
+    assert_includes section0, 'set `scoreboard-refresh` to `enabled: false` and leave a TODO naming the location'
+  end
+
+  def test_fallback_index_limit_is_stated
+    assert_includes section0, "the divert's level-3 fallback index is not guarded by `index_not_public`"
+  end
+
+  def test_template_header_separates_blank_from_marked
+    tpl = File.read(File.join(ROOT, 'setup', 'config.template.yaml'), encoding: 'UTF-8').gsub(/\s*\n#\s*/, ' ')
+    assert_includes tpl, 'A blank or "skip" optional section is unanswered: it stays disabled and becomes a TODO. ' \
+                         "A block that doesn't apply is a decision: list it under `not_applicable`."
+  end
+
+  def test_setup_skill_runs_the_lint
+    step = setup_step(4)
+    assert_includes step, 'run `bin/config-lint` on it from the steward-os checkout'
+    assert_includes step, "A lint that can't run becomes a TODO, never a pass."
+    assert_includes read('skills', 'project-system-setup', 'SKILL.md'), 'project shape (Section 0)'
+  end
+end
+
 # --- Injection guard: the block every untrusted-reading skill opens with ---
 class GuardCheckerTest < Minitest::Test
   def guards(**over)
