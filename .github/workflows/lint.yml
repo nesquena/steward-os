@@ -24,18 +24,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1.336.0
         with:
-          ruby-version: "3.3"
-          bundler-cache: true
+          bundler-cache: true  # Ruby comes from .ruby-version
+      # Each step is a bin/ci step, so `bin/ci contracts` runs the same thing locally.
       - name: Unit tests
-        run: |
-          shopt -s nullglob
-          files=(test/*_test.rb)
-          if [ ${#files[@]} -eq 0 ]; then echo "no test files found"; exit 1; fi
-          for f in "${files[@]}"; do echo "== $f"; bundle exec ruby "$f" || exit 1; done
-        shell: bash
+        run: bin/ci unit
       - name: Skills-contract lint
-        run: bundle exec ./bin/skills-contract-lint
+        run: bin/ci skills
       - name: Config-contract lint
-        run: bundle exec ./bin/config-lint
+        run: bin/ci config
       - name: Anchor-link lint
-        run: bundle exec ./bin/anchor-lint
+        run: bin/ci anchor
