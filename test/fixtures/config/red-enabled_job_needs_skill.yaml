@@ -1,5 +1,6 @@
 # Red fixture for enabled_job_needs_skill.
-# One edit vs green-enabled.yaml: the issue-capture job renamed to mentions-sweep.
+# Two edits vs green-enabled.yaml: the issue-capture job renamed to mentions-sweep, and
+# community.mentions_sweep.enabled set to true, so job_flag_agree doesn't fire as well.
 project:
   name: "fixture project"
   trunk_branch: "main"
@@ -34,7 +35,7 @@ community:
     monitor: true
     capture_reaction: "white_check_mark"
   mentions_sweep:
-    enabled: false
+    enabled: true
     disambiguate_against: ""
 
 issue_capture:

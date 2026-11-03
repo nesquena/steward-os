@@ -107,7 +107,8 @@ module ConfigContract
   # Jobs whose enabled run needs a feature flag on: job name => flag path.
   JOB_FLAGS = {
     'issue-capture' => 'issue_capture.enabled',
-    'chat-monitor' => 'community.chat.monitor'
+    'chat-monitor' => 'community.chat.monitor',
+    'mentions-sweep' => 'community.mentions_sweep.enabled'
   }.freeze
 
   # The markable block served by each template job that serves one. A job on a marked block must
@@ -876,8 +877,8 @@ module ConfigContract
     flag = JOB_FLAGS[name]
     if flag && fetch_path(config, flag) != true
       found << err(:job_flag_agree, "scheduled_jobs.jobs[#{index}]",
-                   "job '#{job['name']}' is enabled but #{flag} is not true, so the rules that " \
-                   'guard it never run')
+                   "job '#{job['name']}' is enabled but #{flag} is not true: the job runs with its " \
+                   "feature turned off, and any rules that guard the feature don't run")
     end
     found
   end

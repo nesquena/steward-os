@@ -1653,6 +1653,15 @@ class MarkerTest < Minitest::Test
     assert_includes rules(capture_off(with_chat_jobs(cfg))), :job_flag_agree
   end
 
+  def test_the_mentions_job_on_with_the_sweep_off_is_refused
+    on = with_chat_jobs(cfg)
+    assert_empty errors(on)
+    on['community']['mentions_sweep']['enabled'] = false
+    index = on['scheduled_jobs']['jobs'].index { |j| j['name'] == 'mentions-sweep' }
+    assert_equal ["scheduled_jobs.jobs[#{index}]"], keys_for(on, :job_flag_agree)
+    assert_empty errors(job_off(on, 'mentions-sweep'))
+  end
+
   def test_community_turned_off_with_its_jobs_lints_clean
     off = lambda do |c|
       c['community']['chat']['monitor'] = false
@@ -1661,6 +1670,7 @@ class MarkerTest < Minitest::Test
     end
     assert_empty errors(job_off(job_off(off.call(with_chat_jobs(cfg)), 'chat-monitor'), 'mentions-sweep'))
     assert_includes rules(job_off(off.call(with_chat_jobs(cfg)), 'mentions-sweep')), :job_flag_agree
+    assert_includes rules(job_off(off.call(with_chat_jobs(cfg)), 'chat-monitor')), :job_flag_agree
   end
 
   def test_capture_flag_alone_does_not_turn_capture_off
