@@ -311,10 +311,12 @@ the common case. A naive check can also read "not allowed to signal that process
 
 **Catch it:** "A process with that id exists" doesn't mean "the owner is alive". Prefer a lock the
 operating system releases when its holder exits: an advisory lock on a file held open for the run,
-on a local filesystem, with the descriptor closed on exec so a child can't keep it. Otherwise
-record the process start time together with a boot id, since start times count from boot. A live
-but hung holder keeps any lock, so a run that skips for a held lock reports how long it has been
-held, and alerts past a limit. (The
+on a local filesystem. A flock lock stays held until every copy of its descriptor is closed, a
+forked child's included, so set close-on-exec to keep a program the job starts from holding it, and
+close the descriptor in any child the job forks without exec. Otherwise record the process start
+time together with a boot id, since start times count from boot. A live but hung holder keeps any
+lock, so a run that skips for a held lock reports how long it has been held, and alerts past a
+limit. (The
 [simple file lock](../playbooks/scheduled-jobs.md#coordination--durability) is usually enough; this
 is how it goes wrong.)
 
@@ -342,7 +344,7 @@ sources answered, so an empty one can be checked.
 
 ## 18. The run record stamped at start
 
-**Shape:** A job writes "last run: <time>" when it starts, then does its work. A run that crashes,
+**Shape:** A job writes `last run: <time>` when it starts, then does its work. A run that crashes,
 hangs or is killed halfway still leaves a current time. A watchdog or a reader checking freshness
 sees a recent run and reports all clear, though nothing finished.
 
