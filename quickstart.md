@@ -54,8 +54,9 @@ Your agent picks these up on next launch. (Using a different runtime? Drop them 
 skills, or point its rules file at them — the `SKILL.md` bodies are the same.) They're the
 procedures the setup interview and the lifecycle playbooks tell the agent to load.
 
-Keep the steward-os checkout in place and tell your agent where it is: the skills' relative links
-(like `../../setup/setup-interview.md`) resolve against it, not against `.claude/skills/`.
+Keep the steward-os checkout in place and tell your agent where it is. The skills link to its
+`setup/` and `docs/` with paths written for the checkout's layout (like
+`../../setup/setup-interview.md`), so from `.claude/skills/` the agent reads them in the checkout.
 
 ## 3. Wire it to your project
 
@@ -95,8 +96,10 @@ you watch, it proposes, you approve every public write:
 - A PR → load `pr-triage`, ask it to run the [fit screen](docs/lifecycle/pr-lifecycle.md#0-fit--scope-screen)
   and summarize.
 
-Naming the item in your request counts as a human naming it, so older items get judged too. The
-agent shows its records and drafts in the session; it writes nothing yet.
+In a supervised session you are where rulings reach the agent, so an item you name in your request
+counts as named, even one opened before you adopted Steward. The skills record judgments on the
+scoreboard and keep marks in their own state; until you set those up (Level 2), tell the agent where
+to keep them, or to show them in the session.
 
 Nothing is posted without your say-so. That's Level 1: the playbooks run in supervised sessions, so
 you get value on day one without handing over any autonomy.
