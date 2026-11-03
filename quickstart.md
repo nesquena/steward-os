@@ -94,16 +94,17 @@ Pick an open issue or PR. Ask the agent to run the matching playbook **in a supe
 you watch, it proposes, you approve every public write:
 
 - An issue → load `issue-triage`, ask it to triage that issue and draft (not post) a reply. Pick
-  one no one has answered yet: the skill drafts replies only for those (an answered issue still gets
-  judged).
+  one no one has answered yet: the skill drafts replies only for those (an answered issue is still
+  triaged).
 - A PR → load `pr-triage`, ask it to run the [fit screen](docs/lifecycle/pr-lifecycle.md#0-fit--scope-screen)
   and summarize.
 
 `issue-triage` judges issues opened after its first run, plus any you name in your request, so your
-practice issue still gets a judgment. The skills record judgments on a scoreboard and keep marks in
-their own state. Until you've set those up, tell the agent where to keep them (state somewhere
-private that only you write; the board no more visible than your issues), or to show them in the
-session, in which case nothing carries over to later runs.
+practice issue is triaged too (judged, or halted or escalated as the skill says). The skills record
+judgments on a scoreboard and keep marks in their own state. Until you've set those up, tell the
+agent where to keep them (state somewhere private that only you and your agent write; the board no
+more visible than your issues), or to show them in the session, in which case nothing carries over
+to later runs.
 
 Nothing is posted without your say-so. That's Level 1: the playbooks run in supervised sessions, so
 you get value on day one without handing over any autonomy.
