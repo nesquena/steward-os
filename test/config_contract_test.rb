@@ -409,7 +409,8 @@ class TypeTest < Minitest::Test
   def base
     {
       'repositories' => [{ 'host' => 'github.com', 'visibility' => 'public', 'host_closes_on_merge' => false }],
-      'community' => { 'chat' => { 'monitor' => false, 'platform' => '', 'capture_reaction' => '' } },
+      'community' => { 'chat' => { 'monitor' => false, 'platform' => '', 'capture_reaction' => '' },
+                       'mentions_sweep' => { 'enabled' => false, 'disambiguate_against' => '' } },
       'issue_capture' => {
         'enabled' => false, 'capture_marker' => '', 'queue_path' => '',
         'ledger_path' => '', 'checkpoint_path' => '',
@@ -440,6 +441,12 @@ class TypeTest < Minitest::Test
     assert_equal :error, v.severity
     assert_equal 'issue_capture.enabled', v.key
     assert_match(/String/, v.message)
+  end
+
+  def test_string_true_sweep_flag_is_not_a_boolean
+    cfg = base
+    cfg['community']['mentions_sweep']['enabled'] = 'true'
+    assert_equal 'community.mentions_sweep.enabled', find(cfg, :type_boolean)&.key
   end
 
   def test_real_boolean_passes
@@ -633,7 +640,8 @@ class SemanticTest < Minitest::Test
     {
       'repositories' => [{ 'host' => 'github.com', 'visibility' => 'private', 'host_closes_on_merge' => false }],
       'community' => { 'chat' => { 'monitor' => true, 'platform' => 'discord',
-                                   'capture_reaction' => 'white_check_mark' } },
+                                   'capture_reaction' => 'white_check_mark' },
+                       'mentions_sweep' => { 'enabled' => false, 'disambiguate_against' => '' } },
       'issue_capture' => {
         'enabled' => true, 'capture_marker' => 'steward-captured',
         'queue_path' => '/srv/steward/queue.md', 'ledger_path' => '/srv/steward/ledger.md',
@@ -1653,6 +1661,15 @@ class MarkerTest < Minitest::Test
     assert_includes rules(capture_off(with_chat_jobs(cfg))), :job_flag_agree
   end
 
+  def test_the_mentions_job_on_with_the_sweep_off_is_refused
+    on = with_chat_jobs(cfg)
+    assert_empty errors(on)
+    on['community']['mentions_sweep']['enabled'] = false
+    index = on['scheduled_jobs']['jobs'].index { |j| j['name'] == 'mentions-sweep' }
+    assert_equal ["scheduled_jobs.jobs[#{index}]"], keys_for(on, :job_flag_agree)
+    assert_empty errors(job_off(on, 'mentions-sweep'))
+  end
+
   def test_community_turned_off_with_its_jobs_lints_clean
     off = lambda do |c|
       c['community']['chat']['monitor'] = false
@@ -1661,6 +1678,7 @@ class MarkerTest < Minitest::Test
     end
     assert_empty errors(job_off(job_off(off.call(with_chat_jobs(cfg)), 'chat-monitor'), 'mentions-sweep'))
     assert_includes rules(job_off(off.call(with_chat_jobs(cfg)), 'mentions-sweep')), :job_flag_agree
+    assert_includes rules(job_off(off.call(with_chat_jobs(cfg)), 'chat-monitor')), :job_flag_agree
   end
 
   def test_capture_flag_alone_does_not_turn_capture_off

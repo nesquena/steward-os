@@ -50,7 +50,7 @@ community:                      # optional — leave platform blank to disable c
     monitor: false              # off until issue_capture.enabled and platform are set; shared issue_capture owns capture + reaction
     capture_reaction: "white_check_mark"   # chat-source marker; NEVER free-text public voice
   mentions_sweep:
-    enabled: false
+    enabled: false              # the mentions-sweep job needs this true; turn both off together
     disambiguate_against: ""    # namesake to exclude, if any
 
 issue_capture:                  # shared pre-tracker capture core for chat and non-chat adapters
