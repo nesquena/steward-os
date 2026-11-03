@@ -256,6 +256,133 @@ structure instead of matching patterns).
 
 ---
 
+## 14. The refresh that overwrites what it couldn't read
+
+**Shape:** A job rebuilds a file each run and carries part of it forward: it recomputes the fresh
+data and merges in the judgment from the last copy. One run finds the last copy unparseable (a
+truncated write, a hand edit with a typo, a format change) and treats it as empty. It writes a clean
+new file, and every carried value is gone. The next run reads the clean file and has nothing left to
+recover.
+
+**Why checks miss it:** "Parse error, start fresh" looks like sensible defensive code, and every
+test that feeds it a good file passes. The loss happens once, quietly, and the file it leaves is
+valid.
+
+**Catch it:** A read that fails is an error, not an empty result. When the prior state can't be
+parsed, alert once, leave the file as it is, and write nothing over it until a human repairs it.
+That rule covers every cause above. To stop a crash from causing a truncated write in the first
+place, write each new copy to a uniquely named temporary file in the same directory, flush it to
+disk, then rename it into place. Test it with a corrupt prior file and assert the file is unchanged
+afterwards.
+
+---
+
+## 15. The one-way archive
+
+**Shape:** An item leaves the active set (closed, merged, resolved) and its state moves to an
+archive or is dropped with it. Then the same item comes back: reopened, or its revert reverted. The
+job looks only in the active set, so it treats the item as new, and what it had built up (a
+judgment, a counter, a parked mark) is gone or stranded in the archive. This is
+[entry 10](#10-cleanup-at-the-wrong-lifecycle-phase) with a twist: the phase that ended can
+restart, under the same id.
+
+**Why checks miss it:** Tests cover the forward path: open, handled, closed, archived. Reopening is
+rare, no fixture has it, and a reopened item looks exactly like a new one.
+
+**Catch it:** For every path that takes state out of the active set, write down the path that
+brings it back, and test the round trip: close, reopen, and assert what came back. When an item
+reappears, look it up by its stable id, archive included, before treating it as new. If some
+state shouldn't return (a judgment of content that changed while it was closed), mark it stale
+rather than dropping it.
+
+---
+
+## 16. The lock held by a reused process id
+
+**Shape:** A job's lock file records its owner's process id, and a new run checks whether that
+process is alive before taking the lock over. The owner crashed, and the operating system has since
+given its id to an unrelated process. The check finds a live process, so the lock is never taken
+over. Every later run skips, and since skipping is the quiet path, nothing reports it.
+
+**Why checks miss it:** An id is reused only after the counter wraps or across a reboot, which tests
+never reach. In a container whose lock file survives the run (on a volume, or across restarts),
+every run can start with the same low id, so the new run finds itself "alive" and the collision is
+the common case. A naive check can also read "not allowed to signal that process" as alive.
+
+**Catch it:** "A process with that id exists" doesn't mean "the owner is alive". Prefer a lock the
+operating system releases when its holder exits: an advisory lock on a file held open for the run,
+on a local filesystem. A flock lock stays held until every copy of its descriptor is closed, a
+forked child's included, so set close-on-exec to keep a program the job starts from holding it, and
+close the descriptor in any child the job forks without exec. Otherwise record the process start
+time together with a boot id, since start times count from boot. A live but hung holder keeps any
+lock, so a run that skips for a held lock reports how long it has been held, and alerts past a
+limit. (The
+[simple file lock](../playbooks/scheduled-jobs.md#coordination--durability) is usually enough; this
+is how it goes wrong.)
+
+---
+
+## 17. Zero rows that read as an empty backlog
+
+**Shape:** A job publishes a list (a board, a digest, a queue), and readers take it as the state of
+the world. One run's fetch fails quietly: an expired token, a rate limit, a query that matches
+nothing because a field was renamed. The job gets zero rows, publishes an empty list and exits zero.
+Readers see nothing to do.
+
+**Why checks miss it:** Empty is a valid result, and under
+[silent-on-no-op](../playbooks/scheduled-jobs.md#silent-on-no-op-the-most-important-rule) a run
+with nothing to report is a quiet one, so a failed fetch passes for one. Unless it checks, the job
+can't tell "there is nothing" from "I couldn't see anything".
+
+**Catch it:** Check each source's status, not just its row count, and fail the run on an error, as
+[failure surfacing](../playbooks/scheduled-jobs.md#failure-surfacing) says.
+Where a sudden drop to zero is unlikely (an open backlog of forty items going to none), compare with
+the last run and alert instead of publishing. A list people trust says when it was fetched and which
+sources answered, so an empty one can be checked.
+
+---
+
+## 18. The run record stamped at start
+
+**Shape:** A job writes `last run: <time>` when it starts, then does its work. A run that crashes,
+hangs or is killed halfway still leaves a current time. A watchdog or a reader checking freshness
+sees a recent run and reports all clear, though nothing finished.
+
+**Why checks miss it:** In every test the run finishes, so start and finish agree. They differ only
+when a run dies, and a dead run is what the record is there to catch.
+
+**Catch it:** Record start and finish separately. Write the finish record on every exit path,
+failure included, with its outcome, and never before the work it vouches for; write it the way
+[entry 14](#14-the-refresh-that-overwrites-what-it-couldnt-read) writes a file. A freshness check
+reads the last successful finish, and treats a start with no finish after the job's timeout as a
+failure. It's the logic of the
+[fleet heartbeat](../playbooks/scheduled-jobs.md#the-heartbeat-exception): an absence is the alarm,
+so nothing may fill it early.
+
+---
+
+## 19. The stored result that outlives the rules that made it
+
+**Shape:** A job stores a derived result (a judgment, a classification, a score) so it doesn't redo
+the work every run, and keys "already done" on the item alone. Then the rules change: a new rubric,
+prompt, model or scoring fix. The stored results were made under the old rules, but the items
+haven't changed, so the job never redoes them. Old-rule and new-rule values sit side by side with
+nothing to tell them apart.
+
+**Why checks miss it:** The cache is right for the case it was built for: unchanged rules. Tests
+check that an unchanged item is skipped, which is exactly the behavior that hides this.
+
+**Catch it:** Key a stored result on everything that produced it: the item's inputs and the version
+of the rules (rubric, prompt, model id, schema). When the version changes, mark the old results
+stale and re-queue them at a capped rate, rather than redoing everything at once or never. This is
+[entry 12](#12-the-invariant-the-tests-dont-encode)'s "every identity axis" applied to stored
+results. The [scoreboard's staleness rules](../playbooks/triage-scoreboard.md#when-a-judgment-goes-stale)
+are this fix, and the per-item stamp in
+[scheduled jobs](../playbooks/scheduled-jobs.md#when-a-models-output-feeds-a-script) uses the same
+idea to bring parked items back.
+
+---
+
 _How to use this: skim it before a deep review so the shapes are fresh, and add to it when your
 project discovers a new recurring class. A catalog of the bugs that actually bite you is one of the
 highest-leverage documents a project keeps._
