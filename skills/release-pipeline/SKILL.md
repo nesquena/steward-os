@@ -128,13 +128,28 @@ pulled or deployed, so a merge isn't
    whether to yank the release or fix forward. Where a comparison was due, no receipt, or an old or
    incomplete one (another release commit, or digests other than the two compared), means it isn't
    finished: step 6 waits until a current one is kept.
-6. **Close + credit [6].** Close the PR and every issue it resolves with a comment naming the
-   version and **thanking the author by handle.** On a repository whose `host_closes_on_merge` is
-   `true`, the host closed those issues at merge: comment on them, close any it left open (an
-   absorbed PR never merges, so the host closes nothing for it), and don't reopen them. Treat an
-   issue a separate tracker's own integration closed or moved at merge the same way. Update the
-   [trust ledger](../../docs/lifecycle/contributor-recognition.md) with one terminal outcome for the
-   PR, in the [event schema](../contributor-trust/SKILL.md#the-ledger). If `trust` is listed under
+6. **Close + credit [6].** The release covers every PR it contains, not just the one this run
+   merged: each PR whose merge commit is reachable from this tag but not from the nearest earlier
+   release tag reachable from it (pre-release tags don't count; on a first release, every merge
+   reachable from this tag), and each absorbed PR whose change it carries. Under `style:
+   continuous` every merge is its own release, so only this run's PR. For each PR, close it if it's
+   still open, and close every issue it links as closing (`Closes #N` in its description, or a
+   sidebar link; a keyword only in a commit message doesn't count; where a separate tracker holds
+   the link, read it there), with a comment naming the version and **thanking the author by
+   handle.**
+   Leave open an issue a human holds, the same holds
+   [`issue-autoclose`](../issue-autoclose/SKILL.md) honours: reopened since the merge, a reporter
+   comment or reaction after it, an unchecked task item, a `multi-surface`/`epic` label, or another
+   closing PR no release contains yet. Name each one to the maintainer in the release's output. An
+   issue already closed with a comment naming this version gets no second comment; one closed
+   without a version gets the comment, and is never reopened. On a repository whose
+   `host_closes_on_merge` is `true`, the host closed those issues at merge: comment on them, close
+   any it left open that no hold keeps open (an absorbed PR never merges, so the host closes
+   nothing for it), and don't reopen them. Treat an issue a separate tracker's own integration
+   closed or moved at merge the same way. Update the
+   [trust ledger](../../docs/lifecycle/contributor-recognition.md) with one terminal outcome for
+   each PR in the release that has no terminal event there yet, in the
+   [event schema](../contributor-trust/SKILL.md#the-ledger). If `trust` is listed under
    `not_applicable`, or `trust.ledger_path` is blank, skip the ledger update and record no trust
    event.
    Clean up the branch/worktree.
@@ -169,6 +184,8 @@ trailer exists; it does **not** prove the *name* is right.
 - A published artifact of the kind step 4 covers is the candidate that was tested, or differs from it
   only as step 5 allows.
 - The author is credited identically on every surface, and the handle is the real author of the work.
-- The PR and its issues are closed with version + thanks; the trust ledger has one terminal event.
+- Every PR the release contains, and every issue each links as closing, is closed with version +
+  thanks, except an issue a human holds, which stays open and is named to the maintainer; the
+  trust ledger has one terminal event per PR.
   With `trust` listed under `not_applicable`, or a blank `trust.ledger_path`, no ledger event was written.
 - No branch/worktree left dangling.
