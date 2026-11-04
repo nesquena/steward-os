@@ -21,7 +21,9 @@ crons — is an application of the four ideas on this page. Read it once and the
 A maintenance system has four jobs. Keeping them distinct — in your head, in your skills, and in
 your automation — is what keeps the system legible as it grows. One agent can wear all four hats;
 a larger setup gives each its own cron or session. The point is the *separation of concern*, not
-the number of processes.
+the number of processes. One rule holds either way: the reviews that clear a change come from a
+reader that didn't write it
+([independent readers](../lifecycle/quality-gates.md#independent-readers)).
 
 ### 1. Watcher — "what's coming in?"
 Detects and captures inbound signal from every channel: chat platforms, the issue tracker, pull

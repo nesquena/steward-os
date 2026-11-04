@@ -25,9 +25,11 @@ consumer is.
 > listed, and the right one depends on your volume, concurrency, and runtime.
 
 > You do not have to hand off at all. [One agent can wear all four roles](../architecture/index.md#the-four-roles)
-> in a single session and pass nothing between processes. But the moment work crosses a process, a
-> schedule, or a context window — and for any long task it eventually does — the contract applies,
-> because in-context memory does not survive the boundary.
+> in a single session and pass nothing between processes, except a change's own review, which needs
+> a reader that didn't write it
+> ([independent readers](../lifecycle/quality-gates.md#independent-readers)). But the moment work
+> crosses a process, a schedule, or a context window — and for any long task it eventually does —
+> the contract applies, because in-context memory does not survive the boundary.
 
 ---
 

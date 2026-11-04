@@ -64,7 +64,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      you don't duplicate feedback.
    - **Fix it yourself** (Builder) for mechanical blockers (rebase, a few failing tests, a small
      nit) — on the author's branch, preserving authorship. Outcome **no run**: bounce instead; a
-     fix you can't run is a fix you can't verify.
+     fix you can't run is a fix you can't verify. With no independent reader for the fixed head
+     (step 5), bounce instead too.
 5. **Run the authoritative gate [4] — fresh, independent of any prior verdict, on pinned head and
    trunk commits, each from its own copy:**
    - Always: the **automated code review** pass and the **adversarial review** pass (a second,
@@ -72,6 +73,14 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      inert tools: `code_review_tool` and `adversarial_review_tool` come from step 2's accepted
      configuration and must not autoload/execute PR-controlled content
      under **no run**. If that cannot be guaranteed, the reading leg is missing, not passed.
+   - **Independent readers.** A reading leg counts only if a reader that wrote no commit in the
+     PR's range produced it, under
+     [the rule](../../docs/lifecycle/quality-gates.md#independent-readers). A fix you make in step
+     4, 7 or 8 makes you a writer of the new head: its legs come from a fresh reader, given the
+     diff, the trunk and the rubric and nothing of your reasoning. A tool's findings count
+     verbatim, never your summary of them. Your own read of your fix is not a leg; with no
+     independent reader, the leg is missing, not passed. Independence is on top of the second
+     pass being differently tuned, not instead of it.
    - Unless the outcome is **no run**: the full **test suite** to completion (command + runtime
      from step 2's accepted configuration) — never sample — and **visual verification** for any
      visible surface (screenshots at its accepted viewports; *drive* interactions, don't just
@@ -139,6 +148,7 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
 - For an all-clear: the full suite passed to completion on the *current* code; any human-run
   replacement has verified trusted origin, fresh completion time, required scope and successful results.
 - Both independent review passes completed on the same current head; no required finding unresolved.
+- Neither reading leg was produced by a reader that wrote a commit in the PR's range.
 - The differential ran, or the verdict says why none applied; where trunk's accepted configuration
   has CI, the runs it would start for this PR exist and ran in full for this head.
 - Required visible surfaces inspected/driven; regression coverage for fixes present; authorship preserved.

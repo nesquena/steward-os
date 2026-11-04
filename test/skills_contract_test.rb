@@ -641,6 +641,72 @@ class ProjectShapeContractTest < Minitest::Test
 end
 
 # --- Injection guard: the block every untrusted-reading skill opens with ---
+class IndependentReadersContractTest < Minitest::Test
+  # The rule that a change's reviews come from a reader that didn't write it. Whitespace-folded.
+  def read(*path)
+    File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
+  end
+
+  def section(text, heading)
+    text[/## #{Regexp.escape(heading)} .*?(?= ## |\z)/m] or flunk("section #{heading} missing")
+  end
+
+  def skill_step(skill, num)
+    text = read('skills', skill, 'SKILL.md')
+    step = text[/ #{num}\. \*\*.*?(?= #{num + 1}\. \*\*|\z)/m] or flunk("#{skill} step #{num} missing")
+    step.split(/ ## /).first
+  end
+
+  RULE = 'independent readers](../lifecycle/quality-gates.md#independent-readers)'
+
+  def test_quality_gates_defines_who_wrote_a_change
+    rule = section(read('docs', 'lifecycle', 'quality-gates.md'), 'Independent readers')
+    assert_includes rule, 'Gates 2 and 3 count only when their reader didn\'t write the change. A reader wrote it if ' \
+                          'it made any commit in the PR\'s range, trunk to head: authoring, fixing, rebasing, ' \
+                          'absorbing or cherry-picking it all count.'
+    assert_includes rule, 'Being the same model or the same account doesn\'t decide it; what the reader was given does.'
+    assert_includes rule, 'A subagent that inherits the writer\'s context, a resumed session and an inherited ' \
+                          'transcript are not.'
+    assert_includes rule, 'its findings are taken verbatim.'
+    assert_includes rule, 'when none is available, the reviewer bounces the fix to the author instead of making it.'
+    assert_includes rule, 'An agent that wrote a commit in the PR\'s range never makes it on its own. A human who ' \
+                          'pushed a finishing commit still may.'
+  end
+
+  def test_deep_review_counts_only_independent_legs
+    step5 = skill_step('pr-deep-review', 5)
+    assert_includes step5, '**Independent readers.** A reading leg counts only if a reader that wrote no commit in ' \
+                           'the PR\'s range produced it'
+    assert_includes step5, 'A fix you make in step 4, 7 or 8 makes you a writer of the new head'
+    assert_includes step5, 'Your own read of your fix is not a leg; with no independent reader, the leg is missing, ' \
+                           'not passed.'
+    assert_includes skill_step('pr-deep-review', 4),
+                    'With no independent reader for the fixed head (step 5), bounce instead too.'
+    assert_includes read('skills', 'pr-deep-review', 'SKILL.md').split('## Verification').last,
+                    'Neither reading leg was produced by a reader that wrote a commit in the PR\'s range.'
+  end
+
+  def test_release_merge_call_is_a_humans
+    skill = read('skills', 'release-pipeline', 'SKILL.md')
+    assert_includes skill[0...skill.index('## Steps')],
+                    'an agent that wrote a commit in the PR\'s range never makes it on its own'
+    assert_includes skill.split('## Verification').last,
+                    'The merge call was a human\'s decision naming the gated head, recorded outside the ' \
+                    'contributor-writable thread.'
+  end
+
+  def test_one_agent_many_hats_points_at_the_rule
+    assert_includes read('docs', 'architecture', 'index.md'), "the reviews that clear a change come from a reader " \
+                                                              "that didn't write it ([#{RULE})"
+    handoff = read('docs', 'playbooks', 'state-handoff.md').gsub(' > ', ' ')
+    assert_includes handoff, "pass nothing between processes, except a change's own review, which needs a reader " \
+                             "that didn't write it ([#{RULE})"
+    faq = read('docs', 'reference', 'faq.md')
+    assert_includes faq, "its reviews from a reader that didn't write the change ([#{RULE})"
+    refute_includes faq, 'on anything substantial'
+  end
+end
+
 class GuardCheckerTest < Minitest::Test
   def guards(**over)
     base = {
