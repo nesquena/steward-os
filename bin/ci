@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Run the checks CI runs, one step at a time or all of them.
+#
+#   bin/ci              every step, in CI's order
+#   bin/ci contracts    unit, skills, config, anchor (lint.yml)
+#   bin/ci site         build, links (ci.yml)
+#   bin/ci <step>...    named steps: unit skills config anchor build links
+#
+# The workflows call these same steps, so a green local run is the CI run.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+step_unit() {
+  shopt -s nullglob
+  local files=(test/*_test.rb)
+  if [ ${#files[@]} -eq 0 ]; then echo "no test files found" >&2; exit 1; fi
+  for f in "${files[@]}"; do
+    echo "== $f"
+    bundle exec ruby "$f"
+  done
+}
+
+step_skills() { bundle exec ./bin/skills-contract-lint; }
+step_config() { bundle exec ./bin/config-lint; }
+step_anchor() { bundle exec ./bin/anchor-lint; }
+
+# An empty baseurl keeps links root-relative so they resolve under _site/
+# (production uses baseurl: /steward-os, which html-proofer would otherwise
+# chase to paths that don't exist).
+step_build() { JEKYLL_ENV=production bundle exec jekyll build --baseurl ""; }
+step_links() { bundle exec htmlproofer _site --disable-external --allow-hash-href; }
+
+steps=()
+if [ $# -eq 0 ]; then set -- contracts site; fi
+for arg in "$@"; do
+  case "$arg" in
+    contracts) steps+=(unit skills config anchor) ;;
+    site) steps+=(build links) ;;
+    unit|skills|config|anchor|build|links) steps+=("$arg") ;;
+    *) echo "bin/ci: unknown step '$arg'" >&2; exit 2 ;;
+  esac
+done
+
+for s in "${steps[@]}"; do
+  if [ -n "${GITHUB_ACTIONS:-}" ]; then echo "::group::$s"; else echo "==> $s"; fi
+  "step_$s"
+  if [ -n "${GITHUB_ACTIONS:-}" ]; then echo "::endgroup::"; fi
+done

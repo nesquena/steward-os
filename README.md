@@ -87,7 +87,13 @@ setup/
   config.template.*    the config the interview produces
   config.yaml          this repo's own filled config (a worked example)
 skills/            loadable agent procedures, linked from the playbooks
+bin/               the three contract lints (skills, config, anchor links) and bin/ci
+lib/               the code behind the lints
+test/              their tests
 ```
+
+To run what CI runs, use `bin/ci` (needs Ruby, version in `.ruby-version`, and `bundle install`).
+`bin/ci contracts` runs the tests and lints. `bin/ci site` builds the site and checks its links.
 
 ## Status
 

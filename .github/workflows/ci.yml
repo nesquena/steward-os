@@ -26,17 +26,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1.336.0
         with:
-          ruby-version: "3.3"
-          bundler-cache: true
-      # Build with an empty baseurl so links are root-relative and resolve
-      # under _site/ (production uses baseurl: /steward-os, which html-proofer
-      # would otherwise chase to non-existent paths).
+          bundler-cache: true  # Ruby comes from .ruby-version
+      # Each step is a bin/ci step, so `bin/ci site` runs the same thing locally.
       - name: Build with Jekyll
-        run: bundle exec jekyll build --baseurl ""
-        env:
-          JEKYLL_ENV: production
+        run: bin/ci build
       - name: Check internal links and anchors
-        run: |
-          bundle exec htmlproofer _site \
-            --disable-external \
-            --allow-hash-href
+        run: bin/ci links
