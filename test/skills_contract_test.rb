@@ -265,6 +265,53 @@ class HostClosingContractTest < Minitest::Test
   end
 end
 
+class BatchedReleaseContractTest < Minitest::Test
+  # A release closes the issues of every PR it contains, and the board lists any it left open.
+  def read(*path)
+    File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
+  end
+
+  def step(skill, num)
+    text = read('skills', skill, 'SKILL.md')
+    found = text[/ #{num}\. \*\*.*?(?= #{num + 1}\. \*\*|\z)/m] or flunk("#{skill} step #{num} missing")
+    found.split(/ ## /).first
+  end
+
+  def test_release_closes_every_pr_it_contains
+    s6 = step('release-pipeline', 6)
+    assert_includes s6, 'The release covers every PR it contains, not just the one this run merged: each PR whose ' \
+                        'merge commit is reachable from this tag but not from the nearest earlier release tag ' \
+                        'reachable from it (pre-release tags don\'t count; on a first release, every merge reachable ' \
+                        'from this tag), and each absorbed PR whose change it carries.'
+    assert_includes s6, 'Under `style: continuous` every merge is its own release, so only this run\'s PR.'
+    assert_includes s6, 'Leave open an issue a human holds, the same holds [`issue-autoclose`](../issue-autoclose/' \
+                        'SKILL.md) honours: reopened since the merge, a reporter comment or reaction after it, an ' \
+                        'unchecked task item, a `multi-surface`/`epic` label, or another closing PR no release ' \
+                        'contains yet. Name each one to the maintainer in the release\'s output.'
+    assert_includes s6, 'close every issue it links as closing (`Closes #N` in its description, or a sidebar link; ' \
+                        'a keyword only in a commit message doesn\'t count; where a separate tracker holds the link, read it there)'
+    assert_includes s6, 'An issue already closed with a comment naming this version gets no second comment'
+    assert_includes s6, 'one terminal outcome for each PR in the release that has no terminal event there yet'
+    assert_includes read('skills', 'release-pipeline', 'SKILL.md').split('## Verification').last,
+                    'Every PR the release contains, and every issue each links as closing, is closed with version + ' \
+                    'thanks, except an issue a human holds, which stays open and is named to the maintainer'
+    assert_includes read('docs', 'lifecycle', 'pr-lifecycle.md'),
+                    'Close every PR the release contains, not just the last one merged, and every issue each links ' \
+                    'as closing'
+  end
+
+  def test_board_lists_released_but_open_issues
+    s1 = step('triage-scoreboard', 1)
+    assert_includes s1, 'An open issue a release already ships (a release tag contains the merge of a PR that ' \
+                        'links it as closing) is **released but open**.'
+    assert_includes s1, 'skip a repository that has no release tag'
+    assert_includes s1, 'the refresh closes nothing.'
+    assert_includes step('triage-scoreboard', 6), 'the released but open issues (each with any hold ' \
+                                                  '`issue-autoclose` would see, named; each keeps its place in the ' \
+                                                  'ranking too)'
+  end
+end
+
 class ProjectShapeContractTest < Minitest::Test
   # Section 0 of the setup interview, the setup skill and the template header. Read with whitespace
   # folded, so a re-wrap doesn't break the pin.

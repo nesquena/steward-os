@@ -30,7 +30,11 @@ displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job
 
 1. **Pull live metadata** for every open item: for PRs, CI status, mergeable/behind, size, age,
    author; for issues, created date, cross-reference count, and open PRs that would close it. Read
-   repos from `config.yaml`.
+   repos from `config.yaml`. For an open issue, also read the merged PRs that link it as closing,
+   and whether a release tag contains each merge: read the tag list once per repository per run,
+   and skip a repository that has no release tag. An open issue a release already ships (a release
+   tag contains the merge of a PR that links it as closing) is **released but open**. It's
+   discovery for a human, who closes it or keeps it open on purpose; the refresh closes nothing.
 2. **Recompute mechanical dimensions** fresh each run (disposable): CI, conflict state, behind-count,
    size bucket, contributor trust score (computed by [`contributor-trust`](../contributor-trust/SKILL.md)
    from the [trust ledger](../../docs/lifecycle/contributor-recognition.md)). PRs and issues have
@@ -100,7 +104,9 @@ displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job
    listed nowhere else. A stale value counts like a fresh one, and a stale flag still promotes.
 5. **Tag evidence-readiness** per item: which review streams have landed (automated review present?
    visual preview? deep-review dossier?). Compact ✓/· marker. Presence ≠ clean.
-6. **Render** the living board: the spotlight, then per kind the not yet judged section (its count
+6. **Render** the living board: the spotlight, then the released but open issues (each with
+   any hold `issue-autoclose` would see, named; each keeps its place in the ranking too), then per
+   kind the not yet judged section (its count
    and first five in mechanical order) and the ranking by composite; name inert dimensions in the
    header; mark each stale value and give the stale count per kind in the header; add a curated
    "review these first" short-list drawn from both. Give the board's row count in its header.
