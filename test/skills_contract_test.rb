@@ -363,9 +363,9 @@ class ProjectShapeContractTest < Minitest::Test
   end
 
   def test_board_goes_only_where_the_issues_are_as_private
-    assert_includes section0, 'The board, its machine-readable artifact and any digest of its rows go only where ' \
-                              'they are no more visible than the issues they list; history counts, so re-check ' \
-                              'before any visibility change.'
+    assert_includes section0, 'The board, its machine-readable artifact, the refresh\'s state and any digest of its ' \
+                              'rows go only where they are no more visible than the issues they list; history ' \
+                              'counts, so re-check before any visibility change.'
   end
 
   def test_setup_verification_checks_the_marker
@@ -464,11 +464,93 @@ class ProjectShapeContractTest < Minitest::Test
   end
 
   def test_board_rule_covers_every_output
-    sentence = 'The board, its machine-readable artifact and any digest of its rows go only where they are no more ' \
-               'visible than the issues they list; history counts, so re-check before any visibility change. ' \
+    sentence = 'The board, its machine-readable artifact, the refresh\'s state and any digest of its rows go only ' \
+               'where they are no more visible than the issues they list; history counts, so re-check before any ' \
+               'visibility change. ' \
                'Nothing mechanical enforces this rule.'
     assert_includes skill_step_only('triage-scoreboard', 7), sentence
     assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'), sentence
+  end
+
+  def test_unreadable_prior_board_stops_the_refresh
+    step = skill_step_only('triage-scoreboard', 3)
+    assert_includes step, 'The board is the source of judgment; the machine-readable artifact is derived from it and ' \
+                          'rewritten each run.'
+    assert_includes step, 'If the prior board can\'t be read (it doesn\'t parse, it has fewer rows than its row ' \
+                          'count, it has no row count once the row-count mark is written, or its format is one ' \
+                          'this skill doesn\'t know), stop with a non-zero exit and alert once for that file\'s ' \
+                          'content; write nothing, state and its marks included.'
+    assert_includes step, 'It\'s a first run only when neither the board nor this skill\'s state exists, or when ' \
+                          'there\'s no board and state holds only the first-run mark: that\'s a first run that ' \
+                          'didn\'t finish, so run it again.'
+    assert_includes step, 'A board with a row count and no state, or any other state with no board, stops the run ' \
+                          'the same way: the state held judgment, and a human decides where it went.'
+    assert_includes skill_step_only('triage-scoreboard', 6), 'Give the board\'s row count in its header.'
+    pitfalls = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Pitfalls').last.split('## Verification').first
+    assert_includes pitfalls, '**An unreadable prior board is an error, not an empty one.**'
+    assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'),
+                    'A prior board the refresh can\'t read stops the run; it never counts as empty'
+  end
+
+  def test_a_board_from_before_row_counts_or_state_is_read
+    step = skill_step_only('triage-scoreboard', 3)
+    assert_includes step, 'A board rendered before row counts has none: while this skill\'s state has no row-count ' \
+                          'mark, read it as before, and this run renders the count.'
+    assert_includes step, 'A board with no row count and no state is from before this skill kept state: read it, ' \
+                          'and this run creates the state.'
+    refute_includes step, 'its row count is missing'
+    refute_includes step, 'if one exists without the other'
+    verification = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Verification').last
+    assert_includes verification, 'A board rendered before row counts, with or without state, is read, and the ' \
+                                  'run\'s board carries a count; once the row-count mark is written, a board with ' \
+                                  'no count stops the run.'
+    assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'),
+                    'A board from before the refresh kept a row count or state is read, not refused, and the next ' \
+                    'board carries a count.'
+  end
+
+  def test_a_closed_items_judgment_moves_and_comes_back
+    step = skill_step_only('triage-scoreboard', 3)
+    assert_includes step, 'An item that leaves the open set moves its judgment (each value with its setter, judgment ' \
+                          'stamp and rubric identifier) into this skill\'s state, keyed by repository, kind and id, ' \
+                          'and replaces any older entry for that key.'
+    assert_includes step, 'The refresh never discards a value; it only moves it.'
+    assert_includes step, 'An item that leaves with no judgment leaves no entry.'
+    assert_includes step, 'When an item with that key is open again, fill each dimension that is empty on the board ' \
+                          'from the entry; a value already on the board wins.'
+    assert_includes step, 'The run that finds the item open uses the entry up, whether or not it fills anything, ' \
+                          'and the entry stays in state until that run\'s board is written (step 7).'
+    assert_includes step, 'records every value with no setter as `legacy`, a value moving into state this run ' \
+                          'included, then writes the mark.'
+    refute_includes step, 'then remove the entry'
+    assert_includes step, 'except that a value that moved without a stamp gets the judgment stamp `stale`, which ' \
+                          'never matches.'
+    refute_includes step, 'never stamped'
+    assert_includes step, 'An item transferred or re-keyed starts unjudged, and its old entry stays.'
+    assert_includes step, 'Nothing prunes state: pruning would drop judgment.'
+  end
+
+  def test_refresh_writes_state_around_the_board
+    step = skill_step_only('triage-scoreboard', 7)
+    assert_includes step, 'Write this skill\'s state first, with this run\'s new entries added and the entries this ' \
+                          'run used still in it (with no state yet, this write creates it, holding the first-run ' \
+                          'mark if there\'s no board either), then the artifact, then the board, then the state ' \
+                          'again without those used entries or the first-run mark and with any mark this run ' \
+                          'adopted (setters, row count).'
+    assert_includes step, 'so a run that dies mid-write leaves the last good copy of each: never a board whose ' \
+                          'departed items are missing from state, never a state whose removed entries aren\'t on ' \
+                          'the board, and never a mark ahead of the board it describes.'
+    assert_includes step, 'write state only when it doesn\'t exist yet, an entry moves or a mark changes.'
+    verification = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Verification').last
+    assert_includes verification, 'A run killed between any two file writes loses no judgment, and its retry ' \
+                                  'doesn\'t stop on what it left: a first run that didn\'t finish is run again.'
+  end
+
+  def test_moving_judgment_is_named_as_a_refresh_write
+    skill = read('skills', 'triage-scoreboard', 'SKILL.md')
+    refute_includes skill, 'its one judgment write is the judgment stamp'
+    refute_includes skill, 'the refresh\'s one judgment write'
+    assert_includes skill, 'moving a value unchanged between the board and its state'
   end
 
   def test_a_fact_missing_on_some_items_is_no_zero

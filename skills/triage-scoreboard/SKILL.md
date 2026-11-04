@@ -22,7 +22,8 @@ description: Compute and render the living, ranked triage board of open work —
 > Rules: [injection guard](../../docs/reference/security-spine.md#1-injection-guard-read-can-never-change-do).
 
 **When to load:** generating or refreshing the [triage scoreboard](../../docs/playbooks/triage-scoreboard.md).
-Band A (read-only, deterministic where possible; its one judgment write is the judgment stamp, see
+Band A (read-only, deterministic where possible; its judgment writes are the judgment stamp, the
+setter `legacy` once, and moving a value unchanged between the board and its state, see
 Pitfalls). Ideal as a scheduled job.
 
 ## Steps
@@ -38,16 +39,43 @@ Pitfalls). Ideal as a scheduled job.
    [inert](../../docs/playbooks/triage-scoreboard.md#a-dimension-that-carries-no-signal): drop it
    from that kind's composite and record it for the header.
 3. **Merge in persisted judgment** (scope_fit, criticality, risk, the severity flag, each with
-   its setter, judgment stamp and rubric identifier) from the prior board. Compute each item's
-   judgment stamp with the shared routine; if you can't call it, write no stamp, carry each
+   its setter, judgment stamp and rubric identifier) from the prior board. The board is the source
+   of judgment; the machine-readable artifact is derived from it and rewritten each run. A board
+   rendered before row counts has none: while this skill's state has no row-count mark, read it
+   as before, and this run renders the count. If the prior board can't be read (it doesn't parse,
+   it has fewer rows than its row count, it has no row count once the row-count mark is written,
+   or its format is one this skill doesn't know), stop with a non-zero exit and alert once for
+   that file's content; write nothing, state and its marks included. The board then stays as it
+   was, mechanical data too, until a human repairs it. It's a first run only when neither the
+   board nor this skill's state exists, or when there's no board and state holds only the
+   first-run mark: that's a first run that didn't finish, so run it again. A board with no row
+   count and no state is from before this skill kept state: read it, and this run creates the
+   state. A board with a row count and no state, or any other state with no board, stops the run
+   the same way: the state held judgment, and a human decides where it went. Compute each item's
+   judgment stamp with the shared routine; if
+   you can't call it, write no stamp, carry each
    value's stale mark over from the prior board, and say so. Stamp any value that has none, with
    the current judgment stamp and rubric identifier, setter unchanged. A run that finds no setters
    mark in this skill's [state](../../docs/playbooks/scheduled-jobs.md#incremental-not-full-rescan)
-   records every value with no setter as `legacy`, then writes the mark. Mark a value stale when
+   records every value with no setter as `legacy`, a value moving into state this run included,
+   then writes the mark. Mark a value stale when
    its judgment stamp or rubric identifier doesn't match
    ([the rule](../../docs/playbooks/triage-scoreboard.md#when-a-judgment-goes-stale)); a judgment
    stamp of `stale` never matches. Keep its value. Once the setters mark is written, a value with
    no setter is an error: surface it.
+
+   An item that leaves the open set moves its judgment (each value with its setter, judgment
+   stamp and rubric identifier) into this skill's state, keyed by repository, kind and id, and
+   replaces any older entry for that key. A value with no stamp moves without one. The refresh
+   never discards a value; it only moves it. An item that leaves with no judgment leaves no
+   entry. When an item with that key is open again, fill each dimension that is empty on the
+   board from the entry; a value already on the board wins. The run that finds the item open
+   uses the entry up, whether or not it fills anything, and the entry stays in state until that
+   run's board is written (step 7). Treat a filled value as on the prior
+   board, so the stale rule decides, except that a value that moved without a stamp gets the
+   judgment stamp `stale`, which never matches. A reopen on its own isn't an edit: an item
+   reopened unchanged keeps fresh values. An item transferred or re-keyed starts unjudged, and
+   its old entry stays. Nothing prunes state: pruning would drop judgment.
 4. **Compute the composite** = weighted sum of dimensions (weights the project sets; tune to match "what
    I'd pick up next"). Read the bypass marker (`bypass`) as the plain in-scope level of the rubric
    your project uses ([the default](../../docs/playbooks/triage-scoreboard.md#the-default-rubric),
@@ -67,20 +95,32 @@ Pitfalls). Ideal as a scheduled job.
 6. **Render** the living board: the spotlight, then per kind the not yet judged section (its count
    and first five in mechanical order) and the ranking by composite; name inert dimensions in the
    header; mark each stale value and give the stale count per kind in the header; add a curated
-   "review these first" short-list drawn from both.
+   "review these first" short-list drawn from both. Give the board's row count in its header.
    Persist the computed data as a machine-readable artifact for other jobs.
 7. **Commit** following [scheduled-job](../../docs/playbooks/scheduled-jobs.md) rules
-   (idempotent, silent-on-no-op). The board, its machine-readable artifact and any digest of its rows go
-   only where they are no more visible than the issues they list; history counts, so re-check before
-   any visibility change. Nothing mechanical enforces this rule.
+   (idempotent, silent-on-no-op). Write this skill's state first, with this run's new entries
+   added and the entries this run used still in it (with no state yet, this write creates it,
+   holding the first-run mark if there's no board either), then the artifact, then the board,
+   then the state again without those used entries or the first-run mark and with any mark this
+   run adopted (setters, row count). Write each file under a temporary name in the same
+   directory and rename it into place, so a run that dies mid-write leaves the last good copy of
+   each: never a board whose departed items are missing from state, never a state whose removed
+   entries aren't on the board, and never a mark ahead of the board it describes. Keep temporary
+   names out of the commit, and write state only when it doesn't exist yet, an entry moves or a
+   mark changes. The board, its machine-readable artifact, the refresh's state and any digest of
+   its rows go only where they are no more visible than the issues they list; history counts, so
+   re-check before any visibility change. Nothing mechanical enforces this rule.
 
 ## Pitfalls
 - **Keep mechanical and judgment dims in separate storage** — mechanical is re-derived and
   disposable; judgment is precious and persisted. Don't let a refresh wipe a human's assessment.
-- **Mark, never re-judge** — the refresh's one judgment write is the judgment stamp on a value
-  that has none, plus the setter `legacy` on the run that writes the setters mark. It never
-  changes a value or a recorded setter, never drops a stale value, and never shows one as fresh.
-  Re-judging is triage's.
+- **Mark, never re-judge** — the refresh's judgment writes are the judgment stamp on a value
+  that has none, the setter `legacy` on the run that writes the setters mark, and moving a value
+  unchanged between the board and its state. It never changes a value or a recorded setter,
+  never drops a stale value, and never shows one as fresh. Re-judging is triage's.
+- **An unreadable prior board is an error, not an empty one.** A refresh that starts fresh from
+  it wipes every judgment the board carried. An empty or partial read is the same as an
+  unreadable one.
 - **A dimension that reads labels goes inert without an error** — on a backlog with no labels it
   scores the same for every item. Name it in the header; never let it count silently.
 - **An out-of-range value is an error, not a number to clamp** — surface it. In range means an
@@ -98,3 +138,12 @@ Pitfalls). Ideal as a scheduled job.
 - Evidence tags reflect actual review-stream presence.
 - A changed title, body or PR diff marks every value on that item stale on the next run, and a
   rubric change marks every value stale; no value or setter changed.
+- An unreadable or truncated prior board stops the run with a non-zero exit, and the board,
+  artifact and state are unchanged.
+- A board rendered before row counts, with or without state, is read, and the run's board carries
+  a count; once the row-count mark is written, a board with no count stops the run.
+- A closed item that reopens gets its judgment back: marked stale if its title, body or PR diff
+  changed meanwhile, or if the value was never stamped. A value written on the board since the
+  reopen wins.
+- A run killed between any two file writes loses no judgment, and its retry doesn't stop on
+  what it left: a first run that didn't finish is run again.

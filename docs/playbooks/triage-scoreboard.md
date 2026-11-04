@@ -187,9 +187,10 @@ a judgment rests on what the item says.
 **When a value is stamped.** An agent judge records the judgment stamp of the inputs it read, as
 it writes. A human's write carries none. The scheduled refresh stamps any value without one,
 recording the judgment stamp and the rubric identifier together. Writing that judgment stamp is
-the refresh's only write to judgment data, except the setter `legacy` it records once, on the run
-that adopts setters ([who set it](#who-set-it)). An edit made between a human's write and the next
-refresh is folded into the judgment stamp it records.
+the refresh's only change to judgment data, except the setter `legacy` it records once, on the run
+that adopts setters ([who set it](#who-set-it)). Moving a value unchanged into its state when the
+item closes, and back when it reopens, changes nothing. An edit made between a human's write and
+the next refresh is folded into the judgment stamp it records.
 
 **When a value is stale.** Its judgment stamp differs from the item's current one, or its rubric
 identifier differs from the rubric in use. A flag a human set also goes stale when an agent
@@ -264,9 +265,15 @@ render, commit. The maintainer never has to ask for a fresh scan — the board i
 open it. A companion "review these first" curated short-list can ride on top for the highest-priority
 handful.
 
-The board, its machine-readable artifact and any digest of its rows go only where they are no more
-visible than the issues they list; history counts, so re-check before any visibility change. Nothing
-mechanical enforces this rule.
+A prior board the refresh can't read stops the run; it never counts as empty, and the board stays
+as it was until a human repairs it. A board from before the refresh kept a row count or state is
+read, not refused, and the next board carries a count. An item that closes takes its judgment into
+the refresh's state, so the judgment comes back if the item reopens: a value that was never stamped
+comes back stale.
+
+The board, its machine-readable artifact, the refresh's state and any digest of its rows go only
+where they are no more visible than the issues they list; history counts, so re-check before any
+visibility change. Nothing mechanical enforces this rule.
 
 ## Why it works
 - It **separates ranking from doing** — the agent ranks continuously and cheaply; the human (or a
