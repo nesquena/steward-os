@@ -188,11 +188,11 @@ a judgment rests on what the item says.
 it writes. A human's write carries none. The scheduled refresh stamps any value without one,
 recording the judgment stamp and the rubric identifier together. Writing that judgment stamp is
 the refresh's only change to judgment data, except the setter `legacy` it records once, on the run
-that adopts setters ([who set it](#who-set-it)). Moving a value unchanged into its state when the
-item closes, and back when it reopens, changes nothing. Where a value on the board wins over the
-state's, the state's value is dropped, and the refresh names a human's or `legacy` one. An edit
-made between a human's write and
-the next refresh is folded into the judgment stamp it records.
+that adopts setters ([who set it](#who-set-it)), and dropping a state value that a board value
+displaces. Moving a value unchanged into its state when the item closes, and back when it reopens,
+changes nothing. A displaced value that a human or the `legacy` adoption set stays in the state
+until a run has named it in its output, so a crash can't lose it unnamed. An edit made between a
+human's write and the next refresh is folded into the judgment stamp it records.
 
 **When a value is stale.** Its judgment stamp differs from the item's current one, or its rubric
 identifier differs from the rubric in use. A flag a human set also goes stale when an agent
@@ -273,7 +273,8 @@ read, not refused, and the next board carries a count. Rows missing from such a 
 detected. An item that closes takes its judgment, stale marks included, into the refresh's state,
 so the judgment comes back if the item reopens: a value that was never stamped comes back stale.
 A value written on the board while the item was back wins, and the refresh names a human's or
-`legacy` value from the state that it displaced, so a human can put it back.
+`legacy` value from the state that it displaced. A human can put it back on the board once the
+item is open, or in the state by hand.
 
 The board, its machine-readable artifact, the refresh's state and any digest of its rows go only
 where they are no more visible than the issues they list; history counts, so re-check before any
