@@ -63,8 +63,9 @@ Rules for the marker:
 - With a separate tracker (question D), question 2 says when its host-closing change applies.
 - The shape answers are not stored. A re-run asks them again. The marker keeps the outcome.
 - Ask where the scoreboard lands when A (public) or D (separate tracker) makes it a real question.
-  The board, its machine-readable artifact and any digest of its rows go only where they are no
-  more visible than the issues they list; history counts, so re-check before any visibility change.
+  The board, its machine-readable artifact, the refresh's state and any digest of its rows go only
+  where they are no more visible than the issues they list; history counts, so re-check before any
+  visibility change.
   If no acceptable location exists, or the question is skipped, set `scoreboard-refresh` to
   `enabled: false` and leave a TODO naming the location, since no config key holds it. Nothing
   mechanical checks this rule.

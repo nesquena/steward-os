@@ -266,8 +266,10 @@ open it. A companion "review these first" curated short-list can ride on top for
 handful.
 
 A prior board the refresh can't read stops the run; it never counts as empty, and the board stays
-as it was until a human repairs it. An item that closes takes its judgment into the refresh's state,
-so the judgment comes back if the item reopens: a value that was never stamped comes back stale.
+as it was until a human repairs it. A board from before the refresh kept a row count or state is
+read, not refused, and the next board carries a count. An item that closes takes its judgment into
+the refresh's state, so the judgment comes back if the item reopens: a value that was never stamped
+comes back stale.
 
 The board, its machine-readable artifact, the refresh's state and any digest of its rows go only
 where they are no more visible than the issues they list; history counts, so re-check before any
