@@ -100,19 +100,24 @@ those runs exist for that exact head; a missing or partial one leaves gate 5 not
 Gates 2 and 3 count only when their reader didn't write the change. A reader wrote it if it made
 any commit in the PR's range, trunk to head: authoring, fixing, rebasing, absorbing or
 cherry-picking it all count. Being the same model or the same account doesn't decide it; what the
-reader was given does. A fresh session given the diff, the trunk and the rubric, and nothing of the
-writer's reasoning, findings or earlier verdicts for this PR, is independent. A subagent that
+reader was given does. A fresh session given the PR as the host shows it (diff, commits and their
+messages, description), the trunk and the gate's configured rubric, and nothing of the writer's own
+reasoning, findings or earlier verdicts for this PR, is independent. A subagent that
 inherits the writer's context, a resumed session and an inherited transcript are not. A review tool
-counts when it is the one configured for the gate, runs on the pinned head with no prompt or
-summary from the writer, and its findings are taken verbatim.
+counts when it is the one configured for the gate, runs on the pinned head with nothing from
+the writer beyond that head and the configured rubric, and its findings are taken verbatim.
 
 A fix starts this over. Once a reviewer fixes something, the reading legs for the new head come
 from a fresh reader; when none is available, the reviewer bounces the fix to the author instead of
 making it. This is on top of the second pass being differently tuned, not instead of it.
 
-The merge call is a human's: made by a human, or by a human's explicit instruction on an
-authenticated channel naming the gated head. An agent that wrote a commit in the PR's range never
-makes it on its own. A human who pushed a finishing commit still may.
+The merge call is a human's. A human's standing instruction can cover merges by an agent that
+wrote no commit in the PR's range; it lives in operator-controlled configuration or the decision
+log, never the PR thread. An agent that wrote a commit in the range merges only on a human's
+explicit instruction, on an authenticated channel, naming the gated head. For this paragraph the
+account decides, not the context: the host records who pushed each commit and who merged, so a
+fresh session on an account that pushed a finishing commit is still that agent. A human who
+pushed a finishing commit still may merge.
 
 ---
 

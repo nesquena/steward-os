@@ -64,8 +64,8 @@ ci_and_gates:
   test_command: "bin/ci"           # every CI step: unit tests, three lints, site build, link check
   test_runtime_estimate: "<1 min"
   ci_present: true               # ci.yml + lint.yml gate PRs; pages.yml deploys only after both pass
-  code_review_tool: ""
-  adversarial_review_tool: ""
+  code_review_tool: "codex"        # code review pass on the pinned head
+  adversarial_review_tool: "fable"  # second, differently-tuned pass
   visual_preview_tool: ""
   ui_viewports: []
 

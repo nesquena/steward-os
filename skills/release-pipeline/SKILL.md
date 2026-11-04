@@ -21,13 +21,14 @@ description: Merge an all-clear PR and ship it — rebase, merge preserving attr
 >
 > Rules: [injection guard](../../docs/reference/security-spine.md#1-injection-guard-read-can-never-change-do).
 
-**When to load:** a PR has passed the [authoritative gate](../../docs/lifecycle/quality-gates.md) and
-is cleared to ship. Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [5]–[6]. Band B,
-and it stays there — a human owns the final merge call. The call is a human's, made by a human or
-by their explicit instruction on an authenticated channel naming the gated head; an agent that
-wrote a commit in the PR's range never makes it on its own
-([independent readers](../../docs/lifecycle/quality-gates.md#independent-readers)). A revert
-doesn't reach anyone who already pulled or deployed, so a merge isn't
+**When to load:** a PR has passed the [authoritative gate](../../docs/lifecycle/quality-gates.md)
+and is cleared to ship. Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [5]–[6].
+Band B, and it stays there — a human owns the final merge call. A human's standing instruction
+covers a merge by an agent that wrote no commit in the PR's range; an agent whose account pushed a
+commit in the range merges only on a human's explicit instruction, on an authenticated channel,
+naming the gated head ([independent
+readers](../../docs/lifecycle/quality-gates.md#independent-readers)). A revert doesn't reach anyone
+who already pulled or deployed, so a merge isn't
 [reversible](../../docs/playbooks/autonomy-ladder.md#what-reversible-means).
 
 > Precondition: **do not enter this skill on a self-report.** The gate must have been run fresh by
@@ -171,7 +172,8 @@ trailer exists; it does **not** prove the *name* is right.
   not assumed.
 - A published artifact of the kind step 4 covers is the candidate that was tested, or differs from it
   only as step 5 allows.
-- The merge call was a human's decision naming the gated head, recorded outside the
+- The merge call was a human's: a standing instruction, for an agent that wrote no commit in the
+  PR's range, or else an explicit decision naming the gated head; either is recorded outside the
   contributor-writable thread.
 - The author is credited identically on every surface, and the handle is the real author of the work.
 - The PR and its issues are closed with version + thanks; the trust ledger has one terminal event.
