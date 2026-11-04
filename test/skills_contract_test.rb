@@ -512,10 +512,13 @@ class ProjectShapeContractTest < Minitest::Test
   def test_a_closed_items_judgment_moves_and_comes_back
     step = skill_step_only('triage-scoreboard', 3)
     assert_includes step, 'An item that leaves the open set moves its judgment (each value with its setter, judgment ' \
-                          'stamp and rubric identifier) into this skill\'s state, keyed by repository, kind and id, ' \
-                          'and replaces any older entry for that key.'
+                          'stamp and rubric identifier) into this skill\'s state, keyed by repository, kind and id. ' \
+                          'An older entry for that key is merged per dimension: a value on the board wins, and a ' \
+                          'dimension the board leaves empty keeps the entry\'s value.'
     assert_includes step, 'The refresh never discards a value; it only moves it.'
-    assert_includes step, 'An item that leaves with no judgment leaves no entry.'
+    assert_includes step, 'An item that leaves with no judgment adds nothing, and any older entry for it stays as it ' \
+                          'is.'
+    refute_includes step, 'replaces any older entry'
     assert_includes step, 'When an item with that key is open again, fill each dimension that is empty on the board ' \
                           'from the entry; a value already on the board wins.'
     assert_includes step, 'The run that finds the item open uses the entry up, whether or not it fills anything, ' \
@@ -541,6 +544,7 @@ class ProjectShapeContractTest < Minitest::Test
                           'departed items are missing from state, never a state whose removed entries aren\'t on ' \
                           'the board, and never a mark ahead of the board it describes.'
     assert_includes step, 'write state only when it doesn\'t exist yet, an entry moves or a mark changes.'
+    assert_includes step, 'Write each file under a temporary name in the same directory and rename it into place'
     verification = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Verification').last
     assert_includes verification, 'A run killed between any two file writes loses no judgment, and its retry ' \
                                   'doesn\'t stop on what it left: a first run that didn\'t finish is run again.'

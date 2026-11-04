@@ -65,10 +65,12 @@ Pitfalls). Ideal as a scheduled job.
    no setter is an error: surface it.
 
    An item that leaves the open set moves its judgment (each value with its setter, judgment
-   stamp and rubric identifier) into this skill's state, keyed by repository, kind and id, and
-   replaces any older entry for that key. A value with no stamp moves without one. The refresh
-   never discards a value; it only moves it. An item that leaves with no judgment leaves no
-   entry. When an item with that key is open again, fill each dimension that is empty on the
+   stamp and rubric identifier) into this skill's state, keyed by repository, kind and id. An
+   older entry for that key is merged per dimension: a value on the board wins, and a dimension
+   the board leaves empty keeps the entry's value. A value with no stamp moves without one. The
+   refresh never discards a value; it only moves it. An item that leaves with no judgment adds
+   nothing, and any older entry for it stays as it is. When an item with that key is open again,
+   fill each dimension that is empty on the
    board from the entry; a value already on the board wins. The run that finds the item open
    uses the entry up, whether or not it fills anything, and the entry stays in state until that
    run's board is written (step 7). Treat a filled value as on the prior
