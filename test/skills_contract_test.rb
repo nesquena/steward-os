@@ -464,11 +464,55 @@ class ProjectShapeContractTest < Minitest::Test
   end
 
   def test_board_rule_covers_every_output
-    sentence = 'The board, its machine-readable artifact and any digest of its rows go only where they are no more ' \
-               'visible than the issues they list; history counts, so re-check before any visibility change. ' \
+    sentence = 'The board, its machine-readable artifact, the refresh\'s state and any digest of its rows go only ' \
+               'where they are no more visible than the issues they list; history counts, so re-check before any ' \
+               'visibility change. ' \
                'Nothing mechanical enforces this rule.'
     assert_includes skill_step_only('triage-scoreboard', 7), sentence
     assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'), sentence
+  end
+
+  def test_unreadable_prior_board_stops_the_refresh
+    step = skill_step_only('triage-scoreboard', 3)
+    assert_includes step, 'The board is the source of judgment; the machine-readable artifact is derived from it and ' \
+                          'rewritten each run.'
+    assert_includes step, 'If the prior board can\'t be read (it doesn\'t parse, its row count is missing or ' \
+                          'doesn\'t match its rows, or its format is one this skill doesn\'t know), stop with a ' \
+                          'non-zero exit and alert once for that file\'s content; write nothing, state and the ' \
+                          'setters mark included.'
+    assert_includes step, 'It\'s a first run only when neither the board nor this skill\'s state exists; if one ' \
+                          'exists without the other, stop the same way.'
+    assert_includes skill_step_only('triage-scoreboard', 6), 'Give the board\'s row count in its header.'
+    pitfalls = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Pitfalls').last.split('## Verification').first
+    assert_includes pitfalls, '**An unreadable prior board is an error, not an empty one.**'
+    assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'),
+                    'A prior board the refresh can\'t read stops the run; it never counts as empty'
+  end
+
+  def test_a_closed_items_judgment_moves_and_comes_back
+    step = skill_step_only('triage-scoreboard', 3)
+    assert_includes step, 'An item that leaves the open set moves its judgment (each value with its setter, judgment ' \
+                          'stamp and rubric identifier) into this skill\'s state, keyed by repository, kind and id, ' \
+                          'and replaces any older entry for that key.'
+    assert_includes step, 'The refresh never discards a value; it only moves it.'
+    assert_includes step, 'When an item with that key is open again, fill each dimension that is empty on the board ' \
+                          'from the entry, then remove the entry; a value already on the board wins.'
+    assert_includes step, 'except that a value that moved without a stamp is marked stale, never stamped.'
+    assert_includes step, 'An item transferred or re-keyed starts unjudged, and its old entry stays.'
+  end
+
+  def test_refresh_writes_state_before_the_board
+    assert_includes skill_step_only('triage-scoreboard', 7),
+                    'Write this skill\'s state first, then the artifact, then the board, each under a temporary ' \
+                    'name in the same directory renamed into place, so a run that dies mid-write leaves the last ' \
+                    'good copy of each and never a board whose departed items are missing from state.'
+  end
+
+  def test_moving_judgment_is_named_as_a_refresh_write
+    skill = read('skills', 'triage-scoreboard', 'SKILL.md')
+    refute_includes skill, 'its one judgment write is the judgment stamp'
+    refute_includes skill, 'the refresh\'s one judgment write'
+    assert_includes skill, 'moving a value unchanged between the board and its state'
   end
 
   def test_a_fact_missing_on_some_items_is_no_zero
