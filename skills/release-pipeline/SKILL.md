@@ -129,20 +129,29 @@ pulled or deployed, so a merge isn't
    incomplete one (another release commit, or digests other than the two compared), means it isn't
    finished: step 6 waits until a current one is kept.
 6. **Close + credit [6].** The release covers every PR it contains, not just the one this run
-   merged: each PR whose merge commit is reachable from this tag but not from the nearest earlier
-   release tag reachable from it (pre-release tags don't count; on a first release, every merge
-   reachable from this tag), and each absorbed PR whose change it carries. Under `style:
-   continuous` every merge is its own release, so only this run's PR. For each PR, close it if it's
-   still open, and close every issue it links as closing (`Closes #N` in its description, or a
-   sidebar link; a keyword only in a commit message doesn't count; where a separate tracker holds
-   the link, read it there), with a comment naming the version and **thanking the author by
-   handle.**
+   merged: each merged PR whose merge commit (the commit the host records for the merge, whatever
+   the merge style) this tag contains and no other release tag contains (test each with
+   `git merge-base --is-ancestor`; a tag the host marks pre-release, or whose name carries a
+   pre-release suffix such as `-rc.1`, is not a release tag; on a first release, every merge this
+   tag contains), and each absorbed PR whose change it carries. An absorbed PR is one closed
+   without merging whose change a commit in the range carries: the commit names it, carries a
+   co-author trailer for its author, or has its patch id. A commit whose
+   `(cherry picked from commit <sha>)` trailer names a PR's merge commit, or a commit of that PR,
+   carries that PR's change, so a maintenance release built by cherry-pick covers it too. A PR
+   whose change a revert in the range undid, and nothing restored, isn't covered: its issues stay
+   open, named to the maintainer. Under `style: continuous` every merge is its own release, so
+   only this run's PR. For each PR, close it if it's still open, and close every issue it links as
+   closing (the host's closing links: on GitHub, `Closes #N` in its description or a sidebar link,
+   not a keyword only in a commit message; on GitLab, a closing pattern in one of the merge
+   request's commit messages counts too; where a separate tracker holds the link, read it there),
+   with a comment naming the version and **thanking the author by handle.**
    Leave open an issue a human holds, the same holds
    [`issue-autoclose`](../issue-autoclose/SKILL.md) honours: reopened since the merge, a reporter
-   comment or reaction after it, an unchecked task item, a `multi-surface`/`epic` label, or another
-   closing PR no release contains yet. Name each one to the maintainer in the release's output. An
-   issue already closed with a comment naming this version gets no second comment; one closed
-   without a version gets the comment, and is never reopened. On a repository whose
+   comment or reaction after it, an unchecked task item, a `multi-surface`/`epic` label, or more
+   than one linked closing PR (`issue-autoclose` routes a multi-PR issue to a human, whether or not
+   a release contains the other), or a signal you can't read. Name each one to the maintainer in
+   the release's output. An issue already closed with a comment naming a version gets no second
+   comment; one closed without a version gets the comment, and is never reopened. On a repository whose
    `host_closes_on_merge` is `true`, the host closed those issues at merge: comment on them, close
    any it left open that no hold keeps open (an absorbed PR never merges, so the host closes
    nothing for it), and don't reopen them. Treat an issue a separate tracker's own integration
@@ -187,5 +196,7 @@ trailer exists; it does **not** prove the *name* is right.
 - Every PR the release contains, and every issue each links as closing, is closed with version +
   thanks, except an issue a human holds, which stays open and is named to the maintainer; the
   trust ledger has one terminal event per PR.
+- A PR whose change a revert in the range undid, and nothing restored, closed none of its issues;
+  each is named to the maintainer.
   With `trust` listed under `not_applicable`, or a blank `trust.ledger_path`, no ledger event was written.
 - No branch/worktree left dangling.
