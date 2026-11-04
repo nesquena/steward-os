@@ -47,15 +47,18 @@ Pitfalls). Ideal as a scheduled job.
    or its format is one this skill doesn't know), stop with a non-zero exit and alert once for
    that file's content; write nothing, state and its marks included. The board then stays as it
    was, mechanical data too, until a human repairs it. It's a first run only when neither the
-   board nor this skill's state exists. A board with no row count and no state is from before
-   this skill kept state: read it, and this run creates the state. A board with a row count and
-   no state, or state with no board, stops the run the same way: the state held judgment, and a
-   human decides where it went. Compute each item's judgment stamp with the shared routine; if
+   board nor this skill's state exists, or when there's no board and state holds only the
+   first-run mark: that's a first run that didn't finish, so run it again. A board with no row
+   count and no state is from before this skill kept state: read it, and this run creates the
+   state. A board with a row count and no state, or any other state with no board, stops the run
+   the same way: the state held judgment, and a human decides where it went. Compute each item's
+   judgment stamp with the shared routine; if
    you can't call it, write no stamp, carry each
    value's stale mark over from the prior board, and say so. Stamp any value that has none, with
    the current judgment stamp and rubric identifier, setter unchanged. A run that finds no setters
    mark in this skill's [state](../../docs/playbooks/scheduled-jobs.md#incremental-not-full-rescan)
-   records every value with no setter as `legacy`, then writes the mark. Mark a value stale when
+   records every value with no setter as `legacy`, a value moving into state this run included,
+   then writes the mark. Mark a value stale when
    its judgment stamp or rubric identifier doesn't match
    ([the rule](../../docs/playbooks/triage-scoreboard.md#when-a-judgment-goes-stale)); a judgment
    stamp of `stale` never matches. Keep its value. Once the setters mark is written, a value with
@@ -66,8 +69,9 @@ Pitfalls). Ideal as a scheduled job.
    replaces any older entry for that key. A value with no stamp moves without one. The refresh
    never discards a value; it only moves it. An item that leaves with no judgment leaves no
    entry. When an item with that key is open again, fill each dimension that is empty on the
-   board from the entry; a value already on the board wins. The entry stays in state until the
-   board that carries the filled values is written (step 7). Treat a filled value as on the prior
+   board from the entry; a value already on the board wins. The run that finds the item open
+   uses the entry up, whether or not it fills anything, and the entry stays in state until that
+   run's board is written (step 7). Treat a filled value as on the prior
    board, so the stale rule decides, except that a value that moved without a stamp gets the
    judgment stamp `stale`, which never matches. A reopen on its own isn't an edit: an item
    reopened unchanged keeps fresh values. An item transferred or re-keyed starts unjudged, and
@@ -95,14 +99,15 @@ Pitfalls). Ideal as a scheduled job.
    Persist the computed data as a machine-readable artifact for other jobs.
 7. **Commit** following [scheduled-job](../../docs/playbooks/scheduled-jobs.md) rules
    (idempotent, silent-on-no-op). Write this skill's state first, with this run's new entries
-   added and the entries this run filled from still in it, then the artifact, then the board,
-   then the state again without those filled-from entries and with any mark this run adopted
-   (setters, row count). Write each file under a temporary name in the same directory and rename
-   it into place, so a run that dies mid-write leaves the last good copy of each: never a board
-   whose departed items are missing from state, never a state whose removed entries aren't on
-   the board, and never a mark ahead of the board it describes. Keep temporary names out of the
-   commit, and rewrite state only when an entry moves or a mark is adopted. The board, its
-   machine-readable artifact, the refresh's state and any digest of
+   added and the entries this run used still in it (with no state yet, this write creates it,
+   holding the first-run mark if there's no board either), then the artifact, then the board,
+   then the state again without those used entries or the first-run mark and with any mark this
+   run adopted (setters, row count). Write each file under a temporary name in the same
+   directory and rename it into place, so a run that dies mid-write leaves the last good copy of
+   each: never a board whose departed items are missing from state, never a state whose removed
+   entries aren't on the board, and never a mark ahead of the board it describes. Keep temporary
+   names out of the commit, and write state only when it doesn't exist yet, an entry moves or a
+   mark changes. The board, its machine-readable artifact, the refresh's state and any digest of
    its rows go only where they are no more visible than the issues they list; history counts, so
    re-check before any visibility change. Nothing mechanical enforces this rule.
 
@@ -140,4 +145,5 @@ Pitfalls). Ideal as a scheduled job.
 - A closed item that reopens gets its judgment back: marked stale if its title, body or PR diff
   changed meanwhile, or if the value was never stamped. A value written on the board since the
   reopen wins.
-- A run killed between any two file writes loses no judgment.
+- A run killed between any two file writes loses no judgment, and its retry doesn't stop on
+  what it left: a first run that didn't finish is run again.

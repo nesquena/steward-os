@@ -480,9 +480,11 @@ class ProjectShapeContractTest < Minitest::Test
                           'count, it has no row count once the row-count mark is written, or its format is one ' \
                           'this skill doesn\'t know), stop with a non-zero exit and alert once for that file\'s ' \
                           'content; write nothing, state and its marks included.'
-    assert_includes step, 'It\'s a first run only when neither the board nor this skill\'s state exists.'
-    assert_includes step, 'A board with a row count and no state, or state with no board, stops the run the same ' \
-                          'way: the state held judgment, and a human decides where it went.'
+    assert_includes step, 'It\'s a first run only when neither the board nor this skill\'s state exists, or when ' \
+                          'there\'s no board and state holds only the first-run mark: that\'s a first run that ' \
+                          'didn\'t finish, so run it again.'
+    assert_includes step, 'A board with a row count and no state, or any other state with no board, stops the run ' \
+                          'the same way: the state held judgment, and a human decides where it went.'
     assert_includes skill_step_only('triage-scoreboard', 6), 'Give the board\'s row count in its header.'
     pitfalls = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Pitfalls').last.split('## Verification').first
     assert_includes pitfalls, '**An unreadable prior board is an error, not an empty one.**'
@@ -516,8 +518,10 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes step, 'An item that leaves with no judgment leaves no entry.'
     assert_includes step, 'When an item with that key is open again, fill each dimension that is empty on the board ' \
                           'from the entry; a value already on the board wins.'
-    assert_includes step, 'The entry stays in state until the board that carries the filled values is written ' \
-                          '(step 7).'
+    assert_includes step, 'The run that finds the item open uses the entry up, whether or not it fills anything, ' \
+                          'and the entry stays in state until that run\'s board is written (step 7).'
+    assert_includes step, 'records every value with no setter as `legacy`, a value moving into state this run ' \
+                          'included, then writes the mark.'
     refute_includes step, 'then remove the entry'
     assert_includes step, 'except that a value that moved without a stamp gets the judgment stamp `stale`, which ' \
                           'never matches.'
@@ -529,12 +533,17 @@ class ProjectShapeContractTest < Minitest::Test
   def test_refresh_writes_state_around_the_board
     step = skill_step_only('triage-scoreboard', 7)
     assert_includes step, 'Write this skill\'s state first, with this run\'s new entries added and the entries this ' \
-                          'run filled from still in it, then the artifact, then the board, then the state again ' \
-                          'without those filled-from entries and with any mark this run adopted (setters, row count).'
+                          'run used still in it (with no state yet, this write creates it, holding the first-run ' \
+                          'mark if there\'s no board either), then the artifact, then the board, then the state ' \
+                          'again without those used entries or the first-run mark and with any mark this run ' \
+                          'adopted (setters, row count).'
     assert_includes step, 'so a run that dies mid-write leaves the last good copy of each: never a board whose ' \
                           'departed items are missing from state, never a state whose removed entries aren\'t on ' \
                           'the board, and never a mark ahead of the board it describes.'
-    assert_includes step, 'rewrite state only when an entry moves or a mark is adopted.'
+    assert_includes step, 'write state only when it doesn\'t exist yet, an entry moves or a mark changes.'
+    verification = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Verification').last
+    assert_includes verification, 'A run killed between any two file writes loses no judgment, and its retry ' \
+                                  'doesn\'t stop on what it left: a first run that didn\'t finish is run again.'
   end
 
   def test_moving_judgment_is_named_as_a_refresh_write
