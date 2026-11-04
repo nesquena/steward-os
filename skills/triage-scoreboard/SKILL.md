@@ -68,25 +68,20 @@ Pitfalls). Ideal as a scheduled job.
 
    An item that leaves the open set moves its judgment (each value with its setter, judgment
    stamp, rubric identifier and stale mark) into this skill's state, keyed by repository, kind and
-   id. An
-   older entry for that key is merged per dimension: a value on the board wins, and a dimension
-   the board leaves empty keeps the entry's value. A value with no stamp moves without one. The
-   refresh never discards a value; it only moves it. The one exception is an agent's value that
-   gives way to the entry on a reopen, below. An item that leaves with no judgment adds
-   nothing, and any older entry for it stays as it is. When an item with that key is open again,
-   fill each dimension that is empty on the
-   board from the entry; a value already on the board wins, unless an agent set it and a human or
-   the `legacy` adoption set the entry's: then the entry's value, setter, judgment stamp and stale
-   mark come back in its place, and the run names the value it replaced in its output. Triage
-   writes only an empty dimension, so it wrote there only because the entry was out of sight. The
-   run that finds the item open
-   uses the entry up, whether or not it fills anything, and the entry stays in state until that
-   run's board is written (step 7). Treat a filled value as on the prior
-   board, its stale mark included, so the stale rule decides, except that a value that moved
-   without a stamp gets the
+   id. An older entry for that key is merged per dimension: a value on the board wins, and a
+   dimension the board leaves empty keeps the entry's value. A value with no stamp moves without
+   one. An item that leaves with no judgment adds nothing, and any older entry for it stays as it
+   is. When an item with that key is open again, fill each dimension that is empty on the board
+   from the entry; a value already on the board wins. The run that finds the item open uses the
+   entry up, whether or not it fills anything, and the entry stays in state until that run's
+   board is written (step 7). Treat a filled value as on the prior board, its stale mark
+   included, so the stale rule decides, except that a value that moved without a stamp gets the
    judgment stamp `stale`, which never matches. A reopen on its own isn't an edit: an item
-   reopened unchanged keeps fresh values. An item transferred or re-keyed starts unjudged, and
-   its old entry stays. Nothing prunes state: pruning would drop judgment.
+   reopened unchanged keeps fresh values. An item transferred or re-keyed starts unjudged, and its
+   old entry stays. The refresh never changes a value. Where a value on the board wins over the
+   entry's, on a close or a reopen, the entry's value is dropped; if a human or the `legacy`
+   adoption set it, the run names it in its output, so a human can put it back. Nothing prunes
+   state: pruning would drop judgment.
 4. **Compute the composite** = weighted sum of dimensions (weights the project sets; tune to match "what
    I'd pick up next"). Read the bypass marker (`bypass`) as the plain in-scope level of the rubric
    your project uses ([the default](../../docs/playbooks/triage-scoreboard.md#the-default-rubric),
@@ -127,10 +122,8 @@ Pitfalls). Ideal as a scheduled job.
   disposable; judgment is precious and persisted. Don't let a refresh wipe a human's assessment.
 - **Mark, never re-judge** — the refresh's judgment writes are the judgment stamp on a value
   that has none, the setter `legacy` on the run that writes the setters mark, and moving a value
-  unchanged between the board and its state, which on a reopen can put a human's value back over
-  one an agent wrote while the entry was out of sight. It never changes a value or a recorded
-  setter,
-  never drops a stale value, and never shows one as fresh. Re-judging is triage's.
+  unchanged between the board and its state. It never changes a value or a recorded setter, never
+  drops a stale value from the board, and never shows one as fresh. Re-judging is triage's.
 - **An unreadable prior board is an error, not an empty one.** A refresh that starts fresh from
   it wipes every judgment the board carried. An empty or partial read is the same as an
   unreadable one.
@@ -158,7 +151,7 @@ Pitfalls). Ideal as a scheduled job.
   from a board without a count can't be detected.
 - A closed item that reopens gets its judgment back: marked stale if its title, body or PR diff
   changed meanwhile, if the value was never stamped, or if it was stale when the item closed. A
-  value a human wrote on the board since the reopen wins; one an agent wrote there gives way to a
-  human's or `legacy` value from the entry, and the run names it.
+  value written on the board while the item was back wins, on the next close too, and the run
+  names a human's or `legacy` value from the entry that it displaced.
 - A run killed between any two file writes loses no judgment, and its retry doesn't stop on
   what it left: a first run that didn't finish is run again.

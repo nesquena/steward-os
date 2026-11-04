@@ -528,27 +528,29 @@ class ProjectShapeContractTest < Minitest::Test
                           'stamp, rubric identifier and stale mark) into this skill\'s state, keyed by repository, ' \
                           'kind and id. An older entry for that key is merged per dimension: a value on the board ' \
                           'wins, and a dimension the board leaves empty keeps the entry\'s value.'
-    assert_includes step, 'The refresh never discards a value; it only moves it. The one exception is an agent\'s ' \
-                          'value that gives way to the entry on a reopen, below.'
+    assert_includes step, 'The refresh never changes a value. Where a value on the board wins over the entry\'s, ' \
+                          'on a close or a reopen, the entry\'s value is dropped; if a human or the `legacy` adoption ' \
+                          'set it, the run names it in its output, so a human can put it back.'
+    refute_includes step, 'never discards a value'
+    refute_includes step, 'unless an agent set it'
     assert_includes step, 'An item that leaves with no judgment adds nothing, and any older entry for it stays as it ' \
                           'is.'
     refute_includes step, 'replaces any older entry'
     assert_includes step, 'When an item with that key is open again, fill each dimension that is empty on the board ' \
-                          'from the entry; a value already on the board wins, unless an agent set it and a human or ' \
-                          'the `legacy` adoption set the entry\'s: then the entry\'s value, setter, judgment stamp ' \
-                          'and stale mark come back in its place, and the run names the value it replaced in its ' \
-                          'output.'
-    refute_includes step, 'from the entry; a value already on the board wins. '
+                          'from the entry; a value already on the board wins. The run that finds the item open'
     assert_includes step, 'Treat a filled value as on the prior board, its stale mark included, so the stale rule ' \
                           'decides'
     verification = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Verification').last
-    assert_includes verification, 'if the value was never stamped, or if it was stale when the item closed. A value a ' \
-                                  'human wrote on the board since the reopen wins; one an agent wrote there gives way ' \
-                                  'to a human\'s or `legacy` value from the entry, and the run names it.'
-    assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'),
-                    'takes its judgment, stale marks included, into the refresh\'s state, so the judgment comes ' \
-                    'back if the item reopens: a value that was never stamped comes back stale, and a human\'s ' \
-                    'value comes back even if triage filled that dimension while the item was back'
+    assert_includes verification, 'if the value was never stamped, or if it was stale when the item closed. A value ' \
+                                  'written on the board while the item was back wins, on the next close too, and the ' \
+                                  'run names a human\'s or `legacy` value from the entry that it displaced.'
+    playbook = read('docs', 'playbooks', 'triage-scoreboard.md')
+    assert_includes playbook, 'takes its judgment, stale marks included, into the refresh\'s state, so the judgment ' \
+                              'comes back if the item reopens: a value that was never stamped comes back stale. A ' \
+                              'value written on the board while the item was back wins, and the refresh names a ' \
+                              'human\'s or `legacy` value from the state that it displaced, so a human can put it back.'
+    assert_includes playbook, 'Where a value on the board wins over the state\'s, the state\'s value is dropped, and ' \
+                              'the refresh names a human\'s or `legacy` one.'
     assert_includes step, 'The run that finds the item open uses the entry up, whether or not it fills anything, ' \
                           'and the entry stays in state until that run\'s board is written (step 7).'
     assert_includes step, 'records every value with no setter as `legacy`, a value moving into state this run ' \
@@ -583,8 +585,7 @@ class ProjectShapeContractTest < Minitest::Test
     refute_includes skill, 'its one judgment write is the judgment stamp'
     refute_includes skill, 'the refresh\'s one judgment write'
     assert_includes skill, 'moving a value unchanged between the board and its state'
-    assert_includes skill, 'which on a reopen can put a human\'s value back over one an agent wrote while the ' \
-                           'entry was out of sight.'
+    refute_includes skill, 'which on a reopen can put a human\'s value back'
   end
 
   def test_a_fact_missing_on_some_items_is_no_zero

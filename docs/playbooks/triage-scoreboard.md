@@ -189,7 +189,9 @@ it writes. A human's write carries none. The scheduled refresh stamps any value 
 recording the judgment stamp and the rubric identifier together. Writing that judgment stamp is
 the refresh's only change to judgment data, except the setter `legacy` it records once, on the run
 that adopts setters ([who set it](#who-set-it)). Moving a value unchanged into its state when the
-item closes, and back when it reopens, changes nothing. An edit made between a human's write and
+item closes, and back when it reopens, changes nothing. Where a value on the board wins over the
+state's, the state's value is dropped, and the refresh names a human's or `legacy` one. An edit
+made between a human's write and
 the next refresh is folded into the judgment stamp it records.
 
 **When a value is stale.** Its judgment stamp differs from the item's current one, or its rubric
@@ -269,9 +271,9 @@ A prior board the refresh can't read stops the run; it never counts as empty, an
 as it was until a human repairs it. A board from before the refresh kept a row count or state is
 read, not refused, and the next board carries a count. Rows missing from such a board can't be
 detected. An item that closes takes its judgment, stale marks included, into the refresh's state,
-so the judgment comes back if the item reopens: a value that was never stamped comes back stale,
-and a human's value comes back even if triage filled that dimension while the item was back (the
-run names the agent's value it replaced).
+so the judgment comes back if the item reopens: a value that was never stamped comes back stale.
+A value written on the board while the item was back wins, and the refresh names a human's or
+`legacy` value from the state that it displaced, so a human can put it back.
 
 The board, its machine-readable artifact, the refresh's state and any digest of its rows go only
 where they are no more visible than the issues they list; history counts, so re-check before any
