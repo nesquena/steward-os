@@ -267,9 +267,11 @@ handful.
 
 A prior board the refresh can't read stops the run; it never counts as empty, and the board stays
 as it was until a human repairs it. A board from before the refresh kept a row count or state is
-read, not refused, and the next board carries a count. An item that closes takes its judgment into
-the refresh's state, so the judgment comes back if the item reopens: a value that was never stamped
-comes back stale.
+read, not refused, and the next board carries a count. Rows missing from such a board can't be
+detected. An item that closes takes its judgment, stale marks included, into the refresh's state,
+so the judgment comes back if the item reopens: a value that was never stamped comes back stale,
+and a human's value comes back even if triage filled that dimension while the item was back (the
+run names the agent's value it replaced).
 
 The board, its machine-readable artifact, the refresh's state and any digest of its rows go only
 where they are no more visible than the issues they list; history counts, so re-check before any
