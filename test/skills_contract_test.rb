@@ -509,15 +509,55 @@ class ProjectShapeContractTest < Minitest::Test
                     'board carries a count.'
   end
 
+  def test_a_truncated_board_is_caught_only_once_it_carries_a_row_count
+    step = skill_step_only('triage-scoreboard', 3)
+    assert_includes step, 'Nothing tells a truncated board of that kind from a shorter one, so the row-count check ' \
+                          'starts with the first board that carries a count.'
+    verification = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Verification').last
+    assert_includes verification, 'An unreadable prior board, or a truncated one that carries a row count, stops ' \
+                                  'the run with a non-zero exit, and the board, artifact and state are unchanged.'
+    refute_includes verification, 'An unreadable or truncated prior board stops the run'
+    assert_includes verification, 'Rows missing from a board without a count can\'t be detected.'
+    assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'),
+                    'Rows missing from such a board can\'t be detected.'
+  end
+
   def test_a_closed_items_judgment_moves_and_comes_back
     step = skill_step_only('triage-scoreboard', 3)
     assert_includes step, 'An item that leaves the open set moves its judgment (each value with its setter, judgment ' \
-                          'stamp and rubric identifier) into this skill\'s state, keyed by repository, kind and id, ' \
-                          'and replaces any older entry for that key.'
-    assert_includes step, 'The refresh never discards a value; it only moves it.'
-    assert_includes step, 'An item that leaves with no judgment leaves no entry.'
+                          'stamp, rubric identifier and stale mark) into this skill\'s state, keyed by repository, ' \
+                          'kind and id. An older entry for that key is merged per dimension: a value on the board ' \
+                          'wins, and a dimension the board leaves empty keeps the entry\'s value.'
+    assert_includes step, 'The refresh never changes a value. Where a value on the board wins over the entry\'s, ' \
+                          'on a close or a reopen, the entry\'s value is dropped. If a human or the `legacy` adoption ' \
+                          'set it, it stays in state as a displaced value until this run\'s last state write (step ' \
+                          '7). Every run names each displaced value in state in its output before that write, so a ' \
+                          'retry after a crash names it again. A human can put it back on the board once the item ' \
+                          'is open, or in state by hand.'
+    refute_includes step, 'the run names it in its output, so a human can put it back'
+    refute_includes step, 'never discards a value'
+    refute_includes step, 'unless an agent set it'
+    assert_includes step, 'An item that leaves with no judgment adds nothing, and any older entry for it stays as it ' \
+                          'is.'
+    refute_includes step, 'replaces any older entry'
     assert_includes step, 'When an item with that key is open again, fill each dimension that is empty on the board ' \
-                          'from the entry; a value already on the board wins.'
+                          'from the entry; a value already on the board wins. The run that finds the item open'
+    assert_includes step, 'Treat a filled value as on the prior board, its stale mark included, so the stale rule ' \
+                          'decides'
+    verification = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Verification').last
+    assert_includes verification, 'if the value was never stamped, or if it was stale when the item closed. A value ' \
+                                  'written on the board while the item was back wins, on the next close too, and the ' \
+                                  'run names a human\'s or `legacy` value from the entry that it displaced.'
+    playbook = read('docs', 'playbooks', 'triage-scoreboard.md')
+    assert_includes playbook, 'takes its judgment, stale marks included, into the refresh\'s state, so the judgment ' \
+                              'comes back if the item reopens: a value that was never stamped comes back stale. A ' \
+                              'value written on the board while the item was back wins, and the refresh names a ' \
+                              'human\'s or `legacy` value from the state that it displaced. A human can put it back ' \
+                              'on the board once the item is open, or in the state by hand.'
+    assert_includes playbook, 'except the setter `legacy` it records once, on the run that adopts setters ([who set ' \
+                              'it](#who-set-it)), and dropping a state value that a board value displaces.'
+    assert_includes playbook, 'A displaced value that a human or the `legacy` adoption set stays in the state until a ' \
+                              'run has named it in its output, so a crash can\'t lose it unnamed.'
     assert_includes step, 'The run that finds the item open uses the entry up, whether or not it fills anything, ' \
                           'and the entry stays in state until that run\'s board is written (step 7).'
     assert_includes step, 'records every value with no setter as `legacy`, a value moving into state this run ' \
@@ -532,18 +572,21 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_refresh_writes_state_around_the_board
     step = skill_step_only('triage-scoreboard', 7)
-    assert_includes step, 'Write this skill\'s state first, with this run\'s new entries added and the entries this ' \
-                          'run used still in it (with no state yet, this write creates it, holding the first-run ' \
-                          'mark if there\'s no board either), then the artifact, then the board, then the state ' \
-                          'again without those used entries or the first-run mark and with any mark this run ' \
-                          'adopted (setters, row count).'
+    assert_includes step, 'Write this skill\'s state first, with this run\'s new entries and displaced values added ' \
+                          'and the entries this run used still in it (with no state yet, this write creates it, ' \
+                          'holding the first-run mark if there\'s no board either), then the artifact, then the ' \
+                          'board, then the state again without those used entries, the displaced values this run ' \
+                          'named, or the first-run mark, and with any mark this run adopted (setters, row count).'
     assert_includes step, 'so a run that dies mid-write leaves the last good copy of each: never a board whose ' \
                           'departed items are missing from state, never a state whose removed entries aren\'t on ' \
                           'the board, and never a mark ahead of the board it describes.'
-    assert_includes step, 'write state only when it doesn\'t exist yet, an entry moves or a mark changes.'
+    assert_includes step, 'write state only when it doesn\'t exist yet, an entry or a displaced value moves, or a ' \
+                          'mark changes.'
+    assert_includes step, 'Write each file under a temporary name in the same directory and rename it into place'
     verification = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Verification').last
     assert_includes verification, 'A run killed between any two file writes loses no judgment, and its retry ' \
-                                  'doesn\'t stop on what it left: a first run that didn\'t finish is run again.'
+                                  'doesn\'t stop on what it left: a first run that didn\'t finish is run again. A ' \
+                                  'displaced value the killed run didn\'t name is named by the retry.'
   end
 
   def test_moving_judgment_is_named_as_a_refresh_write
@@ -551,6 +594,12 @@ class ProjectShapeContractTest < Minitest::Test
     refute_includes skill, 'its one judgment write is the judgment stamp'
     refute_includes skill, 'the refresh\'s one judgment write'
     assert_includes skill, 'moving a value unchanged between the board and its state'
+    refute_includes skill, 'which on a reopen can put a human\'s value back'
+    assert_includes skill, 'its judgment writes are the judgment stamp, the setter `legacy` once, moving a value ' \
+                           'unchanged between the board and its state, and dropping a displaced value once a run has ' \
+                           'named it, see Pitfalls'
+    assert_includes skill, 'moving a value unchanged between the board and its state, and dropping a displaced value ' \
+                           'once a run has named it. It never changes a value or a recorded setter'
   end
 
   def test_a_fact_missing_on_some_items_is_no_zero

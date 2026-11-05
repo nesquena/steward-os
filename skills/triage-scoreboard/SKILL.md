@@ -23,8 +23,8 @@ description: Compute and render the living, ranked triage board of open work —
 
 **When to load:** generating or refreshing the [triage scoreboard](../../docs/playbooks/triage-scoreboard.md).
 Band A (read-only, deterministic where possible; its judgment writes are the judgment stamp, the
-setter `legacy` once, and moving a value unchanged between the board and its state, see
-Pitfalls). Ideal as a scheduled job.
+setter `legacy` once, moving a value unchanged between the board and its state, and dropping a
+displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job.
 
 ## Steps
 
@@ -42,7 +42,9 @@ Pitfalls). Ideal as a scheduled job.
    its setter, judgment stamp and rubric identifier) from the prior board. The board is the source
    of judgment; the machine-readable artifact is derived from it and rewritten each run. A board
    rendered before row counts has none: while this skill's state has no row-count mark, read it
-   as before, and this run renders the count. If the prior board can't be read (it doesn't parse,
+   as before, and this run renders the count. Nothing tells a truncated board of that kind from a
+   shorter one, so the row-count check starts with the first board that carries a count. If the
+   prior board can't be read (it doesn't parse,
    it has fewer rows than its row count, it has no row count once the row-count mark is written,
    or its format is one this skill doesn't know), stop with a non-zero exit and alert once for
    that file's content; write nothing, state and its marks included. The board then stays as it
@@ -65,17 +67,23 @@ Pitfalls). Ideal as a scheduled job.
    no setter is an error: surface it.
 
    An item that leaves the open set moves its judgment (each value with its setter, judgment
-   stamp and rubric identifier) into this skill's state, keyed by repository, kind and id, and
-   replaces any older entry for that key. A value with no stamp moves without one. The refresh
-   never discards a value; it only moves it. An item that leaves with no judgment leaves no
-   entry. When an item with that key is open again, fill each dimension that is empty on the
-   board from the entry; a value already on the board wins. The run that finds the item open
-   uses the entry up, whether or not it fills anything, and the entry stays in state until that
-   run's board is written (step 7). Treat a filled value as on the prior
-   board, so the stale rule decides, except that a value that moved without a stamp gets the
+   stamp, rubric identifier and stale mark) into this skill's state, keyed by repository, kind and
+   id. An older entry for that key is merged per dimension: a value on the board wins, and a
+   dimension the board leaves empty keeps the entry's value. A value with no stamp moves without
+   one. An item that leaves with no judgment adds nothing, and any older entry for it stays as it
+   is. When an item with that key is open again, fill each dimension that is empty on the board
+   from the entry; a value already on the board wins. The run that finds the item open uses the
+   entry up, whether or not it fills anything, and the entry stays in state until that run's
+   board is written (step 7). Treat a filled value as on the prior board, its stale mark
+   included, so the stale rule decides, except that a value that moved without a stamp gets the
    judgment stamp `stale`, which never matches. A reopen on its own isn't an edit: an item
-   reopened unchanged keeps fresh values. An item transferred or re-keyed starts unjudged, and
-   its old entry stays. Nothing prunes state: pruning would drop judgment.
+   reopened unchanged keeps fresh values. An item transferred or re-keyed starts unjudged, and its
+   old entry stays. The refresh never changes a value. Where a value on the board wins over the
+   entry's, on a close or a reopen, the entry's value is dropped. If a human or the `legacy`
+   adoption set it, it stays in state as a displaced value until this run's last state write
+   (step 7). Every run names each displaced value in state in its output before that write, so a
+   retry after a crash names it again. A human can put it back on the board once the item is open,
+   or in state by hand. Nothing prunes state: pruning would drop judgment.
 4. **Compute the composite** = weighted sum of dimensions (weights the project sets; tune to match "what
    I'd pick up next"). Read the bypass marker (`bypass`) as the plain in-scope level of the rubric
    your project uses ([the default](../../docs/playbooks/triage-scoreboard.md#the-default-rubric),
@@ -99,15 +107,15 @@ Pitfalls). Ideal as a scheduled job.
    Persist the computed data as a machine-readable artifact for other jobs.
 7. **Commit** following [scheduled-job](../../docs/playbooks/scheduled-jobs.md) rules
    (idempotent, silent-on-no-op). Write this skill's state first, with this run's new entries
-   added and the entries this run used still in it (with no state yet, this write creates it,
+   and displaced values added and the entries this run used still in it (with no state yet, this write creates it,
    holding the first-run mark if there's no board either), then the artifact, then the board,
-   then the state again without those used entries or the first-run mark and with any mark this
-   run adopted (setters, row count). Write each file under a temporary name in the same
+   then the state again without those used entries, the displaced values this run named, or the
+   first-run mark, and with any mark this run adopted (setters, row count). Write each file under a temporary name in the same
    directory and rename it into place, so a run that dies mid-write leaves the last good copy of
    each: never a board whose departed items are missing from state, never a state whose removed
    entries aren't on the board, and never a mark ahead of the board it describes. Keep temporary
-   names out of the commit, and write state only when it doesn't exist yet, an entry moves or a
-   mark changes. The board, its machine-readable artifact, the refresh's state and any digest of
+   names out of the commit, and write state only when it doesn't exist yet, an entry or a
+   displaced value moves, or a mark changes. The board, its machine-readable artifact, the refresh's state and any digest of
    its rows go only where they are no more visible than the issues they list; history counts, so
    re-check before any visibility change. Nothing mechanical enforces this rule.
 
@@ -115,9 +123,10 @@ Pitfalls). Ideal as a scheduled job.
 - **Keep mechanical and judgment dims in separate storage** — mechanical is re-derived and
   disposable; judgment is precious and persisted. Don't let a refresh wipe a human's assessment.
 - **Mark, never re-judge** — the refresh's judgment writes are the judgment stamp on a value
-  that has none, the setter `legacy` on the run that writes the setters mark, and moving a value
-  unchanged between the board and its state. It never changes a value or a recorded setter,
-  never drops a stale value, and never shows one as fresh. Re-judging is triage's.
+  that has none, the setter `legacy` on the run that writes the setters mark, moving a value
+  unchanged between the board and its state, and dropping a displaced value once a run has named
+  it. It never changes a value or a recorded setter, never
+  drops a stale value from the board, and never shows one as fresh. Re-judging is triage's.
 - **An unreadable prior board is an error, not an empty one.** A refresh that starts fresh from
   it wipes every judgment the board carried. An empty or partial read is the same as an
   unreadable one.
@@ -138,12 +147,15 @@ Pitfalls). Ideal as a scheduled job.
 - Evidence tags reflect actual review-stream presence.
 - A changed title, body or PR diff marks every value on that item stale on the next run, and a
   rubric change marks every value stale; no value or setter changed.
-- An unreadable or truncated prior board stops the run with a non-zero exit, and the board,
-  artifact and state are unchanged.
+- An unreadable prior board, or a truncated one that carries a row count, stops the run with a
+  non-zero exit, and the board, artifact and state are unchanged.
 - A board rendered before row counts, with or without state, is read, and the run's board carries
-  a count; once the row-count mark is written, a board with no count stops the run.
+  a count; once the row-count mark is written, a board with no count stops the run. Rows missing
+  from a board without a count can't be detected.
 - A closed item that reopens gets its judgment back: marked stale if its title, body or PR diff
-  changed meanwhile, or if the value was never stamped. A value written on the board since the
-  reopen wins.
+  changed meanwhile, if the value was never stamped, or if it was stale when the item closed. A
+  value written on the board while the item was back wins, on the next close too, and the run
+  names a human's or `legacy` value from the entry that it displaced.
 - A run killed between any two file writes loses no judgment, and its retry doesn't stop on
-  what it left: a first run that didn't finish is run again.
+  what it left: a first run that didn't finish is run again. A displaced value the killed run
+  didn't name is named by the retry.
