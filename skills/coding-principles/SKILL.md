@@ -54,7 +54,8 @@ Full reasoning: [coding principles reference](../../docs/reference/coding-princi
    that change for different reasons) or surplus (pieces with no reason of their own to change), and
    question each special case you add; the codebase's own
    conventions still win (step 9). Fix an existing link or surplus only when this change can't land
-   cleanly without it; a sibling site with the same flaw is part of the fix, not cleanup
+   cleanly without it; when the change fixes a bug, a sibling site with the same bug is part of the
+   fix, not cleanup
    ([widen](../../docs/reference/reviewing-at-volume.md#widen-to-the-whole-class-before-you-merge));
    propose other cleanup worth doing to the maintainer separately
    ([reference](../../docs/reference/coding-principles.md#what-changes-together-lives-together)).

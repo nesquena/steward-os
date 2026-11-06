@@ -136,8 +136,9 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
   ([special cases](../../docs/reference/coding-principles.md#special-cases-are-a-signal)).
 - **History finds missed siblings.** The files that often change with the ones the diff touches are
   worth a look ([why](../../docs/reference/coding-principles.md#what-changes-together-lives-together)).
-  Their names come from the contributor: pass each to Git as a literal path argument (for example
-  from Git's own `-z` output), never pasted into shell source.
+  Names from the diff come from the contributor; handle them as the
+  [sandbox section](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)
+  says.
 - **Never tolerate a flake** surfaced by the suite — root-cause it.
 
 ## Verification

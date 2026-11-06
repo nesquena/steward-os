@@ -258,11 +258,12 @@ own (a layout by layer, a comment style), the convention wins
 ([principle 10](#10-match-the-codebases-conventions-over-personal-taste)); raise a disagreement
 separately. [Surgical edits](#2-surgical-edits-only) still rule: a change shouldn't add a hidden
 link, a needless link or surplus, and when its own code can't land cleanly without fixing one, that
-fix is part of the change. So is the rest of the class a fix belongs to: a sibling site with the
-same flaw is the change's scope, not cleanup
+fix is part of the change. When the change fixes a bug, so is the rest of that bug's class: a
+sibling site with the same bug is the change's scope, not cleanup
 ([fix the class](../lifecycle/quality-gates.md#the-pre-fix-discipline-before-any-code-changes),
-[widen before you merge](reviewing-at-volume.md#widen-to-the-whole-class-before-you-merge)). Cleanup
-worth doing beyond that goes to the maintainer as a separate proposal, as principles 2 and 10 say.
+[widen before you merge](reviewing-at-volume.md#widen-to-the-whole-class-before-you-merge)). A sibling
+link or surplus the change doesn't need is cleanup: it goes to the maintainer as a separate
+proposal, as principles 2 and 10 say.
 
 In review, the same question finds the sibling a change missed. A grep finds the same shape; history
 finds the same reason to change: the files that have often changed in the same trunk commits as a
@@ -286,7 +287,7 @@ can't show, such as an outside constraint ("the proxy drops websockets, so we po
 steps rely on, or the reason for a workaround (remove it when the workaround goes). The
 [`ceiling:` marker](#mark-deliberate-simplifications) is one of these. Leave out a comment that
 restates the code ("add one to the retry count" above `retries += 1`): it has to change whenever the
-code does, and nothing makes it, so it drifts.
+code does, and nothing forces it to, so it drifts.
 
 > The *what changes together lives together* section adapts its lens and catalog from the
 > [untangle-codebase](https://github.com/caldoai/skills/blob/f3cf47774975a7d9fca45730babf4ff7ad765ada/skills/untangle-codebase/SKILL.md)
