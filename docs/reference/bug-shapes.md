@@ -14,6 +14,9 @@ them in a diff; a builder who knows them avoids writing them.
 Each entry: what it looks like, why the usual checks miss it, and how to catch it. The shapes are
 language- and framework-neutral — the examples are illustrative, not specific to any stack.
 
+Several shapes (7, 8 and 13) survive through a [special case](coding-principles.md#special-cases-are-a-signal)
+a diff adds: ask what general cause it stands in for before accepting it.
+
 ---
 
 ## 1. Runtime coexistence

@@ -131,6 +131,11 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
   reveals. If deep review shows the PR discloses a live vulnerability, the
   [divert](../../docs/reference/security-spine.md#6-the-vulnerability-divert) applies now — a public
   bounce or fix-spec that reproduces the exploit is itself a disclosure; route it private instead.
+- **A special case is a signal.** Ask what cause it stands in for, and ask for the reason where it
+  isn't findable
+  ([special cases](../../docs/reference/coding-principles.md#special-cases-are-a-signal)).
+- **History finds missed siblings.** The files that often change with the ones the diff touches are
+  worth a look ([why](../../docs/reference/coding-principles.md#what-changes-together-lives-together)).
 - **Never tolerate a flake** surfaced by the suite — root-cause it.
 
 ## Verification

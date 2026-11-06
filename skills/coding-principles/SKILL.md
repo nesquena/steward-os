@@ -44,10 +44,18 @@ Full reasoning: [coding principles reference](../../docs/reference/coding-princi
    capability (native control, CSS, DB constraint) before a dependency or hand-rolled code? → an
    already-installed dependency? → one line? → only then, minimum code that works. Never add a new
    dependency for what a few lines do. Mark a deliberate shortcut with a `ceiling:` comment naming
-   the limit *and* the upgrade path. Never minimize away validation, data-loss handling, security, or
-   the regression test. See [reference](../../docs/reference/coding-principles.md#the-minimalism-ladder).
+   the limit *and* the upgrade path; other comments record only what the code can't show, unless the
+   codebase's convention says otherwise (step 9;
+   [comments](../../docs/reference/coding-principles.md#comments-that-earn-their-place)). Never
+   minimize away validation, data-loss handling, security, or the regression test. See [reference](../../docs/reference/coding-principles.md#the-minimalism-ladder).
 6. **Surgical edits only.** Change exactly what the task needs. No drive-by cleanups, renames, or
-   "while we're here" additions. No speculative features.
+   "while we're here" additions. No speculative features. Keep what changes together together: add no
+   hidden link (pieces that must change together with nothing showing it), needless link (pieces tied
+   that change for different reasons) or surplus (pieces with no reason of their own to change), and
+   question each special case you add; the codebase's own
+   conventions still win (step 9). Fix an existing link or surplus only when this change can't land
+   cleanly without it; propose other cleanup worth doing to the maintainer separately
+   ([reference](../../docs/reference/coding-principles.md#what-changes-together-lives-together)).
 7. **One state, one owner.** Don't add a second writer for state something else already controls.
    The other side reads, never writes. When you hide/disable a control, guard what depends on it.
 8. **Don't blend conflicting patterns.** If an old and new pattern contradict, pick one, commit, and
