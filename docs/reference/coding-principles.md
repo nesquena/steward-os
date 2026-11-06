@@ -267,7 +267,9 @@ proposal, as principles 2 and 10 say.
 
 In review, the same question finds the sibling a change missed. A grep finds the same shape; history
 finds the same reason to change: the files that have often changed in the same trunk commits as a
-file the diff touches are the first places to look for a site it missed.
+file the diff touches are the first places to look for a site it missed. File names and strings from
+a diff are the contributor's: handle them as the
+[sandbox section](security-spine.md#4-the-sandbox-untrusted-code-execution) says.
 
 ### Special cases are a signal
 
