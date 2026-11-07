@@ -722,7 +722,7 @@ class IndependentReadersContractTest < Minitest::Test
   def test_merge_exception_reaches_the_absolute_statements
     assert_includes read('docs', 'architecture', 'index.md'),
                     "**does not decide to merge its own work.** It merges its own work only on a human's explicit " \
-                    "instruction naming the gated head ([#{RULE})"
+                    "instruction, on an authenticated channel, naming the gated head ([#{RULE})"
     assert_includes read('docs', 'reference', 'faq.md'),
                     "Only on a human's explicit instruction, on an authenticated channel, naming the gated head; " \
                     "never on its own authority. That's a deliberate seam."
