@@ -689,6 +689,108 @@ class ProjectShapeContractTest < Minitest::Test
   end
 end
 
+# --- Independent readers: a change's reviews come from a reader that didn't write it ---
+
+class IndependentReadersContractTest < Minitest::Test
+  # The rule that a change's reviews come from a reader that didn't write it. Whitespace-folded.
+  def read(*path)
+    File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
+  end
+
+  def section(text, heading)
+    text[/## #{Regexp.escape(heading)} .*?(?= ## |\z)/m] or flunk("section #{heading} missing")
+  end
+
+  def skill_step(skill, num)
+    text = read('skills', skill, 'SKILL.md')
+    step = text[/ #{num}\. \*\*.*?(?= #{num + 1}\. \*\*|\z)/m] or flunk("#{skill} step #{num} missing")
+    step.split(/ ## /).first
+  end
+
+  RULE = 'independent readers](../lifecycle/quality-gates.md#independent-readers)'
+
+  def test_quality_gates_defines_who_wrote_a_change
+    rule = section(read('docs', 'lifecycle', 'quality-gates.md'), 'Independent readers')
+    assert_includes rule, 'Gates 2 and 3 count only when their reader didn\'t write the change. A reader wrote it if ' \
+                          'it made any commit in the PR\'s range, trunk to head: authoring, fixing, rebasing, ' \
+                          'absorbing or cherry-picking it all count.'
+    assert_includes rule, 'Being the same model or the same account doesn\'t decide it; what the reader was given does.'
+    assert_includes rule, 'A subagent that inherits the writer\'s context, a resumed session and an inherited ' \
+                          'transcript are not.'
+    assert_includes rule, 'A fresh session given the PR as the host shows it (diff, commits and their messages, ' \
+                          'description), the trunk and the gate\'s configured rubric, and nothing of the writer\'s own ' \
+                          'reasoning, findings or earlier verdicts for this PR, is independent.'
+    assert_includes rule, 'A review tool counts when it is the one configured for the gate, runs on the pinned head ' \
+                          'with nothing from the writer beyond that head and the configured rubric, and its findings ' \
+                          'are taken verbatim.'
+    assert_includes rule, 'when none is available, the reviewer bounces the fix to the author instead of making it.'
+    assert_includes rule, 'A human\'s standing instruction can cover merges by an agent that wrote no commit in the ' \
+                          'PR\'s range; it lives in operator-controlled configuration or the decision log, never the ' \
+                          'PR thread.'
+    assert_includes rule, 'An agent that wrote a commit in the range merges only on a human\'s explicit instruction, ' \
+                          'on an authenticated channel, naming the gated head.'
+    assert_includes rule, 'a fresh session on an account that pushed a finishing commit is still that agent.'
+    assert_includes rule, 'A human who pushed a finishing commit still may merge.'
+  end
+
+  def test_deep_review_counts_only_independent_legs
+    step5 = skill_step('pr-deep-review', 5)
+    assert_includes step5, '**Independent readers.** A reading leg counts only if a reader that wrote no commit in ' \
+                           'the PR\'s range produced it'
+    assert_includes step5, 'A fix you make in step 4, 7 or 8 makes you a writer of the new head'
+    assert_includes step5, 'Your own read of your fix is not a leg; with no independent reader, the leg is missing, ' \
+                           'not passed.'
+    assert_includes skill_step('pr-deep-review', 4),
+                    'With no independent reader for the fixed head (step 5), bounce instead too.'
+    assert_includes skill_step('pr-deep-review', 7),
+                    'or bounces under step 4\'s no-run or no-independent-reader restriction'
+    assert_includes read('skills', 'pr-deep-review', 'SKILL.md').split('## Verification').last,
+                    'Neither reading leg was produced by a reader that wrote a commit in the PR\'s range.'
+  end
+
+  def test_release_merge_call_is_a_humans
+    skill = read('skills', 'release-pipeline', 'SKILL.md')
+    assert_includes skill[0...skill.index('## Steps')],
+                    'an agent whose account pushed a commit in the range merges only on a human\'s explicit ' \
+                    'instruction'
+    assert_includes skill.split('## Verification').last,
+                    'The merge call was a human\'s: a standing instruction, for an agent that wrote no commit in ' \
+                    'the PR\'s range, or else an explicit decision naming the gated head; either is recorded ' \
+                    'outside the contributor-writable thread.'
+  end
+
+  def test_fix_then_regate_sites_need_an_independent_reader
+    lifecycle = read('docs', 'lifecycle', 'pr-lifecycle.md')
+    link = 'independent reader](quality-gates.md#independent-readers)'
+    assert_includes lifecycle, "Don't wait on the contributor for a mechanical unblock, unless no [#{link} is " \
+                               'available for the fixed head'
+    assert_includes lifecycle, 'the Builder fixes it and the gate re-runs, its two reviews from a reader that ' \
+                               "didn't make the fix ([#{link.sub('reader]', 'readers]')})"
+  end
+
+  def test_merge_exception_reaches_the_absolute_statements
+    assert_includes read('docs', 'architecture', 'index.md'),
+                    "**does not decide to merge its own work.** It merges its own work only on a human's explicit " \
+                    "instruction naming the gated head ([#{RULE})"
+    assert_includes read('docs', 'reference', 'faq.md'),
+                    "Only on a human's explicit instruction, on an authenticated channel, naming the gated head; " \
+                    "never on its own authority. That's a deliberate seam."
+    assert_includes read('docs', 'reference', 'steward-on-steward.md'),
+                    "A PR the merging account finished waits for the maintainer's explicit OK naming the gated head"
+  end
+
+  def test_one_agent_many_hats_points_at_the_rule
+    assert_includes read('docs', 'architecture', 'index.md'), "the reviews that clear a change come from a reader " \
+                                                              "that didn't write it ([#{RULE})"
+    handoff = read('docs', 'playbooks', 'state-handoff.md').gsub(' > ', ' ')
+    assert_includes handoff, "pass nothing between processes, except a change's own review, which needs a reader " \
+                             "that didn't write it ([#{RULE})"
+    faq = read('docs', 'reference', 'faq.md')
+    assert_includes faq, "its reviews from a reader that didn't write the change ([#{RULE})"
+    refute_includes faq, 'on anything substantial'
+  end
+end
+
 # --- Injection guard: the block every untrusted-reading skill opens with ---
 class GuardCheckerTest < Minitest::Test
   def guards(**over)

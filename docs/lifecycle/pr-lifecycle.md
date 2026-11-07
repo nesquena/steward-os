@@ -101,7 +101,9 @@ flaw, decide:
   the live thread first so you don't duplicate feedback.
 - **Fix it yourself** (Builder) — for mechanical blockers (a rebase, a few failing tests, a small
   nit), fix on the author's branch and preserve their authorship. Don't wait on the contributor for
-  a mechanical unblock.
+  a mechanical unblock, unless no [independent reader](quality-gates.md#independent-readers) is
+  available for the fixed head: your fix makes you its writer, so its reviews come from someone
+  else, or it goes back to the author.
 
 The output of deep review is *warm-up*, not the ship decision. The ship decision is the next stage.
 
@@ -138,7 +140,9 @@ a gate with a skipped run is not all-clear.
 
 A green CI is necessary but not sufficient — the authoritative gate has repeatedly caught real
 regressions that green CI and prior review missed. If the gate finds something, the Builder fixes it
-and the gate re-runs. Only an all-clear gate advances to merge.
+and the gate re-runs, its two reviews from a reader that didn't make the fix
+([independent readers](quality-gates.md#independent-readers)). Only an all-clear gate advances to
+merge.
 
 ## [5] Merge + release
 

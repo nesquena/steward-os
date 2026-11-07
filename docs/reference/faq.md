@@ -49,10 +49,12 @@ reputational incident waiting to happen."
 
 ## Can the agent merge its own work?
 
-No — that's a deliberate seam. The [Builder and Reviewer roles are kept separate](../architecture/index.md#the-four-roles)
-so nothing ships on a single agent's say-so. The Builder makes the change on a branch; an
-independent authoritative gate authorizes the merge; a human owns the final irreversible call on
-anything substantial.
+Only on a human's explicit instruction, on an authenticated channel, naming the gated head; never on
+its own authority. That's a deliberate seam. The [Builder and Reviewer roles are kept
+separate](../architecture/index.md#the-four-roles) so nothing ships on a single agent's say-so. The
+Builder makes the change on a branch; an independent authoritative gate authorizes the merge, its
+reviews from a reader that didn't write the change ([independent
+readers](../lifecycle/quality-gates.md#independent-readers)); a human owns the final merge call.
 
 ## Why two code-review passes instead of one?
 
