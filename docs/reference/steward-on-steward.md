@@ -29,6 +29,11 @@ nothing runs unattended here yet.
   [#1](https://github.com/nesquena/steward-os/pull/1) (the output-loop playbook) and
   [#3](https://github.com/nesquena/steward-os/pull/3) (the minimalism ladder), both merged after
   human-gated [PR lifecycle](../lifecycle/pr-lifecycle.md) review.
+- **Merge authority.** The maintainer's standing instruction covers a merge by an agent that wrote
+  no commit in the PR's range. A PR the merging account finished waits for the maintainer's explicit
+  OK naming the gated head ([independent
+  readers](../lifecycle/quality-gates.md#independent-readers)). The two reading legs come from the
+  review tools named in the config: `codex` for code review, `fable` for the adversarial pass.
 - **The editorial loop.** Discovery over delivery: work is proposed, reviewed, and trimmed in the
   open, exactly as the [output-loop playbook](../playbooks/output-loop.md) prescribes.
 

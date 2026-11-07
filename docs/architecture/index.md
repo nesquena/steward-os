@@ -21,7 +21,9 @@ crons — is an application of the four ideas on this page. Read it once and the
 A maintenance system has four jobs. Keeping them distinct — in your head, in your skills, and in
 your automation — is what keeps the system legible as it grows. One agent can wear all four hats;
 a larger setup gives each its own cron or session. The point is the *separation of concern*, not
-the number of processes.
+the number of processes. One rule holds either way: the reviews that clear a change come from a
+reader that didn't write it
+([independent readers](../lifecycle/quality-gates.md#independent-readers)).
 
 ### 1. Watcher — "what's coming in?"
 Detects and captures inbound signal from every channel: chat platforms, the issue tracker, pull
@@ -46,9 +48,10 @@ It is the role that protects the codebase's integrity.
 
 ### 3. Builder — "make the change."
 Writes code: fixes a bug from an issue, rebases a stale contributor PR, adds the regression test,
-resolves a conflict. The Builder produces artifacts (commits, branches, PRs) — but **does not
-merge its own work to the trunk.** Builder and Reviewer are kept separate so nothing ships on a
-single agent's say-so.
+resolves a conflict. The Builder produces artifacts (commits, branches, PRs) — but **does not decide
+to merge its own work.** It merges its own work only on a human's explicit instruction naming the
+gated head ([independent readers](../lifecycle/quality-gates.md#independent-readers)). Builder and
+Reviewer are kept separate so nothing ships on a single agent's say-so.
 
 - Always works on a branch / worktree, never the trunk directly.
 - Adds a regression test for every fix (see [quality gates](../lifecycle/quality-gates.md)).
