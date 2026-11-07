@@ -731,6 +731,7 @@ class IndependentReadersContractTest < Minitest::Test
                           'on an authenticated channel, naming the gated head.'
     assert_includes rule, 'a fresh session on an account that pushed a finishing commit is still that agent.'
     assert_includes rule, 'A human who pushed a finishing commit still may merge.'
+    assert_includes rule, 'This is on top of the second pass being differently tuned, not instead of it.'
   end
 
   def test_deep_review_counts_only_independent_legs
@@ -740,6 +741,10 @@ class IndependentReadersContractTest < Minitest::Test
     assert_includes step5, 'A fix you make in step 4, 7 or 8 makes you a writer of the new head'
     assert_includes step5, 'Your own read of your fix is not a leg; with no independent reader, the leg is missing, ' \
                            'not passed.'
+    assert_includes step5, 'Independence is on top of the second pass being differently tuned, not instead of it.'
+    assert_includes step5, 'given the PR as the host shows it (diff, commits and their messages, description), the ' \
+                           'trunk and the gate\'s configured rubric, and nothing of your own reasoning, findings or ' \
+                           'earlier verdicts for this PR.'
     assert_includes skill_step('pr-deep-review', 4),
                     'With no independent reader for the fixed head (step 5), bounce instead too.'
     assert_includes skill_step('pr-deep-review', 7),
@@ -753,6 +758,9 @@ class IndependentReadersContractTest < Minitest::Test
     assert_includes skill[0...skill.index('## Steps')],
                     'an agent whose account pushed a commit in the range merges only on a human\'s explicit ' \
                     'instruction'
+    assert_includes skill_step('release-pipeline', 1),
+                    'A rebase the merging account pushes makes it a writer of the new range: the merge then needs a ' \
+                    'human\'s explicit instruction naming the re-gated head, not the standing instruction'
     assert_includes skill.split('## Verification').last,
                     'The merge call was a human\'s: a standing instruction, for an agent that wrote no commit in ' \
                     'the PR\'s range, or else an explicit decision naming the gated head; either is recorded ' \
@@ -771,7 +779,7 @@ class IndependentReadersContractTest < Minitest::Test
   def test_merge_exception_reaches_the_absolute_statements
     assert_includes read('docs', 'architecture', 'index.md'),
                     "**does not decide to merge its own work.** It merges its own work only on a human's explicit " \
-                    "instruction naming the gated head ([#{RULE})"
+                    "instruction, on an authenticated channel, naming the gated head ([#{RULE})"
     assert_includes read('docs', 'reference', 'faq.md'),
                     "Only on a human's explicit instruction, on an authenticated channel, naming the gated head; " \
                     "never on its own authority. That's a deliberate seam."

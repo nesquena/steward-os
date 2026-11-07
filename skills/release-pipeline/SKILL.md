@@ -55,7 +55,9 @@ who already pulled or deployed, so a merge isn't
    tree hook. If staleness is the only blocker, the Builder can perform this safe preparation.
    Any new head/rebase or changed trunk voids prior gate evidence, including human receipts:
    reassess the rebased head and re-run the entire fresh gate through `pr-deep-review`, not merely
-   the suite. If required runs/reviews cannot be supplied, stop; do not merge.
+   the suite. If required runs/reviews cannot be supplied, stop; do not merge. A rebase the merging
+   account pushes makes it a writer of the new range: the merge then needs a human's explicit
+   instruction naming the re-gated head, not the standing instruction (see When to load).
 2. **Verify the credit before merging** (see the attribution gate below) — the contributor you're
    about to thank must actually be the author of the work you're shipping.
 3. **Merge preserving attribution.** The original author's authorship must survive: fix on their
