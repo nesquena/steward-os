@@ -265,6 +265,74 @@ class HostClosingContractTest < Minitest::Test
   end
 end
 
+class BatchedReleaseContractTest < Minitest::Test
+  # A release closes the issues of every PR it contains, and the board lists any it left open.
+  def read(*path)
+    File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
+  end
+
+  def step(skill, num)
+    text = read('skills', skill, 'SKILL.md')
+    found = text[/ #{num}\. \*\*.*?(?= #{num + 1}\. \*\*|\z)/m] or flunk("#{skill} step #{num} missing")
+    found.split(/ ## /).first
+  end
+
+  def test_release_closes_every_pr_it_contains
+    s6 = step('release-pipeline', 6)
+    assert_includes s6, 'The release covers every PR it contains, not just the one this run merged: each merged PR ' \
+                        'whose merge commit (the commit the host records for the merge, whatever the merge style) ' \
+                        'this tag contains and no other release tag contains (test each with ' \
+                        '`git merge-base --is-ancestor`; a tag the host marks pre-release, or whose name carries a ' \
+                        'pre-release suffix such as `-rc.1`, is not a release tag; on a first release, every merge ' \
+                        'this tag contains), and each absorbed PR whose change it carries.'
+    assert_includes s6, 'An absorbed PR is one closed without merging whose change a commit in the range carries: the ' \
+                        'commit names it, carries a co-author trailer for its author, or has its patch id.'
+    assert_includes s6, 'A commit whose `(cherry picked from commit <sha>)` trailer names a PR\'s merge commit, or a ' \
+                        'commit of that PR, carries that PR\'s change'
+    assert_includes s6, 'A PR whose change a revert in the range undid, and nothing restored, isn\'t covered: its ' \
+                        'issues stay open, named to the maintainer.'
+    assert_includes s6, 'Under `style: continuous` every merge is its own release, so only this run\'s PR.'
+    assert_includes s6, 'Leave open an issue a human holds, the same holds [`issue-autoclose`](../issue-autoclose/' \
+                        'SKILL.md) honours: reopened since the merge, a reporter comment or reaction after it, an ' \
+                        'unchecked task item, a `multi-surface`/`epic` label, or more than one linked closing PR ' \
+                        '(`issue-autoclose` routes a multi-PR issue to a human, whether or not a release contains ' \
+                        'the other), or a signal you can\'t read. Name each one to the maintainer in the release\'s ' \
+                        'output.'
+    assert_includes s6, 'close every issue it links as closing (the host\'s closing links: on GitHub, `Closes #N` in ' \
+                        'its description or a sidebar link, not a keyword only in a commit message; on GitLab, a ' \
+                        'closing pattern in one of the merge request\'s commit messages counts too; where a separate ' \
+                        'tracker holds the link, read it there)'
+    assert_includes s6, 'An issue already closed with a comment naming a version gets no second comment'
+    assert_includes s6, 'one terminal outcome for each PR in the release that has no terminal event there yet'
+    assert_includes read('skills', 'release-pipeline', 'SKILL.md').split('## Verification').last,
+                    'Every PR the release contains, and every issue each links as closing, is closed with version + ' \
+                    'thanks, except an issue a human holds, which stays open and is named to the maintainer'
+    assert_includes read('skills', 'release-pipeline', 'SKILL.md').split('## Verification').last,
+                    'A PR whose change a revert in the range undid, and nothing restored, closed none of its issues'
+    assert_includes read('docs', 'lifecycle', 'pr-lifecycle.md'),
+                    'Close every PR the release contains, not just the last one merged, and every issue each links ' \
+                    'as closing'
+  end
+
+  def test_board_lists_released_but_open_issues
+    s1 = step('triage-scoreboard', 1)
+    assert_includes s1, 'An open issue a release already ships (a release tag contains the merge of a PR that ' \
+                        'links it as closing; a tag the host marks pre-release, or whose name carries a pre-release ' \
+                        'suffix such as `-rc.1`, is not a release tag) is **released but open**.'
+    assert_includes s1, 'for a repository with no release tag, skip only this released-but-open check'
+    refute_includes s1, 'skip a repository that has no release tag'
+    assert_includes s1, 'the refresh closes nothing.'
+    assert_includes step('triage-scoreboard', 6), 'the released but open issues (each with any hold ' \
+                                                  '`issue-autoclose` would see, named; each is also listed where it ' \
+                                                  'belongs otherwise: the spotlight, not yet judged, or the ranking. ' \
+                                                  'These lines carry no judgment data and don\'t count as board rows.)'
+    assert_includes step('triage-scoreboard', 4), 'a flagged item is listed nowhere else, except under released but open.'
+    playbook = read('docs', 'playbooks', 'triage-scoreboard.md')
+    assert_includes playbook, 'a flagged item is in the spotlight and nowhere else, except under released but open.'
+    assert_includes playbook, 'These lines carry no judgment data and don\'t count as board rows.'
+  end
+end
+
 class ProjectShapeContractTest < Minitest::Test
   # Section 0 of the setup interview, the setup skill and the template header. Read with whitespace
   # folded, so a re-wrap doesn't break the pin.
