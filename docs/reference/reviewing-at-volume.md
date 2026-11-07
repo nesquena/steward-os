@@ -37,7 +37,7 @@ and it is sharper than the author-side version.
   A "missing" link between two isolated components may be missing *because the isolation is the
   design* — with a separate, sanctioned path already covering the legitimate use case. Before
   "fixing" an absence, read the history of the code that would change (`git log -p -- <path>` and
-  `git blame` recover the commit and the reasoning; `git log -S "<string>"` when you're hunting the
+  `git blame` recover the commit and the reasoning; `git log -S <string>` when you're hunting the
   exact addition or removal of a literal) and recover the original intent. The absence may be
   load-bearing.
 - **The premise doesn't hold against how the system actually works.** A change can be internally
