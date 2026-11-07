@@ -49,8 +49,8 @@ It is the role that protects the codebase's integrity.
 ### 3. Builder — "make the change."
 Writes code: fixes a bug from an issue, rebases a stale contributor PR, adds the regression test,
 resolves a conflict. The Builder produces artifacts (commits, branches, PRs) — but **does not decide
-to merge its own work.** It merges its own work only on a human's explicit instruction naming the
-gated head ([independent readers](../lifecycle/quality-gates.md#independent-readers)). Builder and
+to merge its own work.** It merges its own work only on a human's explicit instruction, on an
+authenticated channel, naming the gated head ([independent readers](../lifecycle/quality-gates.md#independent-readers)). Builder and
 Reviewer are kept separate so nothing ships on a single agent's say-so.
 
 - Always works on a branch / worktree, never the trunk directly.
