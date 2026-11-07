@@ -75,6 +75,8 @@ finish it first.*
 
 - If a change clears state on one reset path, audit *every* reset path in the file before merge.
 - If it guards one call to an endpoint, audit every call.
+- This repo also treats history as evidence for missed siblings, the files that change together
+  with the ones a diff touches: see [what changes together lives together](coding-principles.md#what-changes-together-lives-together).
 - "Merge now, open a tracking issue for the siblings" is an anti-pattern when the widening is cheap —
   and it usually is, a couple of lines per site. Tracking issues for cheap widening are where bug
   classes go to survive.

@@ -234,6 +234,70 @@ close so the contributor isn't left thinking their code was bad:
 
 ---
 
+## What changes together lives together
+
+The footprint ladder asks which layer a change lands in. A second structural question applies to any
+change that adds or moves code: **should these pieces change together?** Code is easy to change when
+pieces that change together live together, pieces that change for different reasons aren't tied, and
+everything depends on what changes less often than itself. Structure goes wrong in three ways:
+
+- **Hidden links:** pieces that must change together, where nothing shows it. A copied value or block
+  of logic (reuse it instead, [rung 2](#the-minimalism-ladder)); a module that reads a global, a file
+  or an environment variable another module sets, with nothing in either showing it; one feature
+  spread across folders by layer; a call order or convention that callers just have to know.
+- **Needless links:** pieces tied together that change for different reasons. Callers that reach into
+  another module's internals; stable code that imports something more volatile; a general function
+  with a parameter only one caller understands; a shallow module whose interface changes whenever its
+  internals do.
+- **Surplus:** pieces with no reason of their own to change. Pass-through wrappers, dead code, and
+  extension points or config for something that never varies ([principle 3](#3-no-speculative-features)
+  and the [footprint ladder](#the-footprint-ladder)'s speculative infrastructure).
+
+This is a lens for a change, not a licence to restructure. Where the codebase has a convention of its
+own (a layout by layer, a comment style), the convention wins
+([principle 10](#10-match-the-codebases-conventions-over-personal-taste)); raise a disagreement
+separately. [Surgical edits](#2-surgical-edits-only) still rule: a change shouldn't add a hidden
+link, a needless link or surplus, and when its own code can't land cleanly without fixing one, that
+fix is part of the change. When the change fixes a bug, so is the rest of that bug's class: a
+sibling site with the same bug is the change's scope, not cleanup
+([fix the class](../lifecycle/quality-gates.md#the-pre-fix-discipline-before-any-code-changes),
+[widen before you merge](reviewing-at-volume.md#widen-to-the-whole-class-before-you-merge)). A sibling
+link or surplus the change doesn't need is cleanup: it goes to the maintainer as a separate
+proposal, as principles 2 and 10 say.
+
+In review, the same question finds the sibling a change missed. A grep finds the same shape; history
+finds the same reason to change: the files that have often changed in the same trunk commits as a
+file the diff touches are the first places to look for a site it missed. File names and strings from
+a diff are the contributor's: handle them as the
+[sandbox section](security-spine.md#4-the-sandbox-untrusted-code-execution) says.
+
+### Special cases are a signal
+
+An `if` for one value, a parameter for one caller, a swallowed exception, a retry or a sleep, a
+disabled test: each answers a requirement the design didn't account for. Before adding one, or
+accepting one in review, ask what general cause it stands in for. One fix to that cause often removes
+several special cases, and fixing them one at a time is how a bug class survives (bug shapes
+[7](bug-shapes.md#7-the-flake-thats-actually-a-bug), [8](bug-shapes.md#8-the-instance-fix-that-left-the-class-alone)
+and [13](bug-shapes.md#13-the-refusal-rule-fixed-one-hole-at-a-time) are instances). Keep a special
+case when the situation really is special, and make the reason findable, in the way the codebase
+records such things.
+
+### Comments that earn their place
+
+Where the codebase has no comment convention of its own: keep a comment when it records what the code
+can't show, such as an outside constraint ("the proxy drops websockets, so we poll"), an order two
+steps rely on, or the reason for a workaround (remove it when the workaround goes). The
+[`ceiling:` marker](#mark-deliberate-simplifications) is one of these. Leave out a comment that
+restates the code ("add one to the retry count" above `retries += 1`): it has to change whenever the
+code does, and nothing forces it to, so it drifts.
+
+> The *what changes together lives together* section adapts its lens and catalog from the
+> [untangle-codebase](https://github.com/caldoai/skills/blob/f3cf47774975a7d9fca45730babf4ff7ad765ada/skills/untangle-codebase/SKILL.md)
+> skill by caldoai ([MIT License](https://github.com/caldoai/skills/blob/f3cf47774975a7d9fca45730babf4ff7ad765ada/LICENSE),
+> Copyright (c) 2026 Maze).
+
+---
+
 ## Public-repo discipline
 
 If the project is public (or has any external contributors), a few rules are non-negotiable
