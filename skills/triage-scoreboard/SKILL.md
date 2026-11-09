@@ -53,7 +53,8 @@ displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job
    shorter one, so the row-count check starts with the first board that carries a count. If the
    prior board can't be read (it doesn't parse,
    it has fewer rows than its row count, it has no row count once the row-count mark is written,
-   or its format is one this skill doesn't know), stop with a non-zero exit and alert once for
+   it has no format line once the format mark is written, or its format line names one this skill
+   doesn't know), stop with a non-zero exit and alert once for
    that file's content; write nothing, state and its marks included. The board then stays as it
    was, mechanical data too, until a human repairs it.
    [The board format](../../docs/playbooks/triage-scoreboard.md#the-board-format) says what the
@@ -61,8 +62,10 @@ displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job
    board nor this skill's state exists, or when there's no board and state holds only the
    first-run mark: that's a first run that didn't finish, so run it again. A board with no row
    count and no state is from before this skill kept state: read it, and this run creates the
-   state. A board with a row count and no state, or any other state with no board, stops the run
-   the same way: the state held judgment, and a human decides where it went. Compute each item's
+   state. A board with no format line, while state has no format mark, is from before the board
+   format was defined: read it as the run that wrote it did, render the format, and adopt the
+   format mark (step 7). A board with a row count and no state, or any other state with no
+   board, stops the run the same way: the state held judgment, and a human decides where it went. Compute each item's
    judgment stamp with the shared routine; if
    you can't call it, write no stamp, carry each
    value's stale mark over from the prior board, and say so. Stamp any value that has none, with
@@ -114,7 +117,7 @@ displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job
    any hold `issue-autoclose` would see, named; each is also listed where it belongs otherwise: the
    spotlight, not yet judged, or the ranking. These lines carry no judgment data and don't count as
    board rows.), then per kind the not yet judged section (its count and first five in mechanical
-   order) and the ranking by composite; name inert dimensions in the
+   order, the rest as rows beneath, collapsed) and the ranking by composite; name inert dimensions in the
    header; mark each stale value and give the stale count per kind in the header; add a curated
    "review these first" short-list drawn from both. Give the board's row count in its header.
    Write it in [the board format](../../docs/playbooks/triage-scoreboard.md#the-board-format), with
@@ -124,7 +127,7 @@ displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job
    and displaced values added and the entries this run used still in it (with no state yet, this write creates it,
    holding the first-run mark if there's no board either), then the artifact, then the board,
    then the state again without those used entries, the displaced values this run named, or the
-   first-run mark, and with any mark this run adopted (setters, row count). Write each file under a temporary name in the same
+   first-run mark, and with any mark this run adopted (setters, row count, format). Write each file under a temporary name in the same
    directory and rename it into place, so a run that dies mid-write leaves the last good copy of
    each: never a board whose departed items are missing from state, never a state whose removed
    entries aren't on the board, and never a mark ahead of the board it describes. Before the

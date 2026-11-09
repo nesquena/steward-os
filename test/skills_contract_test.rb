@@ -566,8 +566,9 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes step, 'The board is the source of judgment; the machine-readable artifact is derived from it and ' \
                           'rewritten each run.'
     assert_includes step, 'If the prior board can\'t be read (it doesn\'t parse, it has fewer rows than its row ' \
-                          'count, it has no row count once the row-count mark is written, or its format is one ' \
-                          'this skill doesn\'t know), stop with a non-zero exit and alert once for that file\'s ' \
+                          'count, it has no row count once the row-count mark is written, it has no format line ' \
+                          'once the format mark is written, or its format line names one this skill doesn\'t ' \
+                          'know), stop with a non-zero exit and alert once for that file\'s ' \
                           'content; write nothing, state and its marks included.'
     assert_includes step, 'It\'s a first run only when neither the board nor this skill\'s state exists, or when ' \
                           'there\'s no board and state holds only the first-run mark: that\'s a first run that ' \
@@ -594,8 +595,8 @@ class ProjectShapeContractTest < Minitest::Test
                                   'run\'s board carries a count; once the row-count mark is written, a board with ' \
                                   'no count stops the run.'
     assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'),
-                    'A board from before the refresh kept a row count or state is read, not refused, and the next ' \
-                    'board carries a count.'
+                    'A board from before the refresh kept a row count, state or a format line is read, not refused, ' \
+                    'and the next board carries a count and the line.'
   end
 
   def test_a_truncated_board_is_caught_only_once_it_carries_a_row_count
@@ -665,7 +666,7 @@ class ProjectShapeContractTest < Minitest::Test
                           'and the entries this run used still in it (with no state yet, this write creates it, ' \
                           'holding the first-run mark if there\'s no board either), then the artifact, then the ' \
                           'board, then the state again without those used entries, the displaced values this run ' \
-                          'named, or the first-run mark, and with any mark this run adopted (setters, row count).'
+                          'named, or the first-run mark, and with any mark this run adopted (setters, row count, format).'
     assert_includes step, 'so a run that dies mid-write leaves the last good copy of each: never a board whose ' \
                           'departed items are missing from state, never a state whose removed entries aren\'t on ' \
                           'the board, and never a mark ahead of the board it describes.'
@@ -1128,7 +1129,19 @@ class BoardFormatContractTest < Minitest::Test
     assert_includes s, '`-` and `stale` are reserved.'
     assert_includes s, 'an unparseable cell makes the board unreadable.'
     assert_includes s, 'or an out-of-range value, parses: the board surfaces it'
-    assert_includes s, 'Released but open is a list, not a table, and its lines aren\'t rows.'
+    assert_includes s, 'not yet judged is a table that holds every member as a row'
+    assert_includes s, 'Released but open and the "review these first" short-list are lists, not tables, and their ' \
+                       'lines aren\'t rows.'
+    assert_includes s, '`Stale: issues <n>, PRs <n>`.'
+    assert_includes s, '`Inert: issues <dimensions or none>; PRs <dimensions or none>`.'
+    assert_includes s, '`lane` is set on PR rows only.'
+    assert_includes s, 'setter: `human`, `agent`, `legacy`, or `-` for none.'
+    assert_includes s, 'stamp: the routine\'s output, `-` for none, or `stale`.'
+    assert_includes s, 'rubric: the rubric identifier, or `-` for none.'
+    assert_includes s, 'A stamp or rubric identifier uses only letters, digits, `.`, `_`, `:` and `-`.'
+    assert_includes s, 'keyed by repository, kind and id.'
+    assert_includes s, 'A run that knows both formats reads the old one and writes the new one. Otherwise the ' \
+                       'change ships with a one-time conversion'
   end
 
   def test_title_is_escaped_display_text
@@ -1141,17 +1154,38 @@ class BoardFormatContractTest < Minitest::Test
     s = format_section
     assert_includes s, 'Write only the `lane` and judgment cells of the item\'s row.'
     assert_includes s, 'An item with no row gets one in its kind\'s not yet judged table, and `Rows` goes up by one.'
-    assert_includes s, 'Write nothing to the board when there is no board, when its format line names a format you ' \
-                       'don\'t know, or when it doesn\'t parse. Give the judgment in your output and say why.'
+    assert_includes s, 'Write nothing to the board when there is no board, when it has no format line, when its ' \
+                       'format line names a format you don\'t know, or when it doesn\'t parse. Give the judgment in ' \
+                       'your output and say why.'
+    assert_includes read('quickstart.md'), 'record judgments on a scoreboard once the refresh has made one: triage ' \
+                                           'never starts a board'
   end
 
   def test_refresh_rechecks_the_board_before_writing
-    assert_includes format_section, 'Before it renames its board into place, it checks the board is still that ' \
-                                    'content; if not, it writes nothing and runs again.'
+    assert_includes format_section, 'If not, triage discards its copy, re-reads the board and applies its write ' \
+                                    'rule again'
+    assert_includes format_section, 'It holds the [scheduled-jobs](scheduled-jobs.md) lock from that check through ' \
+                                    'the rename.'
     assert_includes read('skills', 'triage-scoreboard', 'SKILL.md'),
                     'Before the first write, and again before renaming the board into place, check the board still ' \
                     'holds what step 3 read; if a triage run wrote it meanwhile, stop as a run killed there would, ' \
                     'and run again.'
+  end
+
+  def test_a_board_from_before_the_format_is_read_once
+    assert_includes format_section, 'While the refresh\'s state has no format mark, the refresh reads it as the run ' \
+                                    'that wrote it did'
+    assert_includes format_section, 'Once the mark is written, a board with no format line is unreadable'
+    skill = read('skills', 'triage-scoreboard', 'SKILL.md')
+    assert_includes skill, 'it has no format line once the format mark is written'
+    assert_includes skill, '(setters, row count, format)'
+    assert_includes skill, 'Write it in [the board format](../../docs/playbooks/triage-scoreboard.md#the-board-format), ' \
+                           'with its format line.'
+  end
+
+  def test_the_stamp_routine_fits_a_judgment_cell
+    assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'),
+                    'its output uses only the characters [a judgment cell](#the-board-format) allows; a hex digest does.'
   end
 
   def test_every_board_writer_links_the_format

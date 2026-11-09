@@ -186,7 +186,8 @@ fixed by some other change stays fresh until someone re-judges it.
 One routine computes the judgment stamp, and every judge and the scheduled refresh call it.
 Nobody computes one by hand. StewardOS ships no routine: the project installs one beside the
 board's config before it turns staleness on, and records where it lives and which mode it uses.
-The routine fixes the canonical form: line endings, whitespace, field order. Where the store
+The routine fixes the canonical form: line endings, whitespace, field order, and its output uses
+only the characters [a judgment cell](#the-board-format) allows; a hex digest does. Where the store
 can't produce a PR's net diff, the routine hashes the head commit instead, and then every push
 stales the PR's judgment; that mode is chosen once, never per run. A run that can't call the
 routine, or can't read an input it covers, writes no stamp and re-judges nothing: every value and
@@ -272,8 +273,11 @@ formats reads the old one and writes the new one. Otherwise the change ships wit
 conversion, since the refresh stops on a format it doesn't know.
 
 **The format line.** The board's first line is `<!-- board-format: board-1 -->`. A board with no
-format line is read as `board-1`: it either parses or stops the run like any unreadable board,
-and the run writes the line.
+format line is from before the format was defined. While the refresh's state has no format mark,
+the refresh reads it as the run that wrote it did, renders this format, and adopts the mark with
+the board, as it adopts the row count. Once the mark is written, a board with no format line is
+unreadable and stops the run: nothing tells a board that lost its first line from one written
+before the format, so the check starts with the first board that carries the line.
 
 **The header**, after the format line and before the first section:
 
@@ -282,8 +286,9 @@ and the run writes the line.
 - `Inert: issues <dimensions or none>; PRs <dimensions or none>`.
 
 **Rows.** A row is one open item's line in a table in the spotlight, not yet judged or the
-ranking. Every open item has exactly one row, since not yet judged lists every member beneath its
-first five. Released but open is a list, not a table, and its lines aren't rows. A table row's
+ranking. Every open item has exactly one row: not yet judged is a table that holds every member
+as a row, the first five open and the rest beneath them, collapsed. Released but open and the
+"review these first" short-list are lists, not tables, and their lines aren't rows. A table row's
 columns are `kind | repository | id | title | lane | scope_fit | criticality | risk | flag`, then
 the mechanical columns and the evidence tags. `lane` is set on PR rows only.
 
@@ -311,12 +316,17 @@ backslash, write `<` as `&lt;`, and replace line breaks with spaces.
 - Write only the `lane` and judgment cells of the item's row.
 - An item with no row gets one in its kind's not yet judged table, and `Rows` goes up by one. The
   next refresh places it.
-- Write nothing to the board when there is no board, when its format line names a format you
-  don't know, or when it doesn't parse. Give the judgment in your output and say why.
+- Write nothing to the board when there is no board, when it has no format line, when its format
+  line names a format you don't know, or when it doesn't parse. Give the judgment in your output and say why.
 
-**Two writers at once.** Each writer notes the board's content as it reads it. Before it renames
-its board into place, it checks the board is still that content; if not, it writes nothing and
-runs again. Otherwise a refresh that read the board before a triage write would erase it.
+**Two writers at once.** Each writer writes its copy under a temporary name in the board's
+directory and notes the board's content as it reads it. It holds the
+[scheduled-jobs](scheduled-jobs.md) lock from that check through the rename. Before it renames the
+copy into place, it checks the board is still that content. If not, triage discards its copy,
+re-reads the board and applies its write rule again, without repeating replies, labels or routing;
+the refresh stops as a run killed there would, and runs again (its step 7). Where the board is
+committed from separate clones, a push the host rejects as not fast-forward is the same signal.
+Otherwise a refresh that read the board before a triage write would erase it.
 
 ## Evidence-readiness tags
 Beyond rank, show **which review streams have landed** for each item — turning the board from a
@@ -333,8 +343,8 @@ open it. A companion "review these first" curated short-list can ride on top for
 handful.
 
 A prior board the refresh can't read stops the run; it never counts as empty, and the board stays
-as it was until a human repairs it. A board from before the refresh kept a row count or state is
-read, not refused, and the next board carries a count. Rows missing from such a board can't be
+as it was until a human repairs it. A board from before the refresh kept a row count, state or a
+format line is read, not refused, and the next board carries a count and the line. Rows missing from such a board can't be
 detected. An item that closes takes its judgment, stale marks included, into the refresh's state,
 so the judgment comes back if the item reopens: a value that was never stamped comes back stale.
 A value written on the board while the item was back wins, and the refresh names a human's or
