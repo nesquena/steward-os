@@ -114,6 +114,8 @@ you get value on day one without handing over any autonomy.
 You've done the read→run step. From here you add capability deliberately, one rung at a time:
 
 - **Level 2:** a read-only [triage scoreboard](docs/playbooks/triage-scoreboard.md) and digests.
+  The board works without a judgment-stamp routine; staleness stays off until you install one
+  ([when a judgment goes stale](docs/playbooks/triage-scoreboard.md#when-a-judgment-goes-stale)).
 - **Level 3:** promote mechanical, reversible, watched actions to autonomy behind the
   [watchdog pattern](docs/playbooks/watchdog-pattern.md).
 - **Level 4:** the full pipeline.

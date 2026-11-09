@@ -69,6 +69,9 @@ Rules for the marker:
   If no acceptable location exists, or the question is skipped, set `scoreboard-refresh` to
   `enabled: false` and leave a TODO naming the location, since no config key holds it. Nothing
   mechanical checks this rule.
+- Say that the board works without a judgment-stamp routine, and staleness stays off until the
+  project installs one
+  ([when a judgment goes stale](../docs/playbooks/triage-scoreboard.md#when-a-judgment-goes-stale)).
 
 ---
 

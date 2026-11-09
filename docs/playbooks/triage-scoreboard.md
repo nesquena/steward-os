@@ -263,6 +263,61 @@ Each judgment dimension and the severity flag records a setter: `human`, `agent`
   A store that can't tell them apart leaves re-judging off: triage writes only empty values, keeps
   every value already on the board, and says in its output that setters can't be trusted.
 
+## The board format
+Triage writes judgment to the board and the refresh reads it back, often in separate runs or by
+separate agents. They agree on the board only through a shared format. This is the default, with
+the identifier `board-1`. A project may replace it; a replacement names its own identifier and
+carries the same fields, and a change to the format changes the identifier. A run that knows both
+formats reads the old one and writes the new one. Otherwise the change ships with a one-time
+conversion, since the refresh stops on a format it doesn't know.
+
+**The format line.** The board's first line is `<!-- board-format: board-1 -->`. A board with no
+format line is read as `board-1`: it either parses or stops the run like any unreadable board,
+and the run writes the line.
+
+**The header**, after the format line and before the first section:
+
+- `Rows: <n>`, the row count.
+- `Stale: issues <n>, PRs <n>`.
+- `Inert: issues <dimensions or none>; PRs <dimensions or none>`.
+
+**Rows.** A row is one open item's line in a table in the spotlight, not yet judged or the
+ranking. Every open item has exactly one row, since not yet judged lists every member beneath its
+first five. Released but open is a list, not a table, and its lines aren't rows. A table row's
+columns are `kind | repository | id | title | lane | scope_fit | criticality | risk | flag`, then
+the mechanical columns and the evidence tags. `lane` is set on PR rows only.
+
+**A judgment cell** is empty, or four tokens, `<value> <setter> <stamp> <rubric>`, with a fifth,
+`stale`, when the value is stale.
+
+- value: an integer, `bypass` (in `scope_fit` only) or `yes` (in `flag` only).
+- setter: `human`, `agent`, `legacy`, or `-` for none.
+- stamp: the routine's output, `-` for none, or `stale`.
+- rubric: the rubric identifier, or `-` for none.
+
+`-` and `stale` are reserved. A stamp or rubric identifier uses only letters, digits, `.`, `_`,
+`:` and `-`. A cell is unparseable when it has another number of tokens or a token of another
+shape, and an unparseable cell makes the board unreadable. A value with setter `-` once the
+setters mark is written, or an out-of-range value, parses: the board surfaces it, as
+[who set it](#who-set-it) and the refresh's pitfalls say.
+
+**What a reader reads.** The format line, `Rows`, and the `lane` and judgment cells, keyed by
+repository, kind and id. The title and the mechanical columns are display: rewritten each run,
+never read back. The title is the item's own text: in it, escape `\` and then `|` with a
+backslash, write `<` as `&lt;`, and replace line breaks with spaces.
+
+**Writers other than the refresh** (`issue-triage`, `pr-triage`):
+
+- Write only the `lane` and judgment cells of the item's row.
+- An item with no row gets one in its kind's not yet judged table, and `Rows` goes up by one. The
+  next refresh places it.
+- Write nothing to the board when there is no board, when its format line names a format you
+  don't know, or when it doesn't parse. Give the judgment in your output and say why.
+
+**Two writers at once.** Each writer notes the board's content as it reads it. Before it renames
+its board into place, it checks the board is still that content; if not, it writes nothing and
+runs again. Otherwise a refresh that read the board before a triage write would erase it.
+
 ## Evidence-readiness tags
 Beyond rank, show **which review streams have landed** for each item — turning the board from a
 *ranking* into a *readiness view*. For PRs that might mean: automated code review present? visual

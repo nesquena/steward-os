@@ -82,7 +82,9 @@ run still runs steps 3, 5 and 6 on it.
 
    Set the severity flag only under
    [its rule](../../docs/playbooks/triage-scoreboard.md#severity-is-a-flag). Record each value
-   with setter `agent`, the judgment stamp from the shared routine and the rubric identifier.
+   with setter `agent`, the judgment stamp from the shared routine (none when you can't call it)
+   and the rubric identifier, in
+   [the board format](../../docs/playbooks/triage-scoreboard.md#the-board-format).
    Write an empty dimension, or re-judge a stale one an agent set, or a `legacy` one on an issue
    a human named (step 9); any other stands
    ([who set it](../../docs/playbooks/triage-scoreboard.md#who-set-it)). If you disagree with it,

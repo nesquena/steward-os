@@ -1106,3 +1106,67 @@ class GuardRepoTest < Minitest::Test
     assert(live(present: present).any? { |x| x.skill == 'brand-new' })
   end
 end
+
+class BoardFormatContractTest < Minitest::Test
+  # Triage and the refresh agree on one board format, so a refresh can read what triage wrote.
+  def read(*path)
+    File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
+  end
+
+  def format_section
+    read('docs', 'playbooks', 'triage-scoreboard.md')[/## The board format(.*?)(?= ## )/, 1] or
+      flunk('board format section missing')
+  end
+
+  def test_format_names_its_line_header_and_cells
+    s = format_section
+    assert_includes s, 'This is the default, with the identifier `board-1`.'
+    assert_includes s, 'The board\'s first line is `<!-- board-format: board-1 -->`.'
+    assert_includes s, '`Rows: <n>`, the row count.'
+    assert_includes s, 'columns are `kind | repository | id | title | lane | scope_fit | criticality | risk | flag`'
+    assert_includes s, 'or four tokens, `<value> <setter> <stamp> <rubric>`, with a fifth, `stale`, when the value is stale.'
+    assert_includes s, '`-` and `stale` are reserved.'
+    assert_includes s, 'an unparseable cell makes the board unreadable.'
+    assert_includes s, 'or an out-of-range value, parses: the board surfaces it'
+    assert_includes s, 'Released but open is a list, not a table, and its lines aren\'t rows.'
+  end
+
+  def test_title_is_escaped_display_text
+    s = format_section
+    assert_includes s, 'The title and the mechanical columns are display: rewritten each run, never read back.'
+    assert_includes s, 'escape `\\` and then `|` with a backslash, write `<` as `&lt;`, and replace line breaks with spaces.'
+  end
+
+  def test_triage_writes_only_its_cells_and_never_starts_a_board
+    s = format_section
+    assert_includes s, 'Write only the `lane` and judgment cells of the item\'s row.'
+    assert_includes s, 'An item with no row gets one in its kind\'s not yet judged table, and `Rows` goes up by one.'
+    assert_includes s, 'Write nothing to the board when there is no board, when its format line names a format you ' \
+                       'don\'t know, or when it doesn\'t parse. Give the judgment in your output and say why.'
+  end
+
+  def test_refresh_rechecks_the_board_before_writing
+    assert_includes format_section, 'Before it renames its board into place, it checks the board is still that ' \
+                                    'content; if not, it writes nothing and runs again.'
+    assert_includes read('skills', 'triage-scoreboard', 'SKILL.md'),
+                    'Before the first write, and again before renaming the board into place, check the board still ' \
+                    'holds what step 3 read; if a triage run wrote it meanwhile, stop as a run killed there would, ' \
+                    'and run again.'
+  end
+
+  def test_every_board_writer_links_the_format
+    link = '(../../docs/playbooks/triage-scoreboard.md#the-board-format)'
+    %w[triage-scoreboard issue-triage pr-triage].each do |skill|
+      assert_includes read('skills', skill, 'SKILL.md'), link, "#{skill} doesn't link the board format"
+    end
+  end
+
+  def test_stamp_routine_is_optional_and_on_the_on_ramp
+    assert_includes read('skills', 'issue-triage', 'SKILL.md'),
+                    'the judgment stamp from the shared routine (none when you can\'t call it)'
+    assert_includes read('quickstart.md'), 'The board works without a judgment-stamp routine; staleness stays off ' \
+                                           'until you install one'
+    assert_includes read('setup', 'setup-interview.md'), 'Say that the board works without a judgment-stamp ' \
+                                                        'routine, and staleness stays off until the project installs one'
+  end
+end
