@@ -137,7 +137,8 @@ and never reverse unequal ones.
 ### Not yet judged
 An item with no judgment at all can't be ranked against judged ones: its composite rests on
 mechanical dimensions alone, a different scale. The board lists every such item, per kind, in a
-section titled **Not yet judged**, after the spotlight and before the ranking. The section opens
+section titled **Not yet judged**, after the spotlight and the released but open section, and
+before the ranking. The section opens
 collapsed: its count and the first five in mechanical order, with every other member listed
 beneath. The "review these first" short-list draws from this section and the ranking both.
 
@@ -148,7 +149,16 @@ one of them.
 
 An item with some judgment dimensions set stays in the ranking. Each empty dimension counts as
 unjudged for that dimension. The severity flag counts as judgment: a flagged item is in the
-spotlight and nowhere else.
+spotlight and nowhere else, except under released but open.
+
+### Released but open
+An open issue a release already ships (a release tag that isn't a pre-release contains the merge
+of a PR that links it as closing, and no revert a release tag contains undid that PR's change
+unrestored) gets a line in a section titled **Released but open**, after the
+spotlight. Each line names any hold `issue-autoclose` would see. The issue is also listed where it
+belongs otherwise: the spotlight, not yet judged, or the ranking. These lines carry no judgment
+data and don't count as board rows. The refresh closes nothing: a human closes the issue or keeps
+it open on purpose.
 
 ### A dimension that carries no signal
 A mechanical dimension that takes the same value for every item of a kind on the board is
