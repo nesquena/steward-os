@@ -100,11 +100,12 @@ you watch, it proposes, you approve every public write:
   and summarize.
 
 `issue-triage` judges issues opened after its first run, plus any you name in your request, so your
-practice issue is triaged too (judged, or halted or escalated as the skill says). The skills record
-judgments on a scoreboard and keep marks in their own state. Until you've set those up, tell the
-agent where to keep them (state somewhere private that only you and your agent write; the board no
-more visible than your issues), or to show them in the session, in which case nothing carries over
-to later runs.
+practice issue is triaged too (judged, or halted or escalated as the skill says). The skills keep
+marks in their own state and record judgments on a scoreboard once the refresh has made one:
+triage never starts a board ([the board format](docs/playbooks/triage-scoreboard.md#the-board-format)).
+To keep judgments across runs at this level, run `triage-scoreboard` once in a supervised session
+to start the board. Until then, tell the agent where to keep its state (somewhere private that only
+you and your agent write); judgments show in the session and don't carry over to later runs.
 
 Nothing is posted without your say-so. That's Level 1: the playbooks run in supervised sessions, so
 you get value on day one without handing over any autonomy.
@@ -114,6 +115,8 @@ you get value on day one without handing over any autonomy.
 You've done the read→run step. From here you add capability deliberately, one rung at a time:
 
 - **Level 2:** a read-only [triage scoreboard](docs/playbooks/triage-scoreboard.md) and digests.
+  The board works without a judgment-stamp routine; staleness stays off until you install one
+  ([when a judgment goes stale](docs/playbooks/triage-scoreboard.md#when-a-judgment-goes-stale)).
 - **Level 3:** promote mechanical, reversible, watched actions to autonomy behind the
   [watchdog pattern](docs/playbooks/watchdog-pattern.md).
 - **Level 4:** the full pipeline.

@@ -186,7 +186,8 @@ fixed by some other change stays fresh until someone re-judges it.
 One routine computes the judgment stamp, and every judge and the scheduled refresh call it.
 Nobody computes one by hand. StewardOS ships no routine: the project installs one beside the
 board's config before it turns staleness on, and records where it lives and which mode it uses.
-The routine fixes the canonical form: line endings, whitespace, field order. Where the store
+The routine fixes the canonical form: line endings, whitespace, field order, and its output uses
+only the characters [a judgment cell](#the-board-format) allows; a hex digest does. Where the store
 can't produce a PR's net diff, the routine hashes the head commit instead, and then every push
 stales the PR's judgment; that mode is chosen once, never per run. A run that can't call the
 routine, or can't read an input it covers, writes no stamp and re-judges nothing: every value and
@@ -263,6 +264,70 @@ Each judgment dimension and the severity flag records a setter: `human`, `agent`
   A store that can't tell them apart leaves re-judging off: triage writes only empty values, keeps
   every value already on the board, and says in its output that setters can't be trusted.
 
+## The board format
+Triage writes judgment to the board and the refresh reads it back, often in separate runs or by
+separate agents. They agree on the board only through a shared format. This is the default, with
+the identifier `board-1`. A project may replace it; a replacement names its own identifier and
+carries the same fields, and a change to the format changes the identifier. A run that knows both
+formats reads the old one and writes the new one. Otherwise the change ships with a one-time
+conversion, since the refresh stops on a format it doesn't know.
+
+**The format line.** The board's first line is `<!-- board-format: board-1 -->`. A board with no
+format line is from before the format was defined. While the refresh's state has no format mark,
+the refresh reads it as the run that wrote it did, renders this format, and adopts the mark with
+the board, as it adopts the row count. Once the mark is written, a board with no format line is
+unreadable and stops the run: nothing tells a board that lost its first line from one written
+before the format, so the check starts with the first board that carries the line.
+
+**The header**, after the format line and before the first section:
+
+- `Rows: <n>`, the row count.
+- `Stale: issues <n>, PRs <n>`.
+- `Inert: issues <dimensions or none>; PRs <dimensions or none>`.
+
+**Rows.** A row is one open item's line in a table in the spotlight, not yet judged or the
+ranking. Every open item has exactly one row: not yet judged is a table that holds every member
+as a row, the first five open and the rest beneath them, collapsed. Released but open and the
+"review these first" short-list are lists, not tables, and their lines aren't rows. A table row's
+columns are `kind | repository | id | title | lane | scope_fit | criticality | risk | flag`, then
+the mechanical columns and the evidence tags. `lane` is set on PR rows only.
+
+**A judgment cell** is empty, or four tokens, `<value> <setter> <stamp> <rubric>`, with a fifth,
+`stale`, when the value is stale.
+
+- value: an integer, `bypass` (in `scope_fit` only) or `yes` (in `flag` only).
+- setter: `human`, `agent`, `legacy`, or `-` for none.
+- stamp: the routine's output, `-` for none, or `stale`.
+- rubric: the rubric identifier, or `-` for none.
+
+`-` and `stale` are reserved. A stamp or rubric identifier uses only letters, digits, `.`, `_`,
+`:` and `-`. A cell is unparseable when it has another number of tokens or a token of another
+shape, and an unparseable cell makes the board unreadable. A value with setter `-` once the
+setters mark is written, or an out-of-range value, parses: the board surfaces it, as
+[who set it](#who-set-it) and the refresh's pitfalls say.
+
+**What a reader reads.** The format line, `Rows`, and the `lane` and judgment cells, keyed by
+repository, kind and id. The title and the mechanical columns are display: rewritten each run,
+never read back. The title is the item's own text: in it, escape `\` and then `|` with a
+backslash, write `<` as `&lt;`, and replace line breaks with spaces.
+
+**Writers other than the refresh** (`issue-triage`, `pr-triage`):
+
+- Write only the `lane` and judgment cells of the item's row.
+- An item with no row gets one in its kind's not yet judged table, and `Rows` goes up by one. The
+  next refresh places it.
+- Write nothing to the board when there is no board, when it has no format line, when its format
+  line names a format you don't know, or when it doesn't parse. Give the judgment in your output and say why.
+
+**Two writers at once.** Each writer writes its copy under a temporary name in the board's
+directory and notes the board's content as it reads it. It holds the
+[scheduled-jobs](scheduled-jobs.md) lock from that check through the rename. Before it renames the
+copy into place, it checks the board is still that content. If not, triage discards its copy,
+re-reads the board and applies its write rule again, without repeating replies, labels or routing;
+the refresh stops as a run killed there would, and runs again (its step 7). Where the board is
+committed from separate clones, a push the host rejects as not fast-forward is the same signal.
+Otherwise a refresh that read the board before a triage write would erase it.
+
 ## Evidence-readiness tags
 Beyond rank, show **which review streams have landed** for each item — turning the board from a
 *ranking* into a *readiness view*. For PRs that might mean: automated code review present? visual
@@ -278,8 +343,8 @@ open it. A companion "review these first" curated short-list can ride on top for
 handful.
 
 A prior board the refresh can't read stops the run; it never counts as empty, and the board stays
-as it was until a human repairs it. A board from before the refresh kept a row count or state is
-read, not refused, and the next board carries a count. Rows missing from such a board can't be
+as it was until a human repairs it. A board from before the refresh kept a row count, state or a
+format line is read, not refused, and the next board carries a count and the line. Rows missing from such a board can't be
 detected. An item that closes takes its judgment, stale marks included, into the refresh's state,
 so the judgment comes back if the item reopens: a value that was never stamped comes back stale.
 A value written on the board while the item was back wins, and the refresh names a human's or
