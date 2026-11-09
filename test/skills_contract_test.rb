@@ -283,14 +283,27 @@ class BatchedReleaseContractTest < Minitest::Test
                         'whose merge commit (the commit the host records for the merge, whatever the merge style) ' \
                         'this tag contains and no other release tag contains (test each with ' \
                         '`git merge-base --is-ancestor`; a tag the host marks pre-release, or whose name carries a ' \
-                        'pre-release suffix such as `-rc.1`, is not a release tag; on a first release, every merge ' \
-                        'this tag contains), and each absorbed PR whose change it carries.'
-    assert_includes s6, 'An absorbed PR is one closed without merging whose change a commit in the range carries: the ' \
-                        'commit names it, carries a co-author trailer for its author, or has its patch id.'
+                        'pre-release suffix such as `-rc.1`, is not a release tag, and neither is a tag that moves ' \
+                        'from release to release, such as a floating major-version tag like `v1`, or `latest` or ' \
+                        '`stable`; another tag on this release\'s own commit marks the same release, not a different ' \
+                        'one; on a first release, every merge this tag contains), and each absorbed PR whose change ' \
+                        'it carries.'
+    assert_includes s6, 'An absorbed PR is one closed without merging whose whole change the range carries: every ' \
+                        'commit of the PR has the same patch id as a commit in the range (`git patch-id --stable`), ' \
+                        'or a commit in the range says in its message that it absorbs, supersedes or replaces that ' \
+                        'PR by number. A bare mention of the number, or a co-author trailer alone, names a PR or a ' \
+                        'person, not a change: where only those point at a closed PR, or the range carries only some ' \
+                        'of its commits, name it to the maintainer instead of closing its issues.'
+    refute_includes s6, 'carries a co-author trailer for its author, or has its patch id'
     assert_includes s6, 'A commit whose `(cherry picked from commit <sha>)` trailer names a PR\'s merge commit, or a ' \
-                        'commit of that PR, carries that PR\'s change'
+                        'set of commits whose trailers together name every commit that PR merged, carries that PR\'s ' \
+                        'change, so a maintenance release built by cherry-pick covers it too; a cherry-pick of some ' \
+                        'of a PR\'s commits doesn\'t, and is named to the maintainer.'
     assert_includes s6, 'A PR whose change a revert in the range undid, and nothing restored, isn\'t covered: its ' \
                         'issues stay open, named to the maintainer.'
+    assert_includes s6, 'Read a revert from what `git revert` writes: `This reverts commit <sha>` naming the PR\'s ' \
+                        'merge commit or a commit of it; a revert of that revert restores it. A revert by hand that ' \
+                        'names nothing can\'t be seen: a maintainer who knows of one holds the issue.'
     assert_includes s6, 'Under `style: continuous` every merge is its own release, so only this run\'s PR.'
     assert_includes s6, 'Leave open an issue a human holds, the same holds [`issue-autoclose`](../issue-autoclose/' \
                         'SKILL.md) honours: reopened since the merge, a reporter comment or reaction after it, an ' \
@@ -302,7 +315,9 @@ class BatchedReleaseContractTest < Minitest::Test
                         'its description or a sidebar link, not a keyword only in a commit message; on GitLab, a ' \
                         'closing pattern in one of the merge request\'s commit messages counts too; where a separate ' \
                         'tracker holds the link, read it there)'
-    assert_includes s6, 'An issue already closed with a comment naming a version gets no second comment'
+    assert_includes s6, 'An issue already closed with a comment naming this version gets no second comment'
+    assert_includes s6, 'the host closed those issues at merge: comment on them, close any it left open that no hold ' \
+                        'keeps open'
     assert_includes s6, 'one terminal outcome for each PR in the release that has no terminal event there yet'
     assert_includes read('skills', 'release-pipeline', 'SKILL.md').split('## Verification').last,
                     'Every PR the release contains, and every issue each links as closing, is closed with version + ' \
@@ -317,8 +332,10 @@ class BatchedReleaseContractTest < Minitest::Test
   def test_board_lists_released_but_open_issues
     s1 = step('triage-scoreboard', 1)
     assert_includes s1, 'An open issue a release already ships (a release tag contains the merge of a PR that ' \
-                        'links it as closing; a tag the host marks pre-release, or whose name carries a pre-release ' \
-                        'suffix such as `-rc.1`, is not a release tag) is **released but open**.'
+                        'links it as closing, and no revert a release tag contains undid that PR\'s change ' \
+                        'unrestored, read as `release-pipeline` step 6 reads one; a tag the host marks pre-release, ' \
+                        'or whose name carries a pre-release suffix such as `-rc.1`, is not a release tag) is ' \
+                        '**released but open**.'
     assert_includes s1, 'for a repository with no release tag, skip only this released-but-open check'
     refute_includes s1, 'skip a repository that has no release tag'
     assert_includes s1, 'the refresh closes nothing.'
@@ -330,6 +347,10 @@ class BatchedReleaseContractTest < Minitest::Test
     playbook = read('docs', 'playbooks', 'triage-scoreboard.md')
     assert_includes playbook, 'a flagged item is in the spotlight and nowhere else, except under released but open.'
     assert_includes playbook, 'These lines carry no judgment data and don\'t count as board rows.'
+    assert_includes playbook, 'An open issue a release already ships (a release tag that isn\'t a pre-release ' \
+                              'contains the merge of a PR that links it as closing, and no revert a release tag ' \
+                              'contains undid that PR\'s change unrestored)'
+    assert_includes playbook, 'The refresh closes nothing: a human closes the issue or keeps it open on purpose.'
   end
 end
 

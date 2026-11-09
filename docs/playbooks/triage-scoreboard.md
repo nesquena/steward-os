@@ -153,7 +153,8 @@ spotlight and nowhere else, except under released but open.
 
 ### Released but open
 An open issue a release already ships (a release tag that isn't a pre-release contains the merge
-of a PR that links it as closing) gets a line in a section titled **Released but open**, after the
+of a PR that links it as closing, and no revert a release tag contains undid that PR's change
+unrestored) gets a line in a section titled **Released but open**, after the
 spotlight. Each line names any hold `issue-autoclose` would see. The issue is also listed where it
 belongs otherwise: the spotlight, not yet judged, or the ranking. These lines carry no judgment
 data and don't count as board rows. The refresh closes nothing: a human closes the issue or keeps
