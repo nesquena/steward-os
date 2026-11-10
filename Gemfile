@@ -34,5 +34,5 @@ group :test do
   # test/*_test.rb. Ruby ships minitest as a bundled gem, but under `bundle exec`
   # the require shim only honours what the Gemfile declares, so the suite cannot
   # load it undeclared.
-  gem "minitest", "~> 6.0"
+  gem "minitest", "~> 6.1"
 end
