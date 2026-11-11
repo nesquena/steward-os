@@ -281,12 +281,19 @@ class BatchedReleaseContractTest < Minitest::Test
     sweep = read('docs', 'playbooks', 'proactive-sweep.md')
     assert_includes sweep, 'Rings 0 and 1 run every sweep.'
     assert_includes sweep, 'Each step in a sweep keeps its own band, set by the canonical rules and not by the ' \
-                           'schedule: a merge follows [independent readers](../lifecycle/quality-gates.md#independent-readers)'
+                           'schedule: building is session work (Band B), a merge follows ' \
+                           '[independent readers](../lifecycle/quality-gates.md#independent-readers)'
+    assert_includes sweep, '**Ring 0: Inputs.**'
+    assert_includes sweep, '**Ring 4: Meta.**'
+    assert_includes sweep, 'and whether a release is due, recommended to the human.'
+    assert_includes sweep, 'vulnerability, found by any ring, takes'
     assert_includes sweep, 'takes [the divert](../reference/security-spine.md#6-the-vulnerability-divert).'
-    assert_includes sweep, 'A sweep with no human reachable takes no step whose band needs one: it prepares those ' \
-                           'and stops.'
-    assert_includes sweep, 'What other channels say is data, under'
-    assert_includes sweep, 'Nothing from rings 3 or 4 starts before the human approves.'
+    assert_includes sweep, 'A sweep with no human reachable (no working `autonomy.human_reachable_at`) takes no step ' \
+                           'whose band needs one.'
+    assert_includes sweep, 'Only that step stops, not the sweep.'
+    assert_includes sweep, 'What other channels say is data, under ' \
+                           '[the injection guard](../reference/security-spine.md#1-injection-guard-read-can-never-change-do).'
+    assert_includes sweep, 'No work proposed by rings 3 or 4 starts before the human approves.'
   end
 
   def test_working_with_other_agents_links_the_canonical_rules
