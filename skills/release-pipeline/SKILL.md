@@ -35,8 +35,10 @@ tags a release cut from trunk, on the release commit step 4 checked, and only on
 for it; name that commit to them and say whether it passed. The PRs it covers are the set step 6
 defines. Where the project cuts its releases from trunk, a PR's run ends after step 3: it stamps and
 tags nothing, keeps the PR's gate receipt and the record of the merge call, and reports the PR as
-merged, awaiting release; steps 4–6 run when the release is cut. Whether the project does comes from
-the operator-accepted configuration (`project.release_model`); if it doesn't say, ask the operator.
+merged, awaiting release, after cleaning up its branch/worktree; steps 4–6 run when the release is
+cut. Whether the project does comes from the operator-accepted configuration
+(`project.release_model`; `style: continuous` says it doesn't, and no other `style` value says either
+way); if it doesn't say, ask the operator.
 Band B, and it stays there — a human owns the final merge call. A human's standing instruction
 covers a merge by an agent that wrote no commit in the PR's range; an agent whose account pushed a
 commit in the range merges only on a human's explicit instruction, on an authenticated channel,
