@@ -103,7 +103,8 @@ fixed shape:
 
 The orchestrator rolls the answers into one report: decisions first, each with its decision row, then
 blockers with their where and how, then issues. A stand-up where every agent answered and none
-reports any of these sends nothing ([silent on no-op](scheduled-jobs.md#silent-on-no-op-the-most-important-rule)); it isn't
+reports any of these sends nothing
+([silent on no-op](scheduled-jobs.md#silent-on-no-op-the-most-important-rule)); it isn't
 [the heartbeat](scheduled-jobs.md#the-heartbeat-exception). Rules:
 
 - Same questions every time. Schedule in the runner's clock, not the human's.
@@ -131,9 +132,9 @@ a human gets asked to decide something already decided.
 ### Working on silence, in scratch only
 
 When a decision has a deadline, the checkpoint gives the recommendation first, then the options, the
-deadline and a scratch plan. On silence, the plan runs **in scratch only** (build and review, in a local work tree nothing else
-reads: no push, no PR or comment, nothing irreversible) and is
-recorded in the agent's own log as overrulable;
+deadline and a scratch plan. On silence, the plan runs **in scratch only** (build and review, in a
+local work tree nothing else reads: no push, no PR or comment, nothing irreversible) and is recorded
+in the agent's own log as overrulable;
 [silence isn't a decision](output-loop.md#the-decision-row). Before starting it, check every channel the
 human can answer on. When the answer arrives, append it to the record, and stop the scratch work if it
 differs.
@@ -177,10 +178,11 @@ request.
   to the same facts.
 - **Contributor code:** [the sandbox](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution).
 - **Primary and backup.** With two helpers, send to the primary. A helper acks a request before it
-  starts work on it, and reads withdraw notes before requests. If the request is still unanswered and
-  unacked after a fixed wait, re-read the primary's replies, then resend to the backup marked as
-  rerouted and send the primary a withdraw note; a primary that sees the withdraw note before acking
-  drops the request. Only the original sender withdraws.
+  starts work on it, and reads withdraw notes before requests. The ack carries an ETA. If the request
+  is still unanswered and unacked after a fixed wait, or acked and still unanswered past its ETA,
+  re-read the primary's replies, then send the primary a withdraw note and resend to the backup marked
+  as rerouted. A primary that sees the withdraw note before acking drops the request; one that sees it
+  after acking stops and replies with what it already did. Only the original sender withdraws.
 
 ## Gating each other's irreversible steps
 
@@ -265,7 +267,8 @@ release: org/repo#77 8c0f3d9   06:34Z  approved on main@51d2e0a
 ### Setting it up
 
 1. **Pick the channel** from the table above, and write a short roster: each agent's name, what it
-   covers, where it runs, and how fast it notices messages.
+   covers, where it runs, and how fast it notices messages. On an unsigned channel, each agent posts
+   from its own account.
 2. **One name per live session.** Give every agent a join prompt that refers to the roster for roles
    and never names current holders.
 3. **Give every agent a cheap way to wake** on new messages ([the proactive sweep](proactive-sweep.md#waking-cheaply)).
