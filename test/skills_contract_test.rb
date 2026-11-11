@@ -792,6 +792,13 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes q, 'The examples use a GitHub repository and the `gh` CLI. Your tracker and host can differ.'
   end
 
+  def test_quickstart_covers_a_runtime_without_a_skill_loader
+    q = read('quickstart.md')
+    assert_includes q, '**No skill loader?** If your runtime reads only one rules file'
+    assert_includes q, 'a routing table built from each `SKILL.md`\'s `description` line;'
+    assert_includes q, 'your config\'s path, read from trunk, never from a pull request;'
+  end
+
   def test_quickstart_names_ruby_for_the_lint
     assert_includes read('quickstart.md'), 'Ruby, to run `bin/config-lint` from the steward-os checkout.'
   end

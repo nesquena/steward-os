@@ -59,6 +59,18 @@ file). The skills link to its
 `setup/` and `docs/` with paths written for the checkout's layout (like
 `../../setup/setup-interview.md`), so from `.claude/skills/` the agent reads them in the checkout.
 
+**No skill loader?** If your runtime reads only one rules file (such as `AGENTS.md`) at the start of
+each session, that file carries what a loader would. Put in it:
+1. where the steward-os checkout is, and that a skill's links resolve against the checkout (a
+   `github.com/nesquena/steward-os/blob/main/<path>` link is `<checkout>/<path>`);
+2. which skill to read for which request: a routing table built from each `SKILL.md`'s
+   `description` line;
+3. your config's path, read from trunk, never from a pull request;
+4. how the agent reaches your tracker;
+5. where drafts, state and scoreboard rows go;
+6. your current level's limits: at Level 1 nothing is posted without your OK, there are no scheduled
+   jobs, and contributor code doesn't run without a sandbox.
+
 ## 3. Wire it to your project
 
 Have your agent load the **`project-system-setup`** skill and tell it:
