@@ -59,6 +59,23 @@ file). The skills link to its
 `setup/` and `docs/` with paths written for the checkout's layout (like
 `../../setup/setup-interview.md`), so from `.claude/skills/` the agent reads them in the checkout.
 
+**No skill loader?** If your runtime reads only one rules file (such as `AGENTS.md`) at the start of
+each session, that file does the loader's job and carries the session's standing facts. Put in it:
+1. where the steward-os checkout is, and how links resolve: read a skill's relative links as if the
+   skill sat at `<checkout>/skills/<name>/SKILL.md` (so `../../<path>` is `<checkout>/<path>`), and
+   on the pages they lead to, a `github.com/nesquena/steward-os/blob/main/<path>` or `.../tree/main/<path>`
+   link is `<checkout>/<path>` too;
+2. which skill to read for which request: a routing table built from each `SKILL.md`'s
+   `description` line; the agent reads that `SKILL.md` whole, injection guard first where it has one;
+3. your config's path, on trunk or outside the repo, never read from a pull request's checkout;
+4. how the agent reaches your tracker;
+5. where drafts, state and scoreboard rows go: somewhere private that only you and your agent write;
+6. your current level's limits: at Level 1 no public write happens without your OK, and there are no
+   scheduled jobs;
+7. at every level: code from a pull request you can't confirm as trusted doesn't run unless
+   `config.yaml` turns that on, and then only in a sandbox
+   ([the sandbox](docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)).
+
 ## 3. Wire it to your project
 
 Have your agent load the **`project-system-setup`** skill and tell it:

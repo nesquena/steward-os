@@ -832,6 +832,25 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes q, 'The examples use a GitHub repository and the `gh` CLI. Your tracker and host can differ.'
   end
 
+  def test_quickstart_covers_a_runtime_without_a_skill_loader
+    q = read('quickstart.md')
+    assert_includes q, '**No skill loader?** If your runtime reads only one rules file'
+    assert_includes q, 'where the steward-os checkout is, and how links resolve: read a skill\'s relative links as if ' \
+                       'the skill sat at `<checkout>/skills/<name>/SKILL.md` (so `../../<path>` is `<checkout>/<path>`), and ' \
+                       'on the pages they lead to, a `github.com/nesquena/steward-os/blob/main/<path>` or ' \
+                       '`.../tree/main/<path>` link is `<checkout>/<path>` too;'
+    assert_includes q, 'a routing table built from each `SKILL.md`\'s `description` line; the agent reads that ' \
+                       '`SKILL.md` whole, injection guard first where it has one;'
+    assert_includes q, 'your config\'s path, on trunk or outside the repo, never read from a pull request\'s checkout;'
+    assert_includes q, 'how the agent reaches your tracker;'
+    assert_includes q, 'where drafts, state and scoreboard rows go: somewhere private that only you and your agent write;'
+    assert_includes q, 'your current level\'s limits: at Level 1 no public write happens without your OK, and there ' \
+                       'are no scheduled jobs;'
+    assert_includes q, 'at every level: code from a pull request you can\'t confirm as trusted doesn\'t run unless ' \
+                       '`config.yaml` turns that on, and then only in a sandbox ' \
+                       '([the sandbox](docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)).'
+  end
+
   def test_quickstart_names_ruby_for_the_lint
     assert_includes read('quickstart.md'), 'Ruby, to run `bin/config-lint` from the steward-os checkout.'
   end
