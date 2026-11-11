@@ -4,7 +4,7 @@ layout: default
 nav_order: 2
 ---
 
-# Quickstart: adopt Steward in ~15 minutes
+# Quickstart: adopt Steward in one sitting
 {: .fs-8 }
 
 Get an agent co-maintaining your repo, in supervised mode. No autonomy yet —
@@ -22,7 +22,7 @@ this is the on-ramp: read the model, wire the config, run one loop by hand, then
   With `gh`, check that it is authenticated (`gh auth status`).
 - Ruby, to run `bin/config-lint` from the steward-os checkout.
 - **Steward checked out locally** (`git clone https://github.com/nesquena/steward-os`) — you'll copy its skills in step 2.
-- ~15 minutes and an open issue or PR you can practice on.
+- An open issue or PR you can practice on.
 
 You do **not** need any autonomy, scheduled jobs, or a chat integration to start. Those come later,
 on the [adoption ladder](docs/reference/adoption-levels.md).
@@ -32,7 +32,7 @@ The [skills](https://github.com/nesquena/steward-os/tree/main/skills) are runtim
 the equivalent in your own agent works the same way. See
 [adapting a skill to your runtime](https://github.com/nesquena/steward-os/tree/main/skills#adapting-a-skill-to-your-agent-runtime).
 
-## 1. Read the model (5 min)
+## 1. Skim the model
 
 Skim the [architecture overview](docs/architecture/index.md) — the four roles, the autonomy bands,
 and the one idea everything rests on: *reading is cheap; writing to a public surface in the
@@ -99,13 +99,14 @@ you watch, it proposes, you approve every public write:
 - A PR → load `pr-triage`, ask it to run the [fit screen](docs/lifecycle/pr-lifecycle.md#0-fit--scope-screen)
   and summarize.
 
-`issue-triage` judges issues opened after its first run, plus any you name in your request, so your
-practice issue is triaged too (judged, or halted or escalated as the skill says). The skills keep
-marks in their own state and record judgments on a scoreboard once the refresh has made one:
-triage never starts a board ([the board format](docs/playbooks/triage-scoreboard.md#the-board-format)).
-To keep judgments across runs at this level, run `triage-scoreboard` once in a supervised session
-to start the board. Until then, tell the agent where to keep its state (somewhere private that only
-you and your agent write); judgments show in the session and don't carry over to later runs.
+Before it starts, tell the agent where to keep its state: somewhere private that only you and your
+agent write. Your practice issue is triaged because you name it (`issue-triage` otherwise judges only
+issues opened after its first run), and the result shows in the session.
+
+To keep judgments across runs, run `triage-scoreboard` once in a supervised session to start the
+board. The skills record judgments on a scoreboard once the refresh has made one: triage never
+starts a board ([the board format](docs/playbooks/triage-scoreboard.md#the-board-format)). Without
+one, judgments don't carry over to later runs.
 
 Nothing is posted without your say-so. That's Level 1: the playbooks run in supervised sessions, so
 you get value on day one without handing over any autonomy.

@@ -1246,6 +1246,7 @@ class BoardFormatContractTest < Minitest::Test
                        'your output and say why.'
     assert_includes read('quickstart.md'), 'record judgments on a scoreboard once the refresh has made one: triage ' \
                                            'never starts a board'
+    assert_includes read('quickstart.md'), 'Before it starts, tell the agent where to keep its state'
   end
 
   def test_refresh_rechecks_the_board_before_writing

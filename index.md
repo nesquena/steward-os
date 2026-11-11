@@ -43,7 +43,7 @@ the recipes, and the questions it needs to ask you to wire itself up.
 
 ## Find your way
 
-- **[Quickstart](quickstart.md)** — adopt Steward on your repo in ~15 minutes. Start
+- **[Quickstart](quickstart.md)** — adopt Steward on your repo in one sitting. Start
   here to *run* it; read the sections below to understand it.
 - **[Architecture](docs/architecture/)** — the four roles, the autonomy bands, the security spine.
   Everything else builds on it.
@@ -61,3 +61,10 @@ You don't install this all at once. Read the model (Level 0), use the playbooks 
 sessions (Level 1), add the read-only scoreboard and digests (Level 2), promote mechanical actions
 to watchdogged autonomy (Level 3), then run the full pipeline (Level 4). See
 [adoption levels](docs/reference/adoption-levels.md).
+
+## Status
+
+Early. The architecture and lifecycle playbooks are the stable core; the skills and the setup
+interview are still evolving. Nothing runs on its own: you install the skills into your own coding
+agent ([what you need](quickstart.md#before-you-start)), and
+[Steward on Steward](docs/reference/steward-on-steward.md) shows what runs on this repo today.

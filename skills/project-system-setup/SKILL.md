@@ -19,7 +19,7 @@ and produces the project's `config.yaml` from the
 2. **Interview the human, section by section.** Ask only what's needed; explain *why* each section
    matters (cite the playbook it feeds). Accept "skip / not yet" for any optional section.
    - Required: project shape (Section 0), identity & repos, scope anchors, CI/tests, autonomy
-     posture, secrets (if any public write).
+     posture, secrets & safety (questions 19 and 20 always; 18 if any autonomous public write).
    - Optional: chat/community, mentions, scheduled jobs.
 3. **Confirm each answer** before writing it. Never guess — an unanswered question becomes a
    documented TODO in the output, not an assumption.

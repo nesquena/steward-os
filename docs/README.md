@@ -1,7 +1,7 @@
 # Documentation map
 
 Everything in the system, organized by what you're trying to do. New here? The
-[Quickstart](../quickstart.md) gets you running on your repo in ~15 minutes; the
+[Quickstart](../quickstart.md) gets you running on your repo in one sitting; the
 [architecture overview](architecture/index.md) is the model it all rests on. Read whichever fits
 where you are.
 
