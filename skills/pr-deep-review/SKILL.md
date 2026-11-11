@@ -67,7 +67,10 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      fix you can't run is a fix you can't verify. With no independent reader for the fixed head
      (step 5), bounce instead too.
 5. **Run the authoritative gate [4] — fresh, independent of any prior verdict, on pinned head and
-   trunk commits, each from its own copy:**
+   trunk commits, each from its own copy:** pin both as commit IDs from the host's record and an
+   exact trunk lookup, never by letting Git guess a name in a clone holding the proposal's refs (security
+   spine [rule 4](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution),
+   "Proposal refs in your own clone").
    - Always: the **automated code review** pass and the **adversarial review** pass (a second,
      differently-tuned reviewer; stricter wins on a reproduced finding). Both only read through
      inert tools: `code_review_tool` and `adversarial_review_tool` come from step 2's accepted
