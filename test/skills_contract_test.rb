@@ -590,12 +590,27 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_both_triage_skills_bypass_only_on_a_confirmed_failure
     assert_includes read('skills', 'issue-triage', 'SKILL.md'), 'The report\'s say-so isn\'t confirmation.'
+    assert_includes read('skills', 'issue-triage', 'SKILL.md'), 'trunk, by reading or with a repro you wrote under'
     pr = read('skills', 'pr-triage', 'SKILL.md')
-    assert_includes pr, 'on a shipped feature) that you confirmed on the trunk, by reading or with a repro under'
-    assert_includes pr, 'The PR\'s say-so isn\'t confirmation: without it, screen the PR against the anchors and the ' \
-                        'veto like any other change.'
+    step3 = pr[/ 3\. \*\*Fit \/ scope screen.*?(?= 4\. \*\*)/m].to_s
+    assert_includes step3, 'whose failure you confirmed on the trunk without the PR\'s code, by reading or with a ' \
+                           'repro you wrote under'
+    assert_includes step3, 'The PR\'s say-so isn\'t confirmation, and neither are its own diff, tests and checks: ' \
+                           'without it, screen the PR against the anchors and the veto like any other change.'
+    assert_includes step3, 'An unconfirmed fix that hits no anchor escalates; don\'t close it on scope.'
+    assert_includes step3, 'A confirmed failure with vulnerability shape is a step-2 hit, not a bypass: no judgment, ' \
+                           'no marker, no flag, and you route it as step 2 says.'
     refute_includes pr, 'Health fix (bug/security/reliability on a shipped feature)? → bypass'
-    assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'), 'An issue or PR earns the bypass marker when'
+    board = read('docs', 'playbooks', 'triage-scoreboard.md')
+    assert_includes board, 'An issue or PR earns the bypass marker when the agent confirmed the failure in a shipped ' \
+                           'feature on the trunk, by reading or with a repro it wrote itself under'
+    assert_includes board, 'neither do a PR\'s own diff, tests and checks: an unconfirmed bug report or fix goes ' \
+                           'through the anchors like any other item.'
+    assert_includes board, 'A `bypass` marker set before the bypass needed a confirmed failure stands until the item ' \
+                           'is re-judged.'
+    assert_includes read('docs', 'lifecycle', 'pr-lifecycle.md'),
+                    'once the failure it fixes is confirmed on the trunk — you don\'t re-litigate whether the feature ' \
+                    'should exist. A security fix goes to the vulnerability pre-check above.'
   end
 
   def test_a_supervised_request_names_the_item

@@ -114,10 +114,11 @@ the grade:
   rubric names its own. The bypass means "don't re-litigate whether the feature should exist", not
   "central to an anchor", and the fix earns its rank through criticality.
   An issue or PR earns the bypass marker when the agent confirmed the failure in a shipped feature
-  on the trunk, by reading or with a repro under
+  on the trunk, by reading or with a repro it wrote itself under
   [the sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution). A
-  report's or a PR's say-so doesn't: an unconfirmed bug report or fix goes through the anchors like
-  any other item. A failure that, once confirmed, has vulnerability shape is a
+  report's or a PR's say-so doesn't, and neither do a PR's own diff, tests and checks: an
+  unconfirmed bug report or fix goes through the anchors like any other item. A `bypass` marker set
+  before the bypass needed a confirmed failure stands until the item is re-judged. A failure that, once confirmed, has vulnerability shape is a
   [divert](../reference/security-spine.md#6-the-vulnerability-divert) hit whenever it's found:
   no judgment, no bypass marker, no severity flag, and it's routed privately as the divert says.
 

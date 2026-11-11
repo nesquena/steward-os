@@ -71,7 +71,7 @@ run still runs steps 3, 5 and 6 on it.
    - Resumed by step 8 with its ruling standing? The ruling takes the place of the anchor checks
      below; record as step 8 says.
    - Health failure (a bug or reliability failure on a shipped feature) that you confirmed on the
-     trunk, by reading or with a repro under
+     trunk, by reading or with a repro you wrote under
      [the sandbox rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)?
      Record the bypass marker. The report's say-so isn't confirmation. A confirmed failure with
      vulnerability shape is a step-2 hit, not a bypass: no judgment, no marker, no flag.

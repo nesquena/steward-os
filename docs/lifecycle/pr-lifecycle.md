@@ -67,9 +67,9 @@ all?* A technically-perfect PR for a feature that doesn't fit the project is sti
 - Define your project's **scope anchors** up front (the setup interview captures these): the things
   a change must serve to be in-scope. Anything that hits an anchor is on the table; anything that
   hits none gets the philosophy veto.
-- **Health fixes bypass the scope gate.** A bug/security/reliability fix on an already-shipped
-  feature is always in-scope, once the failure it fixes is confirmed on the trunk — you don't
-  re-litigate whether the feature should exist.
+- **Health fixes bypass the scope gate.** A bug or reliability fix on an already-shipped feature is
+  always in-scope, once the failure it fixes is confirmed on the trunk — you don't re-litigate
+  whether the feature should exist. A security fix goes to the vulnerability pre-check above.
 - Verdict → action: clearly-in → proceed · clearly-out → close politely (Band C) with a kind
   explanation and an alternative if one exists · **uncertain → escalate to the human with a
   recommendation**, don't guess.
