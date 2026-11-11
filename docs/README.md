@@ -46,6 +46,9 @@ Patterns that span multiple areas.
   local state honest: discovery over delivery, audit trail vs. actionable, post-action reconcile.
 - **[The state handoff](playbooks/state-handoff.md)** — the agent-to-agent sibling of the output
   loop: how state left by one role or run is found, trusted, and acted on by the next.
+- **[Working with other agents](playbooks/working-with-other-agents.md)** — when a steward isn't the
+  only agent: the channel, the orchestrator's stand-up and relay, delegation and local helpers, gating
+  each other's irreversible steps, and owning a shared asset.
 - **[The proactive sweep](playbooks/proactive-sweep.md)** — the scheduled run that stays useful without
   busywork: waking cheaply, rings that go outward only when the inner ones are empty, and the bar for
   found work.

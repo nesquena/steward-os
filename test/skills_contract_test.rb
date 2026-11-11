@@ -289,6 +289,17 @@ class BatchedReleaseContractTest < Minitest::Test
     assert_includes sweep, 'Nothing from rings 3 or 4 starts before the human approves.'
   end
 
+  def test_working_with_other_agents_links_the_canonical_rules
+    agents = read('docs', 'playbooks', 'working-with-other-agents.md')
+    assert_includes agents, 'The patterns here are optional; the canonical rules they link to apply either way.'
+    assert_includes agents, 'This playbook doesn\'t change the canonical rules. They apply between agents exactly as ' \
+                            'written'
+    assert_includes agents, '**Who approves and who merges:** ' \
+                            '[independent readers](../lifecycle/quality-gates.md#independent-readers).'
+    assert_includes agents, 'private route, never on a public channel or a stand-up.'
+    assert_includes agents, 'A relayed "approved" is corroboration.'
+  end
+
   def test_release_closes_every_pr_it_contains
     s6 = step('release-pipeline', 6)
     assert_includes s6, 'The release covers every PR it contains, not just the one this run merged: each merged PR ' \

@@ -149,4 +149,5 @@ the five-property contract fixed across whichever you pick.
 
 _Related: [the output loop](output-loop.md) (the human-facing sibling) · [the watchdog pattern](watchdog-pattern.md)
 (the append-only ledger it re-verifies) · [resilience & self-healing](resilience-and-self-healing.md)
-(the three verification axes) · [designing scheduled jobs](scheduled-jobs.md) (concurrency and lost-work durability)._
+(the three verification axes) · [designing scheduled jobs](scheduled-jobs.md) (concurrency and lost-work durability) ·
+[working with other agents](working-with-other-agents.md) (handoffs between separate agents)._
