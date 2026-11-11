@@ -23,7 +23,9 @@ your automation — is what keeps the system legible as it grows. One agent can 
 a larger setup gives each its own cron or session. The point is the *separation of concern*, not
 the number of processes. One rule holds either way: the reviews that clear a change come from a
 reader that didn't write it
-([independent readers](../lifecycle/quality-gates.md#independent-readers)).
+([independent readers](../lifecycle/quality-gates.md#independent-readers)). When the hats belong to
+separate agents, [working with other agents](../playbooks/working-with-other-agents.md) covers the
+seams between them.
 
 ### 1. Watcher — "what's coming in?"
 Detects and captures inbound signal from every channel: chat platforms, the issue tracker, pull

@@ -329,6 +329,37 @@ class BatchedReleaseContractTest < Minitest::Test
     assert_includes sweep, 'No work proposed by rings 3 or 4 starts before the human approves.'
   end
 
+  def test_working_with_other_agents_links_the_canonical_rules
+    agents = read('docs', 'playbooks', 'working-with-other-agents.md')
+    assert_includes agents, 'The patterns here are optional; the canonical rules they link to apply either way.'
+    assert_includes agents, 'This playbook doesn\'t change the canonical rules. They apply between agents exactly as ' \
+                            'written'
+    assert_includes agents, '**Who merges:** [independent readers](../lifecycle/quality-gates.md#independent-readers).'
+    assert_includes agents, 'A stand-up where every agent answered and none reports any of these sends nothing'
+    assert_includes agents, 'private route, never on a public channel or a stand-up.'
+    assert_includes agents, 'A relayed "approved" is corroboration.'
+    assert_includes agents, 'A release lifts a hold and nothing else: the gate, the band and the merge call stay as the ' \
+                            'rules above name.'
+    assert_includes agents, 'never a name in the message or a commit\'s author field.'
+    assert_includes agents, 'Whoever wrote the patch wrote the change, whoever commits it'
+    assert_includes agents, 'A helper acks a request before it starts work on it, and reads withdraw notes before requests.'
+    assert_includes agents, 'If the request is still unanswered and unacked after a fixed wait'
+    assert_includes agents, 'or acked and still unanswered past its ETA'
+    assert_includes agents, 'A request acked as holding for approval isn\'t rerouted'
+    assert_includes agents, 'The ack carries an ETA.'
+    assert_includes agents, 'On an unsigned channel, each agent posts from its own account.'
+    assert_includes agents, 're-read the primary\'s replies, then'
+    assert_includes agents, 'Only the original sender withdraws.'
+    assert_includes agents, 'one that sees it after acking stops and replies with what it already did.'
+    assert_includes agents, 'never carries the old one forward.'
+    assert_includes agents, 'only a record the host attributes to the sender\'s account'
+    assert_includes agents, 'every hold naming that version is released'
+    assert_includes agents, 'It covers only the item it names, and it never becomes a'
+    assert_includes agents, '**no authority of its own**'
+    assert_includes agents, 'A role never lifts a write\'s'
+    assert_includes agents, 'never edits the shared asset itself'
+  end
+
   def test_release_closes_every_pr_it_contains
     s6 = step('release-pipeline', 6)
     assert_includes s6, 'The release covers every PR it contains, not just the one this run merged: each merged PR ' \

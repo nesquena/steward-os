@@ -164,4 +164,4 @@ libraries. Events wake the agent in between.
 ---
 
 _Related: [designing scheduled jobs](scheduled-jobs.md) · [the triage scoreboard](triage-scoreboard.md) ·
-[the autonomy ladder](autonomy-ladder.md)._
+[working with other agents](working-with-other-agents.md) · [the autonomy ladder](autonomy-ladder.md)._

@@ -25,5 +25,8 @@ Patterns that span multiple lifecycle areas.
 - **[The state handoff](state-handoff.md)** — the agent-to-agent sibling of the output loop: how
   state left by one role (or one run) is found, trusted, and acted on by the next — the
   mechanism-neutral contract, a recommended markdown default, and other mechanisms with trade-offs.
+- **[Working with other agents](working-with-other-agents.md)** — when a steward isn't the only agent:
+  the channel, the orchestrator's stand-up and relay, delegation and local helpers, gating each other's
+  irreversible steps, and owning a shared asset.
 - **[The proactive sweep](proactive-sweep.md)** — the scheduled run that stays useful without busywork:
   waking cheaply, rings that go outward only when the inner ones are empty, and the bar for found work.
