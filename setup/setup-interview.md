@@ -165,7 +165,7 @@ The system can't screen PRs/issues for fit without knowing what "fits."
 19. **Will the system ever execute contributor code?** (e.g. run PR tests.) If yes, confirm a
     sandbox is available; if not, that capability stays disabled, and the system can review a
     contributor's PR but can't clear it to merge on its own (a human runs the suite). The answer
-    also decides who builds and uses a release candidate that carries contributor code
+    also decides who builds or uses a release candidate that carries contributor code
     ([`release-pipeline`](../skills/release-pipeline/SKILL.md) step 4): the sandbox; a human, under
     a human-run receipt, where it can't run or where the build or install needs the network or a
     credential the sandbox withholds. →

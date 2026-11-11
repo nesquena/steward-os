@@ -24,11 +24,12 @@ description: Merge an all-clear PR and ship it, or ship a release cut from trunk
 **When to load:** a PR has passed the [authoritative gate](../../docs/lifecycle/quality-gates.md)
 and is cleared to ship. Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [5]–[6].
 A release cut from trunk, one release commit after several merges, has no single PR head to gate.
-It enters at step 4, on the release commit, and only when each merge in the range step 6 defines
-passed the gate, under the precondition below, and steps 1–3 when it merged; an ungated merge stops
-it until the human decides, named to them. Name to the human, before they tag, any other commit in
-that range that no gated merge brought in. A human tags a release cut from trunk. The PRs it covers
-are the set step 6 defines.
+It enters at step 4, on the release commit (the stamped commit the tag will name), and only when
+each merge in the range step 6 defines passed the gate, under the precondition below, and steps 1–3
+when it merged; an ungated merge stops it until the human decides, named to them. Name to the human,
+before they tag, any other commit in that range that no gated merge brought in. A human tags a
+release cut from trunk, on the release commit step 4 checked, and only once step 4 has passed for
+it; name that commit to them and say whether it passed. The PRs it covers are the set step 6 defines.
 Band B, and it stays there — a human owns the final merge call. A human's standing instruction
 covers a merge by an agent that wrote no commit in the PR's range; an agent whose account pushed a
 commit in the range merges only on a human's explicit instruction, on an authenticated channel,
@@ -103,7 +104,7 @@ who already pulled or deployed, so a merge isn't
    its digest, naming this release commit, where contributors can't write, like the sandbox rule's
    receipt.
 
-   Then tag the release.
+   Then tag the release (a release cut from trunk: a human tags it, as When to load says).
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
    real **and** (if you deploy) the running version serves the change **and** (for an artifact of
    the kind step 4 covers) the artifact is the tested candidate, or differs from it only as the
@@ -216,7 +217,7 @@ trailer exists; it does **not** prove the *name* is right.
 - The merge call was a human's: a standing instruction, for an agent that wrote no commit in the
   PR's range, or else an explicit decision naming the gated head; either is recorded outside the
   contributor-writable thread.
-- A release cut from trunk was tagged by a human.
+- A release cut from trunk was tagged by a human, on the release commit step 4 passed.
 - The author is credited identically on every surface, and the handle is the real author of the work.
 - Every PR the release contains, and every issue each links as closing, is closed with version +
   thanks, except an issue a human holds, which stays open and is named to the maintainer; the

@@ -280,15 +280,19 @@ class BatchedReleaseContractTest < Minitest::Test
   def test_release_cut_from_trunk_enters_at_step_four
     load = read('skills', 'release-pipeline', 'SKILL.md')[/\*\*When to load:\*\*.*?(?=> Precondition)/m]
     assert_includes load, 'A release cut from trunk, one release commit after several merges, has no single PR ' \
-                          'head to gate. It enters at step 4, on the release commit, and only when each merge in ' \
-                          'the range step 6 defines passed the gate, under the precondition below, and steps 1–3 ' \
-                          'when it merged; an ungated merge stops it until the human decides, named to them.'
+                          'head to gate. It enters at step 4, on the release commit (the stamped commit the tag will ' \
+                          'name), and only when each merge in the range step 6 defines passed the gate, under the ' \
+                          'precondition below, and steps 1–3 when it merged; an ungated merge stops it until the ' \
+                          'human decides, named to them.'
     assert_includes load, 'Name to the human, before they tag, any other commit in that range that no gated merge ' \
-                          'brought in. A human tags a release cut from trunk.'
+                          'brought in. A human tags a release cut from trunk, on the release commit step 4 checked, ' \
+                          'and only once step 4 has passed for it; name that commit to them and say whether it passed.'
+    assert_includes step('release-pipeline', 4),
+                    'Then tag the release (a release cut from trunk: a human tags it, as When to load says).'
     assert_includes read('skills', 'release-pipeline', 'SKILL.md').split('## Verification').last,
-                    'A release cut from trunk was tagged by a human.'
+                    'A release cut from trunk was tagged by a human, on the release commit step 4 passed.'
     assert_includes read('setup', 'setup-interview.md'),
-                    'The answer also decides who builds and uses a release candidate that carries contributor code ' \
+                    'The answer also decides who builds or uses a release candidate that carries contributor code ' \
                     '([`release-pipeline`](../skills/release-pipeline/SKILL.md) step 4): the sandbox; a human, under ' \
                     'a human-run receipt, where it can\'t run or where the build or install needs the network or a ' \
                     'credential the sandbox withholds.'
