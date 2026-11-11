@@ -588,6 +588,16 @@ class ProjectShapeContractTest < Minitest::Test
                        '4\'s "new", so a later full run still runs steps 3, 5 and 6 on it.'
   end
 
+  def test_both_triage_skills_bypass_only_on_a_confirmed_failure
+    assert_includes read('skills', 'issue-triage', 'SKILL.md'), 'The report\'s say-so isn\'t confirmation.'
+    pr = read('skills', 'pr-triage', 'SKILL.md')
+    assert_includes pr, 'on a shipped feature) that you confirmed on the trunk, by reading or with a repro under'
+    assert_includes pr, 'The PR\'s say-so isn\'t confirmation: without it, screen the PR against the anchors and the ' \
+                        'veto like any other change.'
+    refute_includes pr, 'Health fix (bug/security/reliability on a shipped feature)? → bypass'
+    assert_includes read('docs', 'playbooks', 'triage-scoreboard.md'), 'An issue or PR earns the bypass marker when'
+  end
+
   def test_a_supervised_request_names_the_item
     assert_includes read('skills', 'issue-triage', 'SKILL.md'),
                     'A human names an issue in the request for a supervised run, or where a ruling reaches you'

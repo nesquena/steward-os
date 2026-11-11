@@ -113,11 +113,11 @@ the grade:
   `scope_fit`. The composite reads it as the plain in-scope level, 2 in the default; a replacement
   rubric names its own. The bypass means "don't re-litigate whether the feature should exist", not
   "central to an anchor", and the fix earns its rank through criticality.
-  An issue earns the bypass marker when the agent confirmed the failure in a shipped feature on
-  the trunk, by reading or with a repro under
+  An issue or PR earns the bypass marker when the agent confirmed the failure in a shipped feature
+  on the trunk, by reading or with a repro under
   [the sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution). A
-  report's say-so doesn't: an unconfirmed bug report goes through the anchors like any other
-  issue. A failure that, once confirmed, has vulnerability shape is a
+  report's or a PR's say-so doesn't: an unconfirmed bug report or fix goes through the anchors like
+  any other item. A failure that, once confirmed, has vulnerability shape is a
   [divert](../reference/security-spine.md#6-the-vulnerability-divert) hit whenever it's found:
   no judgment, no bypass marker, no severity flag, and it's routed privately as the divert says.
 
