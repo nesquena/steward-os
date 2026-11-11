@@ -164,7 +164,11 @@ The system can't screen PRs/issues for fit without knowing what "fits."
     secret-isolating helper scripts read — **never** pasted into config or an agent prompt.
 19. **Will the system ever execute contributor code?** (e.g. run PR tests.) If yes, confirm a
     sandbox is available; if not, that capability stays disabled, and the system can review a
-    contributor's PR but can't clear it to merge on its own (a human runs the suite). →
+    contributor's PR but can't clear it to merge on its own (a human runs the suite). The answer
+    also decides who builds or uses a release candidate that carries contributor code
+    ([`release-pipeline`](https://github.com/nesquena/steward-os/blob/main/skills/release-pipeline/SKILL.md) step 4): the sandbox; a human, under
+    a human-run receipt, where the sandbox can't run it or where the build or install needs the network or a
+    credential the sandbox withholds. →
     [security spine](../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution).
 20. **Where should a suspected vulnerability go?** When a captured report looks like a security
     vulnerability, it is never filed to the public tracker — it diverts to a private path. Name the

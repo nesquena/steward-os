@@ -1,6 +1,6 @@
 ---
 name: release-pipeline
-description: Merge an all-clear PR and ship it — rebase, merge preserving attribution, tag, deploy, verify it's actually live, close PR/issues with credit, update the trust ledger. Stages 5-6 of the PR lifecycle. Runs only after pr-deep-review's gate is all-clear.
+description: Merge an all-clear PR and ship it, or ship a release cut from trunk — rebase, merge preserving attribution, tag, deploy, verify it's actually live, close PR/issues with credit, update the trust ledger. Stages 5-6 of the PR lifecycle. Runs only after pr-deep-review's gate is all-clear.
 ---
 
 # release-pipeline
@@ -23,6 +23,22 @@ description: Merge an all-clear PR and ship it — rebase, merge preserving attr
 
 **When to load:** a PR has passed the [authoritative gate](../../docs/lifecycle/quality-gates.md)
 and is cleared to ship. Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [5]–[6].
+A release cut from trunk, one release commit after several merges, has no single PR head to gate.
+It enters at step 4, on the release commit (the stamped commit the tag will name), and only when
+each merge in the range step 6 defines passed the gate and steps 1–3 when it merged, judged as of
+that merge from its kept receipt under the precondition below (the gate isn't re-run at release; a
+merge with no such receipt counts as ungated); an ungated merge stops it until the human decides,
+named to them. Name to the human, before they tag, any other commit the release commit contains, and
+no earlier release tag does, that no gated merge brought in (a direct push or a revert; not the
+release commit itself); step 4 still runs, and their tag is their decision on those commits. A human
+tags a release cut from trunk, on the release commit step 4 checked, and only once step 4 has passed
+for it; name that commit to them and say whether it passed. The PRs it covers are the set step 6
+defines. Where the project cuts its releases from trunk, a PR's run ends after step 3: it stamps and
+tags nothing, keeps the PR's gate receipt and the record of the merge call, and reports the PR as
+merged, awaiting release, after cleaning up its branch/worktree; steps 4–6 run when the release is
+cut. Whether the project does comes from the operator-accepted configuration
+(`project.release_model`; `style: continuous` says it doesn't, and no other `style` value says either
+way); if it doesn't say, ask the operator.
 Band B, and it stays there — a human owns the final merge call. A human's standing instruction
 covers a merge by an agent that wrote no commit in the PR's range; an agent whose account pushed a
 commit in the range merges only on a human's explicit instruction, on an authenticated channel,
@@ -63,6 +79,7 @@ who already pulled or deployed, so a merge isn't
 3. **Merge preserving attribution.** The original author's authorship must survive: fix on their
    branch where possible, or a non-squash merge with co-author trailers when not. Never let a rebase
    or "absorb" erase who wrote it. See [contributor recognition](../../docs/lifecycle/contributor-recognition.md).
+   Where releases are cut from trunk, this run ends here (see When to load).
 4. **Stamp the release.** Changelog entry naming the contributor; bump any in-product version marker
    so it matches the tag.
 
@@ -97,7 +114,7 @@ who already pulled or deployed, so a merge isn't
    its digest, naming this release commit, where contributors can't write, like the sandbox rule's
    receipt.
 
-   Then tag the release.
+   Then tag the release (a release cut from trunk: a human tags it, as When to load says).
 5. **Deploy and verify it's actually live.** "Shipped" means the tag exists **and** the merge is
    real **and** (if you deploy) the running version serves the change **and** (for an artifact of
    the kind step 4 covers) the artifact is the tested candidate, or differs from it only as the
@@ -207,9 +224,10 @@ trailer exists; it does **not** prove the *name* is right.
   not assumed.
 - A published artifact of the kind step 4 covers is the candidate that was tested, or differs from it
   only as step 5 allows.
-- The merge call was a human's: a standing instruction, for an agent that wrote no commit in the
-  PR's range, or else an explicit decision naming the gated head; either is recorded outside the
+- Each merge call was a human's (for a release cut from trunk, read from each merge's record): a
+  standing instruction, for an agent that wrote no commit in the PR's range, or else an explicit decision naming the gated head; either is recorded outside the
   contributor-writable thread.
+- A release cut from trunk was tagged by a human, on the release commit step 4 passed.
 - The author is credited identically on every surface, and the handle is the real author of the work.
 - Every PR the release contains, and every issue each links as closing, is closed with version +
   thanks, except an issue a human holds, which stays open and is named to the maintainer; the

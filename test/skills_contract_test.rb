@@ -277,6 +277,39 @@ class BatchedReleaseContractTest < Minitest::Test
     found.split(/ ## /).first
   end
 
+  def test_release_cut_from_trunk_enters_at_step_four
+    load = read('skills', 'release-pipeline', 'SKILL.md')[/\*\*When to load:\*\*.*?(?=> Precondition)/m]
+    assert_includes load, 'A release cut from trunk, one release commit after several merges, has no single PR ' \
+                          'head to gate. It enters at step 4, on the release commit (the stamped commit the tag will ' \
+                          'name), and only when each merge in the range step 6 defines passed the gate and steps 1–3 ' \
+                          'when it merged, judged as of that merge from its kept receipt under the precondition below ' \
+                          '(the gate isn\'t re-run at release; a merge with no such receipt counts as ungated); an ' \
+                          'ungated merge stops it until the human decides, named to them.'
+    assert_includes load, 'Name to the human, before they tag, any other commit the release commit contains, and no ' \
+                          'earlier release tag does, that no gated merge brought in (a direct push or a revert; not ' \
+                          'the release commit itself); step 4 still runs, and their tag is their decision on those ' \
+                          'commits.'
+    assert_includes load, 'A human tags a release cut from trunk, on the release commit step 4 checked, and only once ' \
+                          'step 4 has passed for it; name that commit to them and say whether it passed.'
+    assert_includes load, 'The PRs it covers are the set step 6 defines.'
+    assert_includes load, 'Where the project cuts its releases from trunk, a PR\'s run ends after step 3: it stamps and ' \
+                          'tags nothing, keeps the PR\'s gate receipt and the record of the merge call, and reports ' \
+                          'the PR as merged, awaiting release, after cleaning up its branch/worktree; steps 4–6 run ' \
+                          'when the release is cut. Whether the project does comes from the operator-accepted ' \
+                          'configuration (`project.release_model`; `style: continuous` says it doesn\'t, and no other ' \
+                          '`style` value says either way); if it doesn\'t say, ask the operator.'
+    assert_includes step('release-pipeline', 3), 'Where releases are cut from trunk, this run ends here (see When to load).'
+    assert_includes step('release-pipeline', 4),
+                    'Then tag the release (a release cut from trunk: a human tags it, as When to load says).'
+    assert_includes read('skills', 'release-pipeline', 'SKILL.md').split('## Verification').last,
+                    'A release cut from trunk was tagged by a human, on the release commit step 4 passed.'
+    assert_includes read('setup', 'setup-interview.md'),
+                    'The answer also decides who builds or uses a release candidate that carries contributor code ' \
+                    '([`release-pipeline`](https://github.com/nesquena/steward-os/blob/main/skills/release-pipeline/SKILL.md) step 4): the sandbox; a human, under ' \
+                    'a human-run receipt, where the sandbox can\'t run it or where the build or install needs the network or a ' \
+                    'credential the sandbox withholds.'
+  end
+
   def test_proactive_sweep_keeps_bands_and_the_inner_rings
     sweep = read('docs', 'playbooks', 'proactive-sweep.md')
     assert_includes sweep, 'Rings 0 and 1 run every sweep.'
@@ -871,7 +904,7 @@ class IndependentReadersContractTest < Minitest::Test
                     'A rebase the merging account pushes makes it a writer of the new range: the merge then needs a ' \
                     'human\'s explicit instruction naming the re-gated head, not the standing instruction'
     assert_includes skill.split('## Verification').last,
-                    'The merge call was a human\'s: a standing instruction, for an agent that wrote no commit in ' \
+                    'Each merge call was a human\'s (for a release cut from trunk, read from each merge\'s record): a standing instruction, for an agent that wrote no commit in ' \
                     'the PR\'s range, or else an explicit decision naming the gated head; either is recorded ' \
                     'outside the contributor-writable thread.'
   end
