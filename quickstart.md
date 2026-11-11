@@ -112,8 +112,8 @@ you watch, it proposes, you approve every public write:
   and summarize.
 
 Before it starts, tell the agent where to keep its state: somewhere private that only you and your
-agent write. Your practice issue is triaged because you name it (`issue-triage` otherwise judges only
-issues opened after its first run), and the result shows in the session.
+agent write. Your practice issue is triaged because you name it (`issue-triage` otherwise judges new
+issues: those opened after its first run), and the result shows in the session.
 
 To keep judgments across runs, run `triage-scoreboard` once in a supervised session to start the
 board. The skills record judgments on a scoreboard once the refresh has made one: triage never
