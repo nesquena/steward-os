@@ -487,6 +487,21 @@ class ProjectShapeContractTest < Minitest::Test
                               '(the alarms route).'
   end
 
+  def test_section_six_says_which_questions_are_always_asked
+    rule = '(questions 19 and 20 always; 18 if any autonomous public write)'
+    full = read('setup', 'setup-interview.md')
+    assert_includes full, "## Section 6 — Secrets & safety *#{rule}* 18. **Where do credentials live?**"
+    assert_includes full[/ 19\. \*\*.*?(?= 20\. \*\*)/m].to_s, '**Will the system ever execute contributor code?**'
+    assert_includes setup_step(2), "posture, secrets & safety #{rule}."
+  end
+
+  def test_membrane_bar_is_stricter_than_band_a
+    assert_includes read('docs', 'architecture', 'index.md'),
+                    'is Band C (human), or Band A only when it is reversible, mechanical **and** checked by an ' \
+                    "independent watchdog (a stricter bar than Band A's general one) — never an unverified " \
+                    'autonomous write.'
+  end
+
   def test_a_block_with_history_stays_disabled
     assert_includes section0, "A block with history isn't marked: deleting it would lose its paths and state, and " \
                               'capture state is the audit trail for diverted vulnerabilities. Turn it off instead'
@@ -1246,7 +1261,8 @@ class BoardFormatContractTest < Minitest::Test
                        'your output and say why.'
     assert_includes read('quickstart.md'), 'record judgments on a scoreboard once the refresh has made one: triage ' \
                                            'never starts a board'
-    assert_includes read('quickstart.md'), 'Before it starts, tell the agent where to keep its state'
+    assert_includes read('quickstart.md'), 'Before it starts, tell the agent where to keep its state: somewhere ' \
+                                           'private that only you and your agent write.'
   end
 
   def test_refresh_rechecks_the_board_before_writing
