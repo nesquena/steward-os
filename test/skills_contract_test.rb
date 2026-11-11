@@ -294,8 +294,8 @@ class BatchedReleaseContractTest < Minitest::Test
     assert_includes agents, 'The patterns here are optional; the canonical rules they link to apply either way.'
     assert_includes agents, 'This playbook doesn\'t change the canonical rules. They apply between agents exactly as ' \
                             'written'
-    assert_includes agents, '**Who approves and who merges:** ' \
-                            '[independent readers](../lifecycle/quality-gates.md#independent-readers).'
+    assert_includes agents, '**Who merges:** [independent readers](../lifecycle/quality-gates.md#independent-readers).'
+    assert_includes agents, 'A stand-up where no agent reports any of these sends nothing'
     assert_includes agents, 'private route, never on a public channel or a stand-up.'
     assert_includes agents, 'A relayed "approved" is corroboration.'
   end

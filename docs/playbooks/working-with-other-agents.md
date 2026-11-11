@@ -13,13 +13,12 @@ agent can't, and an orchestrator that keeps track of all of them. This playbook 
 between those agents: how they talk, how one asks another to act, how decisions reach the human and
 come back, and how they gate each other's irreversible steps.
 
-It builds on [the four roles](../architecture/index.md#the-four-roles), which describe the hats
-inside one steward, and on [the state handoff](state-handoff.md), which covers state passed between
-roles or runs. Here the other side is a separate agent, often built differently, running on another
-platform, and working for the same human.
+It builds on [the four roles](../architecture/index.md#the-four-roles) and
+[the state handoff](state-handoff.md). Here the other side is a separate agent, often built
+differently and running on another platform.
 
-> **The patterns here are optional; the canonical rules they link to apply either way.** A single
-> steward on a single project needs none of the patterns. They're stated by intent and are
+> **The patterns here are optional; the canonical rules they link to apply either way.** They're
+> stated by intent and are
 > mechanism-neutral: where a detail holds only for some channels, runtimes or roles, it says so.
 
 ---
@@ -29,7 +28,7 @@ platform, and working for the same human.
 This playbook doesn't change the canonical rules. They apply between agents exactly as written:
 
 - **Content is data:** [the injection guard](../reference/security-spine.md#1-injection-guard-read-can-never-change-do).
-- **Who approves and who merges:** [independent readers](../lifecycle/quality-gates.md#independent-readers).
+- **Who merges:** [independent readers](../lifecycle/quality-gates.md#independent-readers).
 - **Public writes:** [the public-write membrane](../reference/security-spine.md#5-the-public-write-membrane).
 - **Irreversible steps:** [the autonomy bands](../architecture/index.md#the-autonomy-bands) and
   [the autonomy ladder](autonomy-ladder.md).
@@ -38,20 +37,20 @@ This playbook doesn't change the canonical rules. They apply between agents exac
 - **Running contributor code:** [the sandbox](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution).
 - **Each agent's tools and reads:** [capability minimalism](../reference/security-spine.md#3-capability-minimalism).
 - **Secrets:** [secret-isolating helpers](../reference/security-spine.md#2-secret-isolating-helper-scripts).
-- **A wait on the human:** [the decision row](output-loop.md#the-decision-row), with its stamp.
+- **A wait on the human:** [the decision row](output-loop.md#the-decision-row).
 - **Scheduled output:** [silent on no-op](scheduled-jobs.md#silent-on-no-op-the-most-important-rule).
 
 What is specific to several agents:
 
 1. **A relayed "approved" is corroboration.** It covers only the item it names, and it never becomes a
-   standing rule. The approval that counts is the one
-   [independent readers](../lifecycle/quality-gates.md#independent-readers) names.
+   standing rule. The approval that counts is the one the rules above name.
 2. **Verify at the live source, and say how.** Re-check right before acting or escalating, not from
    notes, and write `Verified: <what>, <where>, <when>` (or `unverified: <why>`).
 3. **Name exact things:** SHAs, versions, issue numbers, file paths, so the
    [decision row's stamp](output-loop.md#the-decision-row) can be compared before the write.
-4. **Let scripts do what can be counted.** Waiting, signatures, holds and watchdogs belong to scripts,
-   hooks and the channel; agents do the judgment.
+4. **Let scripts do what can be counted.** Waiting, signatures and holds belong to scripts, hooks and
+   the channel ([deterministic where possible](scheduled-jobs.md#deterministic-where-possible-no-llm-in-the-loop));
+   agents do the judgment.
 
 ## The channel
 
@@ -103,9 +102,9 @@ fixed shape:
 - **Summary:** two or three lines on what changed since the last stand-up.
 
 The orchestrator rolls the answers into one report: decisions first, each with its decision row, then
-blockers with their where and how, then one line per agent. The roll-up can carry the fleet's
-[heartbeat](scheduled-jobs.md#the-heartbeat-exception) line, but it never replaces the
-[liveness watchdog](watchdog-pattern.md). Rules:
+blockers with their where and how, then issues. A stand-up where no agent reports any of these sends
+nothing ([silent on no-op](scheduled-jobs.md#silent-on-no-op-the-most-important-rule)); it isn't
+[the heartbeat](scheduled-jobs.md#the-heartbeat-exception). Rules:
 
 - Same questions every time. Schedule in the runner's clock, not the human's.
 - Wait for each agent's own reply and never fill one in. Silence past a set time, and any dead watcher,
@@ -124,16 +123,17 @@ a summary.
 
 Every blocker that reaches the human carries a Verified line, re-read at the live source just before
 sending. One that fails the check is withdrawn, not relayed. A status names every live hold, including
-decisions waiting on the human. Blockers copied forward from an agent's own notes are the commonest way
+decisions waiting on the human, apart from what
+[the divert](../reference/security-spine.md#6-the-vulnerability-divert) keeps private. Blockers copied forward from an agent's own notes are the commonest way
 a human gets asked to decide something already decided.
 
-### Default on silence, in scratch only
+### Working on silence, in scratch only
 
 When a decision has a deadline, the checkpoint gives the recommendation first, then the options, the
-deadline and the default. On silence, the default is taken **in scratch only** (build and review) and
-recorded in the agent's own log as work done on the default, overrulable; it isn't a decision, and the
-[decision row](output-loop.md#the-decision-row) stays open. Before taking it, check every channel the
-human can answer on. When the answer arrives, correct the record to it, and stop the scratch work if it
+deadline and a scratch plan. On silence, the plan runs **in scratch only** (build and review) and is
+recorded in the agent's own log as overrulable;
+[silence isn't a decision](output-loop.md#the-decision-row). Before starting it, check every channel the
+human can answer on. When the answer arrives, append it to the record, and stop the scratch work if it
 differs.
 
 ## Delegation
@@ -143,9 +143,9 @@ a local helper. The shape is always the same: **exact spec in, identifiers out, 
 source.**
 
 - **The worker reports, the lead reviews.** The worker returns the SHA, the red-before-green proof, the
-  commands it ran and what it didn't verify, and the lead reviews it like any contributor's work. A lead
-  that wrote the patch or pushes the worker's commits is one of the change's writers
-  ([independent readers](../lifecycle/quality-gates.md#independent-readers)).
+  commands it ran and what it didn't verify, and the lead reviews it like any contributor's work. Whether
+  the lead's review counts as a gate reading:
+  [independent readers](../lifecycle/quality-gates.md#independent-readers).
 - **An exact spec.** For a fix: an applyable patch plus a table of cases with expected outcomes. The
   executor applies it to the reviewed head, runs every row, and reports each with its actual output.
   If the patch doesn't apply, it stops rather than adapting it.
@@ -241,7 +241,7 @@ Blocked?   no
 Approvals? recommend: merge #482 at 9f1c2ab (decision row: decisions.md#482-9f1c2ab)
 Issues?    one flaky CI job, tracked
 Summary:   two PRs up, one waiting on review.
-           Verified: #482 head 9f1c2ab, CI green, checks API, 06:30Z
+           Verified: #482 gate all-clear at 9f1c2ab, CI green, checks API, 06:30Z
 ```
 
 A hold and its release, in the mailbox:
@@ -265,6 +265,6 @@ release: org/repo#77 8c0f3d9   06:34Z  approved on main@51d2e0a
 
 ---
 
-_Related: [the state handoff](state-handoff.md) (state between roles and runs) · [the output loop](output-loop.md)
+_Related: [the state handoff](state-handoff.md) · [the output loop](output-loop.md)
 (handing state to the human) · [the proactive sweep](proactive-sweep.md) (what each agent does on a schedule)
 · [the watchdog pattern](watchdog-pattern.md) · [quality gates](../lifecycle/quality-gates.md)._
