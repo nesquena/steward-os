@@ -1,6 +1,6 @@
 ---
 name: release-pipeline
-description: Merge an all-clear PR and ship it — rebase, merge preserving attribution, tag, deploy, verify it's actually live, close PR/issues with credit, update the trust ledger. Stages 5-6 of the PR lifecycle. Runs only after pr-deep-review's gate is all-clear.
+description: Merge an all-clear PR and ship it, or ship a release cut from trunk — rebase, merge preserving attribution, tag, deploy, verify it's actually live, close PR/issues with credit, update the trust ledger. Stages 5-6 of the PR lifecycle. Runs only after pr-deep-review's gate is all-clear.
 ---
 
 # release-pipeline
@@ -23,6 +23,12 @@ description: Merge an all-clear PR and ship it — rebase, merge preserving attr
 
 **When to load:** a PR has passed the [authoritative gate](../../docs/lifecycle/quality-gates.md)
 and is cleared to ship. Runs [PR lifecycle](../../docs/lifecycle/pr-lifecycle.md) stages [5]–[6].
+A release cut from trunk, one release commit after several merges, has no single PR head to gate.
+It enters at step 4, on the release commit, and only when each merge in the range step 6 defines
+passed the gate, under the precondition below, and steps 1–3 when it merged; an ungated merge stops
+it until the human decides, named to them. Name to the human, before they tag, any other commit in
+that range that no gated merge brought in. A human tags a release cut from trunk. The PRs it covers
+are the set step 6 defines.
 Band B, and it stays there — a human owns the final merge call. A human's standing instruction
 covers a merge by an agent that wrote no commit in the PR's range; an agent whose account pushed a
 commit in the range merges only on a human's explicit instruction, on an authenticated channel,
@@ -210,6 +216,7 @@ trailer exists; it does **not** prove the *name* is right.
 - The merge call was a human's: a standing instruction, for an agent that wrote no commit in the
   PR's range, or else an explicit decision naming the gated head; either is recorded outside the
   contributor-writable thread.
+- A release cut from trunk was tagged by a human.
 - The author is credited identically on every surface, and the handle is the real author of the work.
 - Every PR the release contains, and every issue each links as closing, is closed with version +
   thanks, except an issue a human holds, which stays open and is named to the maintainer; the
