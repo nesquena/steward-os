@@ -127,4 +127,5 @@ job), not for every cron.
 ---
 
 _Related: [the watchdog pattern](watchdog-pattern.md) · [the autonomy ladder](autonomy-ladder.md) ·
-[the output loop](output-loop.md)._
+[the output loop](output-loop.md) ·
+[the proactive sweep](proactive-sweep.md) (a steward's recurring run)._
