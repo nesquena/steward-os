@@ -102,8 +102,8 @@ fixed shape:
 - **Summary:** two or three lines on what changed since the last stand-up.
 
 The orchestrator rolls the answers into one report: decisions first, each with its decision row, then
-blockers with their where and how, then issues. A stand-up where no agent reports any of these sends
-nothing ([silent on no-op](scheduled-jobs.md#silent-on-no-op-the-most-important-rule)); it isn't
+blockers with their where and how, then issues. A stand-up where every agent answered and none
+reports any of these sends nothing ([silent on no-op](scheduled-jobs.md#silent-on-no-op-the-most-important-rule)); it isn't
 [the heartbeat](scheduled-jobs.md#the-heartbeat-exception). Rules:
 
 - Same questions every time. Schedule in the runner's clock, not the human's.
@@ -117,7 +117,8 @@ An agent sends the orchestrator a question with its recommendation and evidence;
 batches questions, asks the human, and sends back the human's words, **quoted, not paraphrased**, with
 who answered, when, and which message they replied to. A write still goes through the acting agent's
 own [decision row](output-loop.md#the-decision-row), so the confirmation is of the exact write, not of
-a summary.
+a summary. The quote is corroboration (point 1 above): before a write, the acting agent reads the
+human's answer where it was given.
 
 ### Verify before escalating
 
@@ -130,7 +131,8 @@ a human gets asked to decide something already decided.
 ### Working on silence, in scratch only
 
 When a decision has a deadline, the checkpoint gives the recommendation first, then the options, the
-deadline and a scratch plan. On silence, the plan runs **in scratch only** (build and review) and is
+deadline and a scratch plan. On silence, the plan runs **in scratch only** (build and review, in a local work tree nothing else
+reads: no push, no PR or comment, nothing irreversible) and is
 recorded in the agent's own log as overrulable;
 [silence isn't a decision](output-loop.md#the-decision-row). Before starting it, check every channel the
 human can answer on. When the answer arrives, append it to the record, and stop the scratch work if it
@@ -148,7 +150,9 @@ source.**
   [independent readers](../lifecycle/quality-gates.md#independent-readers).
 - **An exact spec.** For a fix: an applyable patch plus a table of cases with expected outcomes. The
   executor applies it to the reviewed head, runs every row, and reports each with its actual output.
-  If the patch doesn't apply, it stops rather than adapting it.
+  If the patch doesn't apply, it stops rather than adapting it. Whoever wrote the patch wrote the
+  change, whoever commits it: the readings of the new head come from a reader who didn't write it
+  ([independent readers](../lifecycle/quality-gates.md#independent-readers)).
 - **The executor re-checks before acting,** including the brief's premises (the function, file or
   behaviour it names). A premise that doesn't hold is reported before building, not built around.
 - **Identifiers out, conclusions re-derived.** Results come back as pointers (a tag SHA, a digest, a
@@ -172,9 +176,11 @@ request.
 - If a request suggests a write just to learn something, the helper first looks for a read-only route
   to the same facts.
 - **Contributor code:** [the sandbox](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution).
-- **Primary and backup.** With two helpers, send to the primary; if the request is still unread after a
-  fixed wait, resend to the backup marked as rerouted and send the primary a withdraw note. Only the
-  original sender withdraws.
+- **Primary and backup.** With two helpers, send to the primary. A helper acks a request before it
+  starts work on it, and reads withdraw notes before requests. If the request is still unanswered and
+  unacked after a fixed wait, re-read the primary's replies, then resend to the backup marked as
+  rerouted and send the primary a withdraw note; a primary that sees the withdraw note before acking
+  drops the request. Only the original sender withdraws.
 
 ## Gating each other's irreversible steps
 
@@ -182,10 +188,14 @@ When one agent must approve before another merges, tags or publishes:
 
 - **Holds and releases on exact versions.** The gating agent sends a hold naming the item and the
   version it's still reviewing, and a release naming the exact version it approves and the trunk SHA
-  it was gated against. Right before acting, the actor checks that a release names that exact version,
-  that its trunk SHA is the current trunk, and that every hold on it is released. A new push drops the
-  approval by itself. *On a signed channel,* only verified signatures count; *on an unsigned one,* only
-  a record in the sender's own commit or post, read from the channel.
+  it was gated against. Right before acting, the actor checks that a release names the exact version it
+  is about to act on, that the release's trunk SHA is the current trunk, and that every hold naming
+  that version is released. After a push or a moved trunk no release matches, so the actor waits for a
+  new one and never carries the old one forward. A release lifts a hold and nothing else: the gate, the
+  band and the merge call stay as the rules above name. *On a signed channel,* only verified signatures
+  count; *on an unsigned one,* only a record the host attributes to the sender's account (who posted
+  the comment, who pushed the commit), read from the channel, never a name in the message or a
+  commit's author field.
 - **Verdicts name the exact head**, and void as
   [the authoritative re-run](../lifecycle/quality-gates.md#5-the-authoritative-re-run-immediately-before-merge)
   says.
