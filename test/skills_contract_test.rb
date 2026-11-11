@@ -281,12 +281,18 @@ class BatchedReleaseContractTest < Minitest::Test
     load = read('skills', 'release-pipeline', 'SKILL.md')[/\*\*When to load:\*\*.*?(?=> Precondition)/m]
     assert_includes load, 'A release cut from trunk, one release commit after several merges, has no single PR ' \
                           'head to gate. It enters at step 4, on the release commit (the stamped commit the tag will ' \
-                          'name), and only when each merge in the range step 6 defines passed the gate, under the ' \
-                          'precondition below, and steps 1–3 when it merged; an ungated merge stops it until the ' \
-                          'human decides, named to them.'
-    assert_includes load, 'Name to the human, before they tag, any other commit in that range that no gated merge ' \
-                          'brought in. A human tags a release cut from trunk, on the release commit step 4 checked, ' \
-                          'and only once step 4 has passed for it; name that commit to them and say whether it passed.'
+                          'name), and only when each merge in the range step 6 defines passed the gate and steps 1–3 ' \
+                          'when it merged, judged as of that merge from its kept receipt under the precondition below ' \
+                          '(the gate isn\'t re-run at release; a merge with no such receipt counts as ungated); an ' \
+                          'ungated merge stops it until the human decides, named to them.'
+    assert_includes load, 'Name to the human, before they tag, any other commit the release commit contains, and no ' \
+                          'earlier release tag does, that no gated merge brought in'
+    assert_includes load, 'A human tags a release cut from trunk, on the release commit step 4 checked, and only once ' \
+                          'step 4 has passed for it; name that commit to them and say whether it passed.'
+    assert_includes load, 'The PRs it covers are the set step 6 defines.'
+    assert_includes load, 'Where the project cuts its releases from trunk, a PR\'s run ends after step 3: it stamps and ' \
+                          'tags nothing, keeps the PR\'s gate receipt and the record of the merge call'
+    assert_includes step('release-pipeline', 3), 'Where releases are cut from trunk, this run ends here (see When to load).'
     assert_includes step('release-pipeline', 4),
                     'Then tag the release (a release cut from trunk: a human tags it, as When to load says).'
     assert_includes read('skills', 'release-pipeline', 'SKILL.md').split('## Verification').last,
@@ -294,7 +300,7 @@ class BatchedReleaseContractTest < Minitest::Test
     assert_includes read('setup', 'setup-interview.md'),
                     'The answer also decides who builds or uses a release candidate that carries contributor code ' \
                     '([`release-pipeline`](https://github.com/nesquena/steward-os/blob/main/skills/release-pipeline/SKILL.md) step 4): the sandbox; a human, under ' \
-                    'a human-run receipt, where it can\'t run or where the build or install needs the network or a ' \
+                    'a human-run receipt, where the sandbox can\'t run it or where the build or install needs the network or a ' \
                     'credential the sandbox withholds.'
   end
 
@@ -873,7 +879,7 @@ class IndependentReadersContractTest < Minitest::Test
                     'A rebase the merging account pushes makes it a writer of the new range: the merge then needs a ' \
                     'human\'s explicit instruction naming the re-gated head, not the standing instruction'
     assert_includes skill.split('## Verification').last,
-                    'The merge call was a human\'s: a standing instruction, for an agent that wrote no commit in ' \
+                    'Each merge call was a human\'s (for a release cut from trunk, read from each merge\'s record): a standing instruction, for an agent that wrote no commit in ' \
                     'the PR\'s range, or else an explicit decision naming the gated head; either is recorded ' \
                     'outside the contributor-writable thread.'
   end
