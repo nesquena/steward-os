@@ -181,8 +181,10 @@ request.
   starts work on it, and reads withdraw notes before requests. The ack carries an ETA. If the request
   is still unanswered and unacked after a fixed wait, or acked and still unanswered past its ETA,
   re-read the primary's replies, then send the primary a withdraw note and resend to the backup marked
-  as rerouted. A primary that sees the withdraw note before acking drops the request; one that sees it
-  after acking stops and replies with what it already did. Only the original sender withdraws.
+  as rerouted. A request acked as holding for approval isn't rerouted: the wait is the human's, so it
+  goes in the status as a live hold. A primary that sees the withdraw note before acking drops the
+  request; one that sees it after acking stops and replies with what it already did. That reply is a
+  report; the backup's reply answers the request. Only the original sender withdraws.
 
 ## Gating each other's irreversible steps
 
