@@ -40,8 +40,14 @@ Also load it for a PR with a stale judgment an agent set (step 8). Runs
    is a visible diff), and a re-judge keeps only its attempt record; name it in the private record
    so nobody acts on the board's lane.
 3. **Fit / scope screen [0].** Does the PR serve a scope anchor?
-   - Health fix (bug/security/reliability on a shipped feature)? → bypass the scope gate, proceed.
-     Note the bypass marker (`bypass`) for step 6.
+   - Health fix (a fix for a bug or reliability failure on a shipped feature) whose failure you
+     confirmed on the trunk without the PR's code, by reading or with a repro you wrote under
+     [the sandbox rule](../../docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)?
+     → bypass the scope gate, proceed. Note the bypass marker (`bypass`) for step 6. The PR's say-so
+     isn't confirmation, and neither are its own diff, tests and checks: without it, screen the PR
+     against the anchors and the veto like any other change. An unconfirmed fix that hits no anchor
+     escalates; don't close it on scope. A confirmed failure with vulnerability shape is a step-2
+     hit, not a bypass: no judgment, no marker, no flag, and you route it as step 2 says.
    - Hits an anchor? → in-scope, proceed.
    - Hits no anchor / trips the philosophy veto? → out of scope. Close politely (Band C — draft the
      kind explanation, human sends) or escalate if uncertain. An escalation records what you

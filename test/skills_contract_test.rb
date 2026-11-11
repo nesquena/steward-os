@@ -603,6 +603,31 @@ class ProjectShapeContractTest < Minitest::Test
                        '4\'s "new", so a later full run still runs steps 3, 5 and 6 on it.'
   end
 
+  def test_both_triage_skills_bypass_only_on_a_confirmed_failure
+    assert_includes read('skills', 'issue-triage', 'SKILL.md'), 'The report\'s say-so isn\'t confirmation.'
+    assert_includes read('skills', 'issue-triage', 'SKILL.md'), 'trunk, by reading or with a repro you wrote under'
+    pr = read('skills', 'pr-triage', 'SKILL.md')
+    step3 = pr[/ 3\. \*\*Fit \/ scope screen.*?(?= 4\. \*\*)/m].to_s
+    assert_includes step3, 'whose failure you confirmed on the trunk without the PR\'s code, by reading or with a ' \
+                           'repro you wrote under'
+    assert_includes step3, 'The PR\'s say-so isn\'t confirmation, and neither are its own diff, tests and checks: ' \
+                           'without it, screen the PR against the anchors and the veto like any other change.'
+    assert_includes step3, 'An unconfirmed fix that hits no anchor escalates; don\'t close it on scope.'
+    assert_includes step3, 'A confirmed failure with vulnerability shape is a step-2 hit, not a bypass: no judgment, ' \
+                           'no marker, no flag, and you route it as step 2 says.'
+    refute_includes pr, 'Health fix (bug/security/reliability on a shipped feature)? → bypass'
+    board = read('docs', 'playbooks', 'triage-scoreboard.md')
+    assert_includes board, 'An issue or PR earns the bypass marker when the agent confirmed the failure in a shipped ' \
+                           'feature on the trunk, by reading or with a repro it wrote itself under'
+    assert_includes board, 'neither do a PR\'s own diff, tests and checks: an unconfirmed bug report or fix goes ' \
+                           'through the anchors like any other item.'
+    assert_includes board, 'A `bypass` marker set before the bypass needed a confirmed failure stands until the item ' \
+                           'is re-judged.'
+    assert_includes read('docs', 'lifecycle', 'pr-lifecycle.md'),
+                    'once the failure it fixes is confirmed on the trunk — you don\'t re-litigate whether the feature ' \
+                    'should exist. A security fix goes to the vulnerability pre-check above.'
+  end
+
   def test_a_supervised_request_names_the_item
     assert_includes read('skills', 'issue-triage', 'SKILL.md'),
                     'A human names an issue in the request for a supervised run, or where a ruling reaches you'
