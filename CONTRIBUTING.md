@@ -26,6 +26,10 @@ to your project, written up so others can learn).
 3. **Match the voice.** Plain, direct, specific. Sentence-case headings. No filler. Explain *why*,
    not just *what*.
 4. **Cross-link.** New docs link to the playbooks they relate to, and the related docs link back.
+   Link a rule another doc already states rather than paraphrasing it: a paraphrase comes out
+   narrower or broader than the rule, and drifts when the rule changes. A skill step still carries
+   the clause it acts on, matching the source and linked to it; text a lint requires word for word
+   (the injection guard) stays word for word.
 5. **Keep the site buildable.** If you add a doc, add it to the [docs map](docs/README.md) and the
    site nav so it's discoverable.
 
