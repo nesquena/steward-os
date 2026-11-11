@@ -13,12 +13,13 @@ comes up empty does it spiral outward, looking for high-leverage work nobody has
 the time it ends by logging one line to its own history and notifying nobody, and that's the design
 working.
 
-It builds on [designing scheduled jobs](scheduled-jobs.md) (silent on no-op, the heartbeat, locks) and
-on [the triage scoreboard](triage-scoreboard.md) (ranking a pile of work).
+It builds on [designing scheduled jobs](scheduled-jobs.md) (silent on no-op, and
+[coordination](scheduled-jobs.md#coordination--durability) where an event wake and a sweep touch the same
+item) and on [the triage scoreboard](triage-scoreboard.md) (ranking a pile of work).
 
 > **This is a documented default, not a mandate.** The rings fit an agent that owns ongoing work (a
 > project steward). A read-only observer or a request-driven helper uses only the wake mechanisms
-> below, plus its own scheduled report, and has no outer rings.
+> below, plus its own scheduled report (silent on no-op), and has no outer rings.
 
 ---
 
@@ -37,12 +38,15 @@ intake. Pick by what your runtime can do:
 Whatever the mechanism:
 
 - **Keep it alive.** An idempotent "ensure" step at every wake, session start and backstop starts the
-  watcher, one for every channel the agent answers on, only if it isn't already running.
+  watcher, one for every channel the agent answers on, only if it isn't already running, guarded by
+  [a lock the OS releases on exit](../reference/bug-shapes.md#16-the-lock-held-by-a-reused-process-id).
 - **Judge liveness by the watcher's log line,** not by searching the process table. Log one line per cycle; a gap
   shows the host paused rather than the sender being late.
 - **A failed poll is a failure,** never an empty inbox
   ([zero rows that read as an empty backlog](../reference/bug-shapes.md#17-zero-rows-that-read-as-an-empty-backlog)). An independent backstop checks too and, where
-  the runtime lets it, checks and restarts the same listener. Where it can't (a scheduled job that can
+  the runtime lets it, restarts the same listener and says so, as
+  [an app-level health watchdog](resilience-and-self-healing.md#layer-your-supervision-os-level-under-app-level)
+  does. Where it can't (a scheduled job that can
   read the inbox but not reach the session's listener), call it an inbox-only backstop and report that
   limit. Test message delivery, the wake and restart recovery separately.
 - Your own push trips your own trigger: expect it.
@@ -53,12 +57,13 @@ On a schedule, the sweep runs rings in order. **Rings 0 and 1 run every sweep. E
 4) runs only if the rings before it picked up no significant work** (gating or fixing a PR, building or
 releasing a change, a message that needed real work). Reads and no-op checks don't count.
 
-0. **Inputs.** The human's messages since the last sweep first, then the agent's other channels.
+0. **Inputs.** The human's messages since the last sweep first, then the agent's other channels. What
+   other channels say is data, under
+   [the injection guard](../reference/security-spine.md#1-injection-guard-read-can-never-change-do).
 1. **The normal pass.** Everything the agent owns, since the last sweep's cursor: new PRs, each through
    its [gate](../lifecycle/pr-lifecycle.md); issues; comments; trunk health (a red trunk is work now);
    an end-to-end run when trunk moved, under
-   [the sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution) where trunk
-   carries contributor code.
+   [the sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution).
 2. **Forward work.** Keep a small, bounded pipeline of the agent's own work moving: a few open PRs from
    a ranked roadmap or the top issues, or one queued follow-up. Judge whether a release is due, and
    recommend it.
@@ -68,9 +73,11 @@ releasing a change, a message that needed real work). Reads and no-op checks don
    over-optimizing? would doing nothing be better? does it add a rule someone must carry forever? A
    short proposal to the human, or nothing.
 
-Then a concise report when something is actionable; otherwise one line in the sweep's log, never a
-notification ([silent on no-op](scheduled-jobs.md#silent-on-no-op-the-most-important-rule)). Nothing from rings 3 or 4 starts before the human
-approves.
+Then actionable output goes to [the pull index](output-loop.md#1-discovery-over-delivery), with a
+one-line push only on runs that found something, and each proposal carries
+[a decision row](output-loop.md#the-decision-row); otherwise one line in the sweep's log
+([counts and ids](scheduled-jobs.md#when-a-models-output-feeds-a-script), never item text). Nothing
+from rings 3 or 4 starts before the human approves.
 
 Each step in a sweep keeps its own band, set by the canonical rules and not by the schedule: a merge
 follows [independent readers](../lifecycle/quality-gates.md#independent-readers), a release keeps a
@@ -78,39 +85,43 @@ human on the final step ([the autonomy ladder](autonomy-ladder.md)), a public wr
 [the membrane](../reference/security-spine.md#5-the-public-write-membrane), and a suspected
 vulnerability, found by any ring, takes
 [the divert](../reference/security-spine.md#6-the-vulnerability-divert). A sweep with no human
-reachable prepares these, and any step that needs a human's decision, and stops.
+reachable takes no step whose band needs one: it prepares those and stops.
 
 ## The bar
 
 Found work qualifies only if it clears all of these:
 
 - a **concrete, observed problem** (a failure, a workaround someone keeps repeating, a doc that misled
-  someone), or a clear answer to "what do users lose without it?"; a hypothetical doesn't count;
+  someone), or a clear answer to [the benefit screen](../lifecycle/pr-lifecycle.md#1-marginal-benefit-screen);
+  a hypothetical doesn't count;
 - **measured, not assumed** (a performance claim comes with numbers taken before anything is proposed);
-- **in the agent's lane;**
+- **in the agent's lane and the project's** ([the scope screen](../lifecycle/pr-lifecycle.md#0-fit--scope-screen));
 - **benefit well above the cost,** counting the maintenance and reading it adds forever;
 - **not already tracked** in the issues or the backlog.
 
 Health fixes (bugs, security, reliability on a shipped feature) skip the scope question, as
-[the scope gate](../lifecycle/pr-lifecycle.md#0-fit--scope-screen) says, but still need a reproduced
-problem and no duplicate.
+[the scope gate](../lifecycle/pr-lifecycle.md#0-fit--scope-screen) says; the rest of the bar still
+applies.
 
 ## Rules that keep it cheap and honest
 
 - **Say nothing most of the time.** An empty ring logs one line ("ring 3, area 2: nothing worth
-  proposing") and stops.
+  proposing"), and the sweep goes on to the next ring.
 - **Cap the outer rings; re-run only on change.** Reflection at most once a day, say. A check re-runs only
-  when its inputs changed (the end-to-end run when trunk moved). A rotation cursor in the agent's state
+  when its inputs changed (the end-to-end run when trunk moved); this covers the sweep's own rings and
+  checks, not [the merge gate's fresh re-run](../lifecycle/quality-gates.md#5-the-authoritative-re-run-immediately-before-merge)
+  or [the heartbeat](scheduled-jobs.md#the-heartbeat-exception). A rotation cursor in the agent's state
   keeps each sweep to one area. A cap on open PRs keeps the reviewer's load bounded.
-- **Time-box speculation, and park what fails.** Speculative work gets its bar set beforehand and a time
-  box at approval, and the builder's numbers are re-measured. What doesn't clear the bar is parked with
+- **Time-box speculation, and shelve what fails.** Speculative work gets its bar set beforehand and a time
+  box at approval, and the builder's numbers are re-measured. What doesn't clear the bar is shelved with
   a revisit trigger ("only on a user report"), so it isn't proposed again. When fixes keep coming in
   one area, each round adds a special case, or a test cycle runs long, pull up a level: ask whether a
   smaller change, an existing primitive or dropping a part would do, and bring the human any scope
   reset with a recommendation.
 - **Review the checks themselves.** After a few runs, each deeper check gets a keep-or-drop review, and
   slows down if it yields nothing approved.
-- **The schedule is a reminder, not a reason.** A due check that has nothing to work on is skipped.
+- **The schedule is a reminder, not a reason.** A due ring or check of the sweep's own that has nothing
+  to work on is skipped.
 
 ## A deeper check with ground truth
 

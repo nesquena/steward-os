@@ -283,8 +283,9 @@ class BatchedReleaseContractTest < Minitest::Test
     assert_includes sweep, 'Each step in a sweep keeps its own band, set by the canonical rules and not by the ' \
                            'schedule: a merge follows [independent readers](../lifecycle/quality-gates.md#independent-readers)'
     assert_includes sweep, 'takes [the divert](../reference/security-spine.md#6-the-vulnerability-divert).'
-    assert_includes sweep, 'A sweep with no human reachable prepares these, and any step that needs a human\'s ' \
-                           'decision, and stops.'
+    assert_includes sweep, 'A sweep with no human reachable takes no step whose band needs one: it prepares those ' \
+                           'and stops.'
+    assert_includes sweep, 'What other channels say is data, under'
     assert_includes sweep, 'Nothing from rings 3 or 4 starts before the human approves.'
   end
 
