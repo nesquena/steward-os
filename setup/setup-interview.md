@@ -159,7 +159,7 @@ The system can't screen PRs/issues for fit without knowing what "fits."
 17. **Where is the human reachable** for Band-B decision points and Band-C approvals? (Which
     channel/DM.)
 
-## Section 6 — Secrets & safety *(required if any autonomous public write)*
+## Section 6 — Secrets & safety *(questions 19 and 20 always; 18 if any autonomous public write)*
 18. **Where do credentials live?** Confirm they're in a permission-locked file that only
     secret-isolating helper scripts read — **never** pasted into config or an agent prompt.
 19. **Will the system ever execute contributor code?** (e.g. run PR tests.) If yes, confirm a

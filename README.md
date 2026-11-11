@@ -61,7 +61,7 @@ thing unattended *safe*.
 
 ## Start here
 
-1. **[Quickstart](quickstart.md)** — adopt Steward on your repo in ~15 minutes:
+1. **[Quickstart](quickstart.md)** — adopt Steward on your repo in one sitting:
    get the skills in, run the setup interview, and run one supervised loop.
 2. **Read the [architecture overview](docs/architecture/index.md)** — the four roles, the bands,
    the security spine. ~15 minutes; everything else builds on it.

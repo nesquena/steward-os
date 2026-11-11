@@ -136,7 +136,8 @@ spine is the set of rules that hold regardless of what any of that content says.
    is bounded separately, at the
    [membrane](../reference/security-spine.md#5-the-public-write-membrane).
 5. **The public-write membrane.** Any action that writes to a public surface in the project's voice
-   is Band C (human) or Band A **with an independent watchdog** — never an unverified autonomous
+   is Band C (human), or Band A only when it is reversible, mechanical **and** checked by an
+   independent watchdog (a stricter bar than Band A's general one) — never an unverified autonomous
    write. This is the single line that separates "safe to run unattended" from "a reputational
    incident waiting to happen."
 6. **A suspected vulnerability is never public-filed.** A capture that looks like a security
