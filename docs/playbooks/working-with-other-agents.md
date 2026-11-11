@@ -71,8 +71,8 @@ Whatever the channel, the conduct is the same:
 - **Reply and mark read in one step**, so a handled message can't be handled twice.
 - **Hold without losing.** A message you can't act on yet stays unread, and your watcher is told to
   skip it, so it neither wakes you nor gets dropped.
-- **One reader per identity.** One name per live session. If a scheduled run and an interactive
-  session share a name, only one of them reads and replies.
+- **One reader per identity.** One name per live session. A second session (for example, a scheduled
+  run beside an interactive one) takes its own name.
 - **A reply counts only when it checks out.** It answers a request only if the sender and recipient
   match and it names the request it answers. *On a signed channel,* its signature must verify too; a
   signature proves which key signed the bytes, not who's behind the key. Re-pin a changed key only
@@ -181,10 +181,11 @@ request.
   starts work on it, and reads withdraw notes before requests. The ack carries an ETA. If the request
   is still unanswered and unacked after a fixed wait, or acked and still unanswered past its ETA,
   re-read the primary's replies, then send the primary a withdraw note and resend to the backup marked
-  as rerouted. A request acked as holding for approval isn't rerouted: the wait is the human's, so it
-  goes in the status as a live hold. A primary that sees the withdraw note before acking drops the
-  request; one that sees it after acking stops and replies with what it already did. That reply is a
-  report; the backup's reply answers the request. Only the original sender withdraws.
+  as rerouted. A request acked as holding for approval isn't rerouted while the human's answer is
+  pending: the wait is the human's, so it goes in the status as a live hold, and its ETA runs from the
+  human's answer. A primary that sees the withdraw note before acking drops the request; one that sees
+  it after acking stops and replies with what it already did. That reply is a report; the backup's
+  reply answers the request. Only the original sender withdraws.
 
 ## Gating each other's irreversible steps
 

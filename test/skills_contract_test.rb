@@ -350,6 +350,10 @@ class BatchedReleaseContractTest < Minitest::Test
     assert_includes agents, 'On an unsigned channel, each agent posts from its own account.'
     assert_includes agents, 're-read the primary\'s replies, then'
     assert_includes agents, 'Only the original sender withdraws.'
+    assert_includes agents, 'That reply is a report; the backup\'s reply answers the request.'
+    assert_includes agents, 'A second session (for example, a scheduled run beside an interactive one) takes its own name.'
+    assert_includes agents, 'isn\'t rerouted while the human\'s answer is pending: the wait is the human\'s, so it ' \
+                            'goes in the status as a live hold, and its ETA runs from the human\'s answer.'
     assert_includes agents, 'one that sees it after acking stops and replies with what it already did.'
     assert_includes agents, 'never carries the old one forward.'
     assert_includes agents, 'only a record the host attributes to the sender\'s account'
