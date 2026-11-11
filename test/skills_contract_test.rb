@@ -293,7 +293,7 @@ class BatchedReleaseContractTest < Minitest::Test
                     'A release cut from trunk was tagged by a human, on the release commit step 4 passed.'
     assert_includes read('setup', 'setup-interview.md'),
                     'The answer also decides who builds or uses a release candidate that carries contributor code ' \
-                    '([`release-pipeline`](../skills/release-pipeline/SKILL.md) step 4): the sandbox; a human, under ' \
+                    '([`release-pipeline`](https://github.com/nesquena/steward-os/blob/main/skills/release-pipeline/SKILL.md) step 4): the sandbox; a human, under ' \
                     'a human-run receipt, where it can\'t run or where the build or install needs the network or a ' \
                     'credential the sandbox withholds.'
   end
