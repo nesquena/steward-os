@@ -76,6 +76,10 @@ each session, that file does the loader's job and carries the session's standing
    `config.yaml` turns that on, and then only in a sandbox
    ([the sandbox](docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)).
 
+**Publishing a package from this repo?** Keep Steward's files out of the package manifest. A file
+list built from a Git pathspec such as `git ls-files '*.md'` matches in subdirectories too, so it
+also picks up the copied `SKILL.md` files and a Markdown rules file.
+
 ## 3. Wire it to your project
 
 Have your agent load the **`project-system-setup`** skill and tell it:
