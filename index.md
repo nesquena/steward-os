@@ -26,6 +26,12 @@ at a level of rigor that holds up in a real open-source project.
 It is **project-agnostic by design.** You bring the project; the system brings the operating model,
 the recipes, and the questions it needs to ask you to wire itself up.
 
+> **Why "Steward"?** A steward doesn't own what they tend — they care for it on the owner's behalf,
+> with judgment and restraint, and they know which decisions aren't theirs to make. That's the
+> posture this system encodes: an agent that does the tireless work of maintenance but keeps a human
+> at every irreversible edge. (It's also one of the system's four roles — the one that keeps the
+> project healthy and watches the others.)
+
 ## Find your way
 
 - **[Quickstart](quickstart.md)** — adopt Steward on your repo in one sitting. Start
@@ -49,12 +55,6 @@ the recipes, and the questions it needs to ask you to wire itself up.
 > guardrails. The irreversible, reputational acts stay human-gated, and a reversible, mechanical
 > public write runs unattended only with a watchdog. That membrane isn't a limitation; it's what
 > makes running the whole thing unattended *safe*.
-
-> **Why "Steward"?** A steward doesn't own what they tend — they care for it on the owner's behalf,
-> with judgment and restraint, and they know which decisions aren't theirs to make. That's the
-> posture this system encodes: an agent that does the tireless work of maintenance but keeps a human
-> at every irreversible edge. (It's also one of the system's four roles — the one that keeps the
-> project healthy and watches the others.)
 
 ## Adopt it gradually
 
