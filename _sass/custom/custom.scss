@@ -226,3 +226,8 @@ hr { margin: 2rem 0; }
 
   > li:first-child { border-color: $accent-line; }
 }
+
+// ---- Small screens ---------------------------------------------------------
+// The theme shrinks the root size to 14px below its sm breakpoint; keep body
+// copy at the reader's default size on phones too.
+html { font-size: 100% !important; }
