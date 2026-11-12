@@ -202,3 +202,27 @@ blockquote {
 }
 
 hr { margin: 2rem 0; }
+
+// ---- Landing page ----------------------------------------------------------
+// A list marked {: .cards } lays its items out as a grid of cards.
+.main-content ul.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+  padding-left: 0;
+  margin: 1rem 0 0;
+
+  > li {
+    padding: 0.85rem 1rem;
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    background-color: $sidebar-color;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+
+    &::before { content: none; }
+  }
+
+  > li:first-child { border-color: $accent-line; }
+}

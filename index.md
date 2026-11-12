@@ -26,21 +26,6 @@ at a level of rigor that holds up in a real open-source project.
 It is **project-agnostic by design.** You bring the project; the system brings the operating model,
 the recipes, and the questions it needs to ask you to wire itself up.
 
-> **Why "Steward"?** A steward doesn't own what they tend — they care for it on the owner's behalf,
-> with judgment and restraint, and they know which decisions aren't theirs to make. That's the
-> posture this system encodes: an agent that does the tireless work of maintenance but keeps a human
-> at every irreversible edge. (It's also one of the system's four roles — the one that keeps the
-> project healthy and watches the others.)
-
-## The core idea
-
-> Reading is cheap and safe; **writing to a public surface in the project's voice needs a human
-> decision unless it is reversible, mechanical and watched.** Everything upstream of that line —
-> discover, classify, dedupe, review, draft, rank, gate — an agent can do autonomously with the right
-> guardrails. The irreversible, reputational acts stay human-gated, and a reversible, mechanical
-> public write runs unattended only with a watchdog. That membrane isn't a limitation; it's what
-> makes running the whole thing unattended *safe*.
-
 ## Find your way
 
 - **[Quickstart](quickstart.md)** — adopt Steward on your repo in one sitting. Start
@@ -54,6 +39,22 @@ the recipes, and the questions it needs to ask you to wire itself up.
 - **[Reference](docs/reference/)** — glossary, adoption levels, anti-patterns, coding principles,
   authoring changes, reviewing at volume, the bug-shape catalog, the security spine, and an FAQ.
 - **[Setup](setup/setup-interview.md)** — the interview that wires the system to your project.
+{: .cards }
+
+## The core idea
+
+> Reading is cheap and safe; **writing to a public surface in the project's voice needs a human
+> decision unless it is reversible, mechanical and watched.** Everything upstream of that line —
+> discover, classify, dedupe, review, draft, rank, gate — an agent can do autonomously with the right
+> guardrails. The irreversible, reputational acts stay human-gated, and a reversible, mechanical
+> public write runs unattended only with a watchdog. That membrane isn't a limitation; it's what
+> makes running the whole thing unattended *safe*.
+
+> **Why "Steward"?** A steward doesn't own what they tend — they care for it on the owner's behalf,
+> with judgment and restraint, and they know which decisions aren't theirs to make. That's the
+> posture this system encodes: an agent that does the tireless work of maintenance but keeps a human
+> at every irreversible edge. (It's also one of the system's four roles — the one that keeps the
+> project healthy and watches the others.)
 
 ## Adopt it gradually
 
