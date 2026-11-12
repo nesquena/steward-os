@@ -205,7 +205,8 @@ $band-c-lamp: #e0907d;
   letter-spacing: -0.01em;
 }
 
-.site-nav { font-size: 1.1875rem; }
+// The theme sets nav sizes with !important, so this needs it too.
+.site-nav .nav-list .nav-list-item { font-size: 1.0625rem !important; }
 
 // The theme sets the footer note at its smallest size; Garamond reads thin there.
 .site-footer,
