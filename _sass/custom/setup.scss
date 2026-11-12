@@ -1,6 +1,9 @@
-// Typefaces, loaded from Google Fonts in _includes/head_custom.html. Set here
-// (imported after the theme's variables, before the color scheme) so both the
-// light and the dark stylesheet pick them up.
+// Typefaces, self-hosted in assets/fonts/ under the SIL Open Font License
+// (the OFL-*.txt files there). Set here (imported after the theme's
+// variables, before the color scheme) so both the light and the dark
+// stylesheet pick them up. EB Garamond is Google Fonts' Latin subset of the
+// variable font; IBM Plex Mono is IBM's own Latin-1 split, unmodified, since
+// the Plex name is reserved for unmodified files.
 
 $body-font-family: "EB Garamond", garamond, "Iowan Old Style", georgia, serif;
 $mono-font-family: "IBM Plex Mono", "SFMono-Regular", menlo, consolas, monospace;

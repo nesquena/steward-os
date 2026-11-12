@@ -8,6 +8,11 @@ nav_order: 1
   <p class="eyebrow">An operating model for co-maintained software</p>
   <h1 class="hero-title" id="steward">Steward</h1>
   <p class="standfirst">Run a software project with an AI agent as a genuine co-maintainer: triage, review, quality gates, community, and the safety model that makes autonomous action trustworthy.</p>
+  <div class="actions" markdown="1">
+[Get started](quickstart.md){: .btn .btn-primary }
+[Read the architecture](docs/architecture/)
+[View on GitHub](https://github.com/nesquena/steward-os)
+  </div>
   <blockquote class="creed"><p>Reading is cheap and safe; writing to a public surface in the project’s voice <strong>needs a human decision</strong> unless it is reversible, mechanical and watched.</p></blockquote>
   <div class="ledger">
     <p class="caption">The autonomy bands</p>
@@ -23,14 +28,6 @@ nav_order: 1
     <li><span class="n" aria-hidden="true">iii.</span><span class="r">Builder</span><span class="q">Make the change.</span></li>
     <li><span class="n" aria-hidden="true">iv.</span><span class="r">Steward</span><span class="q">Keep the whole thing healthy.</span></li>
   </ol>
-  <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># from your project root, with steward-os checked out alongside it</span>
-mkdir -p .claude/skills
-cp -R /path/to/steward-os/skills/* .claude/skills/</code></pre></div></div>
-  <div class="actions" markdown="1">
-[Get started](quickstart.md){: .btn .btn-primary }
-[Read the architecture](docs/architecture/)
-[View on GitHub](https://github.com/nesquena/steward-os)
-  </div>
 </div>
 
 ## Find your way

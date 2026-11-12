@@ -7,6 +7,46 @@ $accent-tint: rgba($link-color, 0.08);
 $accent-line: rgba($link-color, 0.35);
 $muted-color: $nav-child-link-color;
 
+// ---- Fonts -----------------------------------------------------------------
+// Paths are relative to the built stylesheet in assets/css/.
+$latin: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+  U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+  U+2215, U+FEFF, U+FFFD;
+
+@font-face {
+  font-family: "EB Garamond";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("../fonts/eb-garamond-latin.woff2") format("woff2");
+  unicode-range: $latin;
+}
+
+@font-face {
+  font-family: "EB Garamond";
+  font-style: italic;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("../fonts/eb-garamond-italic-latin.woff2") format("woff2");
+  unicode-range: $latin;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/IBMPlexMono-Regular-Latin1.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/IBMPlexMono-Medium-Latin1.woff2") format("woff2");
+}
+
 // ---- Color: surfaces the scheme variables don't reach ----------------------
 .btn {
   border: 1px solid $border-color;
@@ -90,12 +130,34 @@ $band-c-lamp: #e0907d;
     background-attachment: scroll, fixed;
   }
 } @else {
+  // Chain lines stay in the sidebar, off the reading column.
   body,
+  .side-bar {
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .22 0 0 0 0 .17 0 0 0 0 .1 0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
   .side-bar {
     background-image:
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .22 0 0 0 0 .17 0 0 0 0 .1 0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
       repeating-linear-gradient(90deg, transparent 0 31px, rgba($body-heading-color, 0.045) 31px 32px);
   }
+
+  // GitHub-light code tokens were tuned for white; on the cream code
+  // background three fall under 4.5:1. Same selectors as the theme's file, so
+  // the dark stylesheet's tokens still win in the dark scheme.
+  .highlight .c,
+  .highlight .ch,
+  .highlight .cm,
+  .highlight .cp,
+  .highlight .cpf,
+  .highlight .c1,
+  .highlight .cs { color: #5c6570; }
+
+  .highlight .n,
+  .highlight .ne,
+  .highlight .nx,
+  .highlight .ow { color: #6639ba; }
 }
 
 @media print {
@@ -143,7 +205,14 @@ $band-c-lamp: #e0907d;
   letter-spacing: -0.01em;
 }
 
-.site-nav { font-size: 1.0625rem; }
+.site-nav { font-size: 1.1875rem; }
+
+// The theme sets the footer note at its smallest size; Garamond reads thin there.
+.site-footer,
+footer .d-md-none {
+  font-size: 0.9375rem !important;
+  line-height: 1.45;
+}
 
 // Links: always underlined in running text, stronger on hover.
 .main-content a:not(.btn, .anchor-heading) {
@@ -289,12 +358,13 @@ hr { margin: 2rem 0; }
 html { font-size: 100% !important; }
 
 // ---- Landing hero ----------------------------------------------------------
-// index.md opens with a raw-HTML hero: eyebrow, title, standfirst, the core
-// rule, the bands ledger, the four roles, an install snippet, and the calls
-// to action.
+// index.md opens with a raw-HTML hero: eyebrow, title, standfirst, the calls
+// to action, the core rule, the bands ledger, and the four roles. One width
+// for all of them, so the hero has a single right edge.
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  max-width: 44rem;
   gap: 1.25rem;
   padding-bottom: 1rem;
   margin-bottom: 1rem;
@@ -318,14 +388,12 @@ html { font-size: 100% !important; }
 }
 
 .hero .standfirst {
-  max-width: 46ch;
   font-size: 1.25rem;
   line-height: 1.55;
   color: $body-text-color;
 }
 
 .main-content blockquote.creed {
-  max-width: 52ch;
   padding: 0.25rem 0 0.25rem 1.1rem;
   font-size: 1.2rem;
   font-style: italic;
