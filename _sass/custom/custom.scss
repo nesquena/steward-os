@@ -136,10 +136,6 @@ input:focus-visible,
 .btn:focus:not(:focus-visible) { box-shadow: none; }
 .btn:focus-visible:hover { box-shadow: none; }
 
-// A link focused inside a wide table is scrolled into view by
-// _includes/js/custom.js; this keeps its ring clear of the edge.
-.table-wrapper a { scroll-margin-inline: 4px; }
-
 // List numbers and bullets: the theme's grey is too faint on the light scheme.
 .main-content ol > li::before,
 .main-content ul > li::before { color: $muted-color; }
