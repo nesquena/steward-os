@@ -69,7 +69,7 @@ ci_and_gates:
   visual_preview_tool: ""
   ui_viewports: []
 
-autonomy:                        # honest: supervised today, conservative bands
+autonomy:                        # conservative bands: agents review and merge under the gate; the maintainer owns scope and releases
   pr_labeling: "B"
   issue_triage_replies: "B"
   issue_autoclose: "C"
@@ -94,11 +94,11 @@ secrets:
   execute_contributor_code: false
   sandbox_available: false
 
-scheduled_jobs:                  # honest: nothing runs unattended on this repo yet
+scheduled_jobs:                  # none on yet: the scheduled check-ins are agent sessions, not these no-model jobs
   jobs:                          # subset of the template's menu: only the jobs relevant to a docs repo, all off for now
     - { name: "scoreboard-refresh", every: "2h",  enabled: false, agent: false }
     - { name: "action-watchdog",    every: "6h",  enabled: false, agent: false }
   outputs:
-    index_path: ""               # not yet running unattended; supervised sessions only
+    index_path: ""               # unused until a job runs
     digest_to: ""
     alarms_to: ""

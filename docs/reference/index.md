@@ -22,5 +22,5 @@ Look-it-up material, ordered from orientation to deep guardrails:
 - **[Reviewing at volume](reviewing-at-volume.md)** — maintainer-side field notes on what makes a
   change land, and the failure modes seen most often at high volume (contributed by Teknium).
 - **[Security spine](security-spine.md)** — the guardrail patterns in detail.
-- **[Steward on Steward](steward-on-steward.md)** - the config and pull requests behind this repo,
-  with an honest split of what's live vs. aspirational.
+- **[Steward on Steward](steward-on-steward.md)** - how this repo runs on Steward today: the agents,
+  how a change lands, the config, and what isn't running yet.
