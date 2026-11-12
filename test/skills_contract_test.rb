@@ -1291,3 +1291,61 @@ class BoardFormatContractTest < Minitest::Test
                                                         'routine, and staleness stays off until the project installs one'
   end
 end
+
+class ProposalRefsContractTest < Minitest::Test
+  # Head and trunk are pinned from sources the proposal can't write. Whitespace-folded.
+  def read(*path)
+    File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
+  end
+
+  def skill_step(skill, num)
+    text = read('skills', skill, 'SKILL.md')
+    step = text[/ #{num}\. \*\*.*?(?= #{num + 1}\. \*\*|\z)/m] or flunk("#{skill} step #{num} missing")
+    step.split(/ ## /).first
+  end
+
+  def spine
+    read('docs', 'reference', 'security-spine.md')
+  end
+
+  def test_trunk_pin_is_the_branch_tip_not_the_prs_stored_base
+    assert_includes spine, 'The trunk is the current tip of the PR\'s base branch (normally ' \
+                           '`project.trunk_branch`) in the project\'s own repository, read from the branch itself ' \
+                           'and not from the base commit the host stores on the PR, which can be older: from the ' \
+                           'host\'s record of that branch, or from the `git ls-remote` line against that repository ' \
+                           'whose ref name is exactly `refs/heads/<trunk>`'
+    assert_includes spine, 'These are the pinned commits every gate runs on; take the trunk pin again, the same way, ' \
+                           'immediately before merge.'
+  end
+
+  def test_a_fetched_ref_is_read_exactly_after_a_fetch_that_names_it
+    assert_includes spine, 'In a clone that holds the proposal\'s refs, never let Git guess what a name means, short ' \
+                           'or full; read a fetched ref there only with `git show-ref --verify` on the exact ref the ' \
+                           'fetch wrote, since it fails instead of falling back, and only after a successful ' \
+                           '`--no-tags` fetch whose refspec names both that ref and its source'
+    assert_includes spine, 'For the trunk the source is `refs/heads/<trunk>` in the project\'s own repository: a ' \
+                           'default or single-branch fetch can succeed and leave the trunk\'s ref where it was.'
+  end
+
+  def test_proposal_names_never_pick_a_commit
+    assert_includes spine, 'Fetch with `--no-tags`, by commit ID or by the host\'s own ref for the PR in the ' \
+                           'project\'s repository, into a ref name you choose'
+    assert_includes spine, 'Don\'t fetch the fork through a remote that follows tags, and don\'t use a checkout tool ' \
+                           'that names a local branch after the head branch.'
+    assert_includes spine, 'Write the full ID peeled to a commit, `<id>^{commit}`, in every command that takes one, ' \
+                           'the ones that build a working copy included. After building a copy, check that ' \
+                           '`git rev-parse HEAD` prints the pinned commit.'
+    assert_includes spine, '| Head and trunk are pinned from the host\'s record and an exact trunk lookup, never by ' \
+                           'letting Git guess a name in that clone; every command names the pinned `<id>^{commit}`. |'
+  end
+
+  def test_deep_review_pins_before_its_first_read
+    assert_includes skill_step('pr-deep-review', 1),
+                    'First pin the head and the trunk as commit IDs from the host\'s record and an exact trunk ' \
+                    'lookup, never by letting Git guess a name in a clone holding the proposal\'s refs'
+    assert_includes skill_step('pr-deep-review', 1), 'every later step names them as `<id>^{commit}`.'
+    assert_includes skill_step('pr-deep-review', 5),
+                    'each from its own copy:** the commits pinned in step 1, read again the same way just before ' \
+                    'the gate.'
+  end
+end

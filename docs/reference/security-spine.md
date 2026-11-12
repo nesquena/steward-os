@@ -180,20 +180,25 @@ is missing (a single-branch clone, a fetch by commit ID). And given a full commi
 `git switch` and `git worktree add` take a branch named like that ID first; `--detach` doesn't stop
 it for `checkout` or `switch`. So:
 - **Pin both commits from sources the proposal can't write.** The head is the commit ID the host
-  records for the PR. The trunk is the tip of the PR's base branch as the host records it
-  (normally `project.trunk_branch`), taken from the project's own repository: from the host, or
-  from the `git ls-remote` line against that repository whose ref name is exactly
-  `refs/heads/<trunk>` (its patterns match by suffix, so a tag named `refs/heads/main` matches
-  too). In a clone that holds the proposal's refs, never let Git guess what a name means, short or
-  full; the one lookup allowed there is `git show-ref --verify` on the remote-tracking ref of the
-  project's own repository, right after a `--no-tags` fetch from it, since it fails instead of
-  falling back. Record both pins as full commit IDs. These are the pinned commits every gate runs
-  on; take the trunk pin again, the same way, immediately before merge.
-- **Fetch the proposal's commits without its names.** Fetch with `--no-tags`, by commit ID or by
-  the host's own ref for the PR in the project's repository, into a ref name you choose (for
-  example `refs/review/<number>/head`). Check that the fetched commit is the pinned head; if it
-  isn't, the head moved, so read the host again. Don't fetch the fork through a remote that follows
-  tags, and don't use a checkout tool that names a local branch after the head branch.
+  records for the PR. The trunk is the current tip of the PR's base branch (normally
+  `project.trunk_branch`) in the project's own repository, read from the branch itself and not from
+  the base commit the host stores on the PR, which can be older: from the host's record of that
+  branch, or from the `git ls-remote` line against that repository whose ref name is exactly
+  `refs/heads/<trunk>` (its patterns match by suffix, so a tag named `refs/heads/main` matches too).
+  In a clone that holds the proposal's refs, never let Git guess what a name means, short or full;
+  read a fetched ref there only with `git show-ref --verify` on the exact ref the fetch wrote, since
+  it fails instead of falling back, and only after a successful `--no-tags` fetch whose refspec
+  names both that ref and its source (for example `+refs/heads/main:refs/remotes/origin/main`). For
+  the trunk the source is `refs/heads/<trunk>` in the project's own repository: a default or
+  single-branch fetch can succeed and leave the trunk's ref where it was. Record both pins as full
+  commit IDs. These are the pinned commits every gate runs on; take the trunk pin again, the same
+  way, immediately before merge.
+- **Fetch the proposal's commits without its names.** Fetch with `--no-tags`, by commit ID or by the
+  host's own ref for the PR in the project's repository, into a ref name you choose (for example
+  `refs/review/<number>/head`). Check with `git show-ref --verify` on that ref that the fetched
+  commit is the pinned head; if it isn't, the head moved, so read the host again. Don't fetch the
+  fork through a remote that follows tags, and don't use a checkout tool that names a local branch
+  after the head branch.
 - **Name commits so only a commit matches.** Write the full ID peeled to a commit, `<id>^{commit}`,
   in every command that takes one, the ones that build a working copy included. After building a
   copy, check that `git rev-parse HEAD` prints the pinned commit.
