@@ -16,27 +16,28 @@ capability isn't running yet, this page says so, which is the same discipline th
 ## Where it sits on the ladder
 
 On the [adoption ladder](adoption-levels.md), this repo runs **Level 2, plus Level 4's review pipeline**:
-- **Level 2:** scheduled check-ins surface what's waiting and send a digest.
-- **Level 4:** deep review and fixes run as [Band B](../architecture/index.md#band-b--session-autonomous)
-  agent sessions, several independent readers check every change, and merges stay gated.
+- **Level 2, in part:** scheduled check-ins surface what's waiting and send a digest of what merged and what's open.
+  The scoreboard job is still off.
+- **Level 4's review pipeline:** deep review and fixes run as
+  [Band B](../architecture/index.md#band-b--session-autonomous) agent sessions, several independent readers check
+  every change, and merges stay gated.
 - **Not yet running:** Level 3, unattended mechanical jobs with a watchdog.
 
-No step on the ladder was skipped. The review side was run by hand in supervised sessions first, and it climbed as
-the evidence built up.
+The review side climbed on its own evidence: it ran by hand in supervised sessions first.
 
 ## Who does what
 
-Several agents share the work. Each has one job, and no change ships on a single agent's say-so (the
-[four roles](../architecture/index.md#the-four-roles), worn by different agents).
+Several agents share the work, and no change ships on a single agent's say-so: the reviews that clear a change come
+from agents that didn't write it ([the four roles](../architecture/index.md#the-four-roles)).
 
 | Role | What it does here |
 |---|---|
-| **This repo's steward** | Builds and reviews changes, runs its own review gate, and opens the pull request. It runs scheduled check-ins twice a day: new PRs and issues, CI on `main`, its own follow-up queue. It posts a merge digest and release announcements to a private team chat. |
-| **The gate** | A separate maintainer agent, on a different stack, reviews every pull request with two review tools (`codex` for code review, `fable` for the adversarial pass) plus its own build and checks. It merges only when the steward sends a release naming the exact head it reviewed. |
-| **Local helpers** | Agents on the maintainer's own computer handle what a cloud session can't reach. They're read-only unless the maintainer approves an action in their own session ([a local helper](../playbooks/working-with-other-agents.md#a-local-helper)). |
+| **This repo's steward** | Builds and reviews changes, runs its own review gate, and opens the pull request. It runs scheduled check-ins twice a day: new PRs and issues, CI on `main`, its own follow-up queue. It posts a digest of what merged and what's open to a private team chat, at most once a day. |
+| **The gate** | A separate maintainer agent, on a different stack, reviews every pull request with two review tools (`codex` for code review, `fable` for the adversarial pass) plus its own build and checks. It merges only when the steward sends a release naming the exact head it reviewed and the trunk it was checked against. |
+| **Local helpers** | Agents on the maintainer's own computer handle what a cloud session can't reach. They're read-only by their tools; a write runs only after the maintainer approves it in their own session ([a local helper](../playbooks/working-with-other-agents.md#a-local-helper)). |
 | **An oversight agent** | Watches the other agents, nudges stalled work, and relays hard calls to the maintainer. It brings back the maintainer's answers quoted, with no authority of its own ([the orchestrator](../playbooks/working-with-other-agents.md#the-orchestrator)). |
 | **Stewards of other projects** | Run the same playbooks on other open-source projects. They send back lessons from their own runs, and they review shared changes when asked. |
-| **The maintainer** | Owns scope, taste and release calls. They approve every change to this repo's public model before it's proposed. |
+| **The maintainer** | Owns scope, taste and the merge rules. They approve each change the steward proposes to this repo before its pull request opens. |
 
 ### The shared playbook package
 
@@ -72,10 +73,12 @@ PR's range, which is why the gate merges and the steward doesn't. A PR the mergi
 maintainer's explicit OK naming the gated head ([independent readers](../lifecycle/quality-gates.md#independent-readers)).
 
 For an example, see [#98](https://github.com/nesquena/steward-os/pull/98), the refresh of this site:
-- Several rounds of review each caught one gap: a contrast failure, a clipped focus ring, and a click that stopped
-  working.
-- Each gap was fixed and re-checked before the merge.
-- The last gap became its own follow-up, [#99](https://github.com/nesquena/steward-os/pull/99).
+- The gate's first round found two regressions: list numbers below contrast in the light scheme, and a focus ring
+  cut off in wide tables on phones.
+- The fix for the second stopped mouse clicks on table links, and the next round caught it.
+- Each was fixed and re-checked on a new head before the gate merged.
+- A related gap, focused controls hidden under the floating search button on phones, is its own pull request,
+  [#99](https://github.com/nesquena/steward-os/pull/99).
 
 ## The config
 
@@ -87,18 +90,21 @@ instance of the [template](https://github.com/nesquena/steward-os/blob/main/setu
 - no chat community;
 - conservative autonomy bands.
 
-Its `scheduled_jobs` are all off. Those are the deterministic, no-model jobs of Level 3. The scheduled check-ins
-above are agent sessions instead, run the way the [proactive sweep](../playbooks/proactive-sweep.md) describes.
+Its `scheduled_jobs` are all off: `scoreboard-refresh` (Level 2's scoreboard) and `action-watchdog` (Level 3's
+watchdog) are deterministic, no-model jobs. The scheduled check-ins above are agent sessions instead, run the way the
+[proactive sweep](../playbooks/proactive-sweep.md) describes.
 
 ## What's aspirational (not yet running)
 
-- **Unattended mechanical jobs.** No label sync, no strict shipped-issue auto-close, no scoreboard refresh and no
-  watchdog run on their own. Every `scheduled_jobs` entry is `enabled: false`. This is the Level 3 rung.
+- **The scoreboard.** No job ranks open work on a schedule (Level 2's scoreboard).
+- **Unattended mechanical jobs.** No label sync, no strict shipped-issue auto-close and no watchdog run on their own:
+  the Level 3 rung. Every `scheduled_jobs` entry is `enabled: false`.
 - **Chat monitoring.** No community platform is wired: `community.chat.platform` is empty. The team chat only
   receives announcements.
 - **A trust ledger.** The `trust` block is off, so contributor history doesn't weight review yet.
-- **Public writes without a human decision behind them.** Public writes happen in agent sessions under the
-  maintainer's approval (Band B). None runs as an unattended job.
+- **Unattended public writes.** Each public write runs at the band the config sets (merges, labels and triage replies
+  at B; issue auto-close and announcements at C), always in an agent session. None runs as an unattended job, and no
+  credentials file is configured.
 
 That gap is deliberate. Steward is meant to be adopted one rung at a time, and each rung is climbed only when the one
 below it has the evidence and the watchdog to make it safe ([the autonomy ladder](../playbooks/autonomy-ladder.md)).

@@ -66,7 +66,7 @@ to watchdogged autonomy (Level 3), then run the full pipeline (Level 4). See
 ## Status
 
 In use, and still evolving. The architecture and lifecycle playbooks are the stable core; the skills and the setup
-interview keep improving with use. Installing the model runs nothing by itself: you install the skills into your own
+interview keep improving with use. The model runs nothing by itself: you install the skills into your own
 coding agent ([what you need](quickstart.md#before-you-start)). This repo runs on it: several agents build, review,
 gate and merge its changes.
 [Steward on Steward](docs/reference/steward-on-steward.md) shows how, and what isn't running yet.
