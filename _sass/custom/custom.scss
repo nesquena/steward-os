@@ -554,11 +554,12 @@ html { font-size: 100% !important; }
 // On phones the mascot sits beside the eyebrow and title only; the standfirst
 // and actions run the full width below.
 @media (max-width: 40rem) {
+  .hero > .hero-title,
   .hero > .standfirst,
   .hero > .actions { grid-column: 1 / -1; }
 
   .hero > .mascot {
-    grid-row: 1 / span 2;
+    grid-row: 1;
     align-self: start;
   }
 }
