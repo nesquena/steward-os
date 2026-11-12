@@ -45,7 +45,7 @@ the recipes, and the questions it needs to ask you to wire itself up.
 - **[Reference](docs/reference/)** — glossary, adoption levels, anti-patterns, coding principles,
   authoring changes, reviewing at volume, the bug-shape catalog, the security spine, and an FAQ.
 - **[Setup](setup/setup-interview.md)** — the interview that wires the system to your project.
-{: .cards }
+{: .cards role="list" }
 
 ## The core idea
 

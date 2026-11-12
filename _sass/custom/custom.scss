@@ -127,6 +127,8 @@ input:focus-visible,
 .site-title:focus-visible,
 .site-button:focus-visible,
 .search-input:focus-visible,
+.search-result:focus-visible,
+.anchor-heading:focus-visible,
 .highlight:focus-visible { outline-offset: -2px; }
 
 .btn:focus:not(:focus-visible) { box-shadow: none; }
