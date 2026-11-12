@@ -133,6 +133,11 @@ input:focus-visible,
 .highlight:focus-visible,
 .table-wrapper:focus-visible { outline-offset: -2px; }
 
+// When the browser scrolls a focused control into view, keep it clear of
+// the floating search button and its ring clear of the screen edge.
+html { scroll-padding-bottom: 4.5rem; }
+a, button, input { scroll-margin-block: 6px; }
+
 .btn:focus:not(:focus-visible) { box-shadow: none; }
 .btn:focus-visible:hover { box-shadow: none; }
 
