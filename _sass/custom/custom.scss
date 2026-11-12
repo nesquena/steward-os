@@ -114,9 +114,10 @@ input:focus-visible,
   box-shadow: none;
 }
 
-// These sit against an edge that would clip an outset ring.
-.nav-list-link:focus-visible,
-.nav-list-expander:focus-visible,
+// These sit against an edge that would clip an outset ring. The nav
+// selectors are this long to outrank the theme's own outline-offset.
+.nav-list .nav-list-item .nav-list-link:focus-visible,
+.nav-list .nav-list-item .nav-list-expander:focus-visible,
 .site-title:focus-visible,
 .site-button:focus-visible,
 .search-input:focus-visible { outline-offset: -2px; }
