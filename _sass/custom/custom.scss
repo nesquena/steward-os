@@ -1,96 +1,245 @@
-// Custom style overrides — auto-imported by just-the-docs AFTER its dark scheme.
-// Plain CSS overrides only (no @import of theme internals), so this can't break the SCSS build.
+// Site styles on top of just-the-docs. The palette lives in
+// _sass/color_schemes/steward.scss (light) and steward-dark.scss (dark); the
+// rules here read the theme's variables, so they follow whichever scheme a
+// stylesheet is built with. No @import of theme internals.
 
-// ---- Teal accent on top of the dark scheme --------------------------------
-$accent: #4fd1c5;
-$accent-deep: #0d9488;
+$accent-tint: rgba($link-color, 0.08);
+$accent-line: rgba($link-color, 0.35);
+$muted-color: $nav-child-link-color;
 
-a:not(.btn) { color: $accent; }
-.side-bar .nav-list .nav-list-item .nav-list-link.active { color: $accent; }
-.btn-primary {
-  background-color: $accent-deep;
-  background-image: none;
-  color: #04211e;
-  box-shadow: 0 1px 0 rgba(0,0,0,0.25);
+// ---- Color: surfaces the scheme variables don't reach ----------------------
+.btn {
+  border: 1px solid $border-color;
+  box-shadow: none;
 }
-.btn-primary:hover { background-color: lighten($accent-deep, 6%); }
 
-// Softer, bluer page surface than stock near-black.
-body { background-color: #0f1620; }
-.side-bar, .search-input { background-color: #0c121b; }
+// One flat fill: white label on $btn-primary-color passes AA, a lighter
+// gradient stop would not.
+.btn-primary,
+.btn-primary:hover {
+  background-image: none;
+  border-color: transparent;
+}
 
-// ---- Band / role pill labels ----------------------------------------------
-// Usable inline in docs:  <span class="band band-a">Band A</span>
-.band, .role-tag {
+.btn-primary:hover { background-color: darken($btn-primary-color, 4%); }
+
+.search-input::placeholder {
+  color: $muted-color;
+  opacity: 1;
+}
+
+.search-result-doc.search-result-doc-parent {
+  color: $muted-color;
+  opacity: 1;
+}
+
+.site-footer,
+footer .d-md-none { color: $muted-color; }
+
+// Band / role pill labels, usable inline in docs:
+//   <span class="band band-a">Band A</span>
+.band,
+.role-tag {
   display: inline-block;
+  padding: 0.08em 0.55em;
   font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  padding: 0.08em 0.55em;
-  border-radius: 999px;
   line-height: 1.5;
+  letter-spacing: 0.02em;
   white-space: nowrap;
   border: 1px solid transparent;
-}
-.band-a { background: rgba(16, 185, 129, 0.15); color: #4fd1c5; border-color: rgba(16,185,129,0.4); }
-.band-b { background: rgba(234, 179, 8, 0.13);  color: #eab308; border-color: rgba(234,179,8,0.4); }
-.band-c { background: rgba(239, 68, 68, 0.13);  color: #f87171; border-color: rgba(239,68,68,0.4); }
-.role-tag { background: rgba(79, 209, 197, 0.10); color: #7fdbcf; border-color: rgba(79,209,197,0.3); }
-
-// ---- Hero -----------------------------------------------------------------
-.fs-9 { letter-spacing: -0.02em; }
-
-// ---- Blockquotes as soft callouts -----------------------------------------
-blockquote {
-  border-left: 3px solid $accent-deep;
-  background: rgba(13, 148, 136, 0.06);
-  padding: 0.6rem 1rem;
-  border-radius: 0 6px 6px 0;
+  border-radius: 999px;
 }
 
-// ---- Tables ---------------------------------------------------------------
-table { font-size: 0.85rem; }
-th { background: rgba(79, 209, 197, 0.06); }
+@mixin pill($dark, $light) {
+  $color: $light;
 
-// ---- Inline code ----------------------------------------------------------
-code.language-plaintext, code:not([class*="language-"]) {
-  color: #7fdbcf;
-  background: rgba(79, 209, 197, 0.08);
-  border-radius: 4px;
+  @if $color-scheme == dark {
+    $color: $dark;
+  }
+
+  color: $color;
+  background: rgba($color, 0.12);
+  border-color: rgba($color, 0.4);
 }
 
-// Fenced code blocks: a soft border + a touch more breathing room.
-div.highlighter-rouge, figure.highlight, pre.highlight {
-  border: 1px solid rgba(79, 209, 197, 0.14);
+.band-a { @include pill(#4fd1c5, #0f766e); }
+.band-b { @include pill(#eab308, #854d0e); }
+.band-c { @include pill(#f87171, #b91c1c); }
+.role-tag { @include pill(#7fdbcf, #115e59); }
+
+// ---- Typography ------------------------------------------------------------
+.main-content h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.main-content h2,
+.main-content h3 {
+  margin-bottom: 0.5em;
+  font-weight: 600;
+}
+
+// The theme's sizes are !important and step down on phones, where an h2
+// ends up barely larger than body copy; hold the larger size at every width.
+.main-content h2 {
+  margin-top: 2.5em;
+  font-size: 1.5rem !important;
+  letter-spacing: -0.01em;
+}
+
+.main-content h3 {
+  margin-top: 1.75em;
+  font-size: 1.125rem !important;
+}
+
+.main-content h1 + h2,
+.main-content hr + h2 { margin-top: 1em; }
+
+.site-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+// Links: always underlined in running text, stronger on hover.
+.main-content a:not(.btn, .anchor-heading) {
+  text-decoration-color: $accent-line;
+  text-underline-offset: 0.18em;
+
+  &:hover { text-decoration-color: currentcolor; }
+}
+
+// Keyboard focus: one visible ring everywhere.
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+.btn:focus-visible,
+.highlight:focus-visible,
+.table-wrapper:focus-visible {
+  outline: 2px solid $link-color;
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+// These sit against an edge that would clip an outset ring. The nav
+// selectors are this long to outrank the theme's own outline-offset.
+.nav-list .nav-list-item .nav-list-link:focus-visible,
+.nav-list .nav-list-item .nav-list-expander:focus-visible,
+.site-title:focus-visible,
+.site-button:focus-visible,
+.search-input:focus-visible,
+.search-result:focus-visible,
+.anchor-heading:focus-visible,
+.highlight:focus-visible,
+.table-wrapper:focus-visible { outline-offset: -2px; }
+
+.btn:focus:not(:focus-visible) { box-shadow: none; }
+.btn:focus-visible:hover { box-shadow: none; }
+
+// List numbers and bullets: the theme's grey is too faint on the light scheme.
+.main-content ol > li::before,
+.main-content ul > li::before { color: $muted-color; }
+
+// ---- Navigation ------------------------------------------------------------
+// Section links read as text; the accent marks only where you are.
+.nav-list .nav-list-item .nav-list-link { color: $body-text-color; }
+.nav-list .nav-list-item > .nav-list .nav-list-item .nav-list-link { color: $muted-color; }
+
+.nav-list .nav-list-item .nav-list-link:hover { color: $body-heading-color; }
+
+.nav-list .nav-list-item .nav-list-link.active,
+.nav-list .nav-list-item > .nav-list .nav-list-item .nav-list-link.active {
+  color: $link-color;
+  box-shadow: inset 2px 0 0 $link-color;
+}
+
+// ---- Code ------------------------------------------------------------------
+:not(pre, figure) > code {
+  padding: 0.1em 0.3em;
+  font-size: 0.875em;
+  background-color: $accent-tint;
+  border-color: transparent;
+}
+
+div.highlighter-rouge,
+figure.highlight {
+  margin-bottom: 1.25rem;
   border-radius: 8px;
 }
 
-// ---- Nav polish -----------------------------------------------------------
-.site-title { font-weight: 700; letter-spacing: -0.01em; }
-
-// Active nav item gets a left accent bar so you always know where you are.
-.side-bar .nav-list .nav-list-item .nav-list-link.active {
-  box-shadow: inset 2px 0 0 $accent;
+// The theme outlines code blocks in the body text color.
+div.highlighter-rouge div.highlight,
+figure.highlight pre {
+  border-color: $border-color;
+  border-radius: 8px;
 }
 
-// ---- Links: gentle underline on hover, not by default ---------------------
-a:not(.btn):hover { text-decoration: underline; text-underline-offset: 2px; }
-
-// ---- Horizontal rules as quiet section breaks -----------------------------
-hr {
-  border: 0;
-  height: 1px;
-  background: linear-gradient(to right, rgba(79,209,197,0.35), rgba(79,209,197,0.02));
-  margin: 2rem 0;
+div.highlighter-rouge pre.highlight code,
+figure.highlight pre code {
+  font-size: 0.8125rem;
+  line-height: 1.6;
 }
 
-// ---- First paragraph after an H1 reads as a standfirst --------------------
-.main-content > h1:first-of-type + p {
-  font-size: 1.05rem;
-  color: #b9c2cc;
+// ---- Tables ----------------------------------------------------------------
+.table-wrapper {
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  box-shadow: none;
 }
 
-// ---- Footer ---------------------------------------------------------------
-// The "built with" line is replaced at the source via _includes/nav_footer_custom.html.
-.site-footer, footer .d-md-none { font-size: 0.75rem; color: #6b7682; }
-.site-footer a, footer .d-md-none a { color: #7fdbcf; }
+// !important to match the theme's own size rule, which drops cells to 12px
+// on phones.
+th,
+td {
+  font-size: 0.875rem !important;
+  vertical-align: top;
+}
+
+th {
+  color: $body-heading-color;
+  text-align: left;
+  background-color: mix($link-color, $table-background-color, 7%);
+}
+
+// ---- Callouts and rules ----------------------------------------------------
+blockquote {
+  padding: 0.75rem 1rem;
+  margin: 1.25rem 0;
+  background: $accent-tint;
+  border-left: 3px solid $link-color;
+  border-radius: 0 6px 6px 0;
+
+  > :first-child { margin-top: 0; }
+  > :last-child { margin-bottom: 0; }
+}
+
+hr { margin: 2rem 0; }
+
+// ---- Landing page ----------------------------------------------------------
+// A list marked {: .cards } lays its items out as a grid of cards.
+.main-content ul.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  gap: 0.75rem;
+  padding-left: 0;
+  margin: 1rem 0 0;
+
+  > li {
+    padding: 0.85rem 1rem;
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    background-color: $sidebar-color;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+
+    &::before { content: none; }
+  }
+
+  > li:first-child { border-color: $accent-line; }
+}
+
+// ---- Small screens ---------------------------------------------------------
+// The theme shrinks the root size to 14px below its sm breakpoint; keep body
+// copy at the reader's default size on phones too.
+html { font-size: 100% !important; }

@@ -1,0 +1,18 @@
+---
+# Front matter (empty) makes this a page, as the theme's file is, so it
+# replaces that file instead of being written alongside it.
+---
+/* Replaces the theme's file of the same name, which is built from one color
+   scheme only. Both rules apply until the theme's script switches this
+   stylesheet off, so the current page's link is marked without JavaScript.
+   The two colors must match $feedback-color in _sass/color_schemes/steward.scss
+   and steward-dark.scss. */
+.site-nav ul li a {
+  background-image: linear-gradient(-90deg, #e9eef3 0%, rgba(233, 238, 243, 0.8) 80%, rgba(233, 238, 243, 0) 100%);
+}
+
+@media screen and (prefers-color-scheme: dark) {
+  .site-nav ul li a {
+    background-image: linear-gradient(-90deg, #162030 0%, rgba(22, 32, 48, 0.8) 80%, rgba(22, 32, 48, 0) 100%);
+  }
+}
