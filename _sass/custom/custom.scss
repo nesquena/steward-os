@@ -136,11 +136,6 @@ input:focus-visible,
   box-shadow: inset 2px 0 0 $link-color;
 }
 
-// The header's search box does this job from the md breakpoint up.
-@include mq(md) {
-  .search-button { display: none; }
-}
-
 // ---- Code ------------------------------------------------------------------
 :not(pre, figure) > code {
   padding: 0.1em 0.3em;
