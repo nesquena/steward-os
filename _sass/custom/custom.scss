@@ -114,7 +114,8 @@ a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 .btn:focus-visible,
-.highlight:focus-visible {
+.highlight:focus-visible,
+.table-wrapper:focus-visible {
   outline: 2px solid $link-color;
   outline-offset: 2px;
   box-shadow: none;
@@ -129,9 +130,19 @@ input:focus-visible,
 .search-input:focus-visible,
 .search-result:focus-visible,
 .anchor-heading:focus-visible,
-.highlight:focus-visible { outline-offset: -2px; }
+.highlight:focus-visible,
+.table-wrapper:focus-visible { outline-offset: -2px; }
 
 .btn:focus:not(:focus-visible) { box-shadow: none; }
+.btn:focus-visible:hover { box-shadow: none; }
+
+// A link focused inside a wide table is scrolled into view by
+// _includes/js/custom.js; this keeps its ring clear of the edge.
+.table-wrapper a { scroll-margin-inline: 4px; }
+
+// List numbers and bullets: the theme's grey is too faint on the light scheme.
+.main-content ol > li::before,
+.main-content ul > li::before { color: $muted-color; }
 
 // ---- Navigation ------------------------------------------------------------
 // Section links read as text; the accent marks only where you are.
