@@ -97,8 +97,10 @@ To run what CI runs, use `bin/ci` (needs Ruby, version in `.ruby-version`, and `
 
 ## Status
 
-Early. The architecture and lifecycle playbooks are the stable core. Skills and the setup interview
-are evolving. Contributions and adaptations to your own project are the whole point — see
+In use, and still evolving. The architecture and lifecycle playbooks are the stable core; the skills and the setup
+interview keep improving with use. This repo runs on Steward itself, with several agents building, reviewing, gating
+and merging its changes: [Steward on Steward](docs/reference/steward-on-steward.md) shows how, and what isn't
+running yet. Contributions and adaptations to your own project are the whole point — see
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
