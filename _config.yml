@@ -22,7 +22,7 @@ search:
   button: true
 heading_anchors: true
 
-color_scheme: dark
+color_scheme: steward
 
 aux_links:
   "View on GitHub":
