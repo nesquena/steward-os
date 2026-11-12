@@ -1,22 +1,23 @@
-// Steward, light: the site's base color scheme (color_scheme in _config.yml).
+// Steward, light ("daylight"): the site's base color scheme (color_scheme in
+// _config.yml). Laid cream paper, iron-gall ink, an oxblood accent.
 // Sets the theme's own variables, so every component picks the palette up.
 // Keep the variable list in step with steward-dark.scss.
 
 $color-scheme: light;
-$body-background-color: #ffffff;
-$body-heading-color: #111827;
-$body-text-color: #27313d;
-$link-color: #0f766e;
-$nav-child-link-color: #55606e;
-$sidebar-color: #f6f8fa;
-$base-button-color: #f1f4f7;
-$btn-primary-color: #0f766e;
-$code-background-color: #ffffff;
-$code-linenumber-color: #24292f;
-$feedback-color: #e9eef3;  // also in assets/css/just-the-docs-head-nav.css (light)
-$table-background-color: #ffffff;
-$search-background-color: #ffffff;
-$search-result-preview-color: #27313d;
-$border-color: #d5dce5;
+$body-background-color: #ece4d2;
+$body-heading-color: #211c17;
+$body-text-color: #2e2720;
+$link-color: #6b1e22;
+$nav-child-link-color: #5e5448;
+$sidebar-color: #e4dac4;
+$base-button-color: #e4dac4;
+$btn-primary-color: #6b1e22;
+$code-background-color: #f3ecdd;
+$code-linenumber-color: #2e2720;
+$feedback-color: #dacfb6;  // also in assets/css/just-the-docs-head-nav.css (light)
+$table-background-color: #f1eadb;
+$search-background-color: #f3ecdd;
+$search-result-preview-color: #2e2720;
+$border-color: #c4b79c;
 
 @import "./vendor/accessible-pygments/github-light";

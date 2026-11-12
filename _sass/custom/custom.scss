@@ -42,13 +42,14 @@ footer .d-md-none { color: $muted-color; }
 .role-tag {
   display: inline-block;
   padding: 0.08em 0.55em;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  line-height: 1.5;
-  letter-spacing: 0.02em;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
   white-space: nowrap;
+  font-variant-caps: all-small-caps;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 2px;
 }
 
 @mixin pill($dark, $light) {
@@ -63,43 +64,86 @@ footer .d-md-none { color: $muted-color; }
   border-color: rgba($color, 0.4);
 }
 
-.band-a { @include pill(#4fd1c5, #0f766e); }
-.band-b { @include pill(#eab308, #854d0e); }
-.band-c { @include pill(#f87171, #b91c1c); }
-.role-tag { @include pill(#7fdbcf, #115e59); }
+// Catalogue-stamp inks: green-black, ochre, oxblood; the role tag in ink.
+$band-a-ink: #2c4a3b;
+$band-b-ink: #6f5314;
+$band-c-ink: #6b1e22;
+$band-a-lamp: #93b8a0;
+$band-b-lamp: #d6ab52;
+$band-c-lamp: #e0907d;
+
+.band-a { @include pill($band-a-lamp, $band-a-ink); }
+.band-b { @include pill($band-b-lamp, $band-b-ink); }
+.band-c { @include pill($band-c-lamp, $band-c-ink); }
+.role-tag { @include pill(#c9bba2, #4a4037); }
+
+// ---- Paper -----------------------------------------------------------------
+// Grain from an SVG noise filter, plus faint chain lines in daylight (laid
+// paper) or a warm lamp glow in lamplight. Decorative only: no text sits on a
+// color these change by more than a few percent.
+@if $color-scheme == dark {
+  body,
+  .side-bar {
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .92 0 0 0 0 .78 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      radial-gradient(120% 70% at 18% 0%, rgba(255, 190, 110, 0.06), transparent 60%);
+    background-attachment: scroll, fixed;
+  }
+} @else {
+  body,
+  .side-bar {
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .22 0 0 0 0 .17 0 0 0 0 .1 0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      repeating-linear-gradient(90deg, transparent 0 31px, rgba($body-heading-color, 0.045) 31px 32px);
+  }
+}
+
+@media print {
+  body,
+  .side-bar { background-image: none; }
+}
 
 // ---- Typography ------------------------------------------------------------
-.main-content h1 {
-  font-weight: 700;
-  letter-spacing: -0.02em;
+// Garamond sets small for its size; the reading column runs a step larger.
+.main-content {
+  font-size: 1.125rem;
+  line-height: 1.6;
 }
 
+.main-content h1,
 .main-content h2,
 .main-content h3 {
-  margin-bottom: 0.5em;
-  font-weight: 600;
+  font-weight: 500;
 }
+
+.main-content h1 { letter-spacing: -0.015em; }
+
+.main-content h2,
+.main-content h3 { margin-bottom: 0.5em; }
 
 // The theme's sizes are !important and step down on phones, where an h2
 // ends up barely larger than body copy; hold the larger size at every width.
 .main-content h2 {
   margin-top: 2.5em;
-  font-size: 1.5rem !important;
+  font-size: 1.875rem !important;
   letter-spacing: -0.01em;
 }
 
 .main-content h3 {
   margin-top: 1.75em;
-  font-size: 1.125rem !important;
+  font-size: 1.375rem !important;
 }
 
 .main-content h1 + h2,
 .main-content hr + h2 { margin-top: 1em; }
 
 .site-title {
-  font-weight: 700;
+  font-size: 1.5rem !important;
+  font-weight: 500;
   letter-spacing: -0.01em;
 }
+
+.site-nav { font-size: 1.0625rem; }
 
 // Links: always underlined in running text, stronger on hover.
 .main-content a:not(.btn, .anchor-heading) {
@@ -164,14 +208,14 @@ input:focus-visible,
 div.highlighter-rouge,
 figure.highlight {
   margin-bottom: 1.25rem;
-  border-radius: 8px;
+  border-radius: 2px;
 }
 
 // The theme outlines code blocks in the body text color.
 div.highlighter-rouge div.highlight,
 figure.highlight pre {
   border-color: $border-color;
-  border-radius: 8px;
+  border-radius: 2px;
 }
 
 div.highlighter-rouge pre.highlight code,
@@ -183,7 +227,7 @@ figure.highlight pre code {
 // ---- Tables ----------------------------------------------------------------
 .table-wrapper {
   border: 1px solid $border-color;
-  border-radius: 8px;
+  border-radius: 2px;
   box-shadow: none;
 }
 
@@ -207,7 +251,7 @@ blockquote {
   margin: 1.25rem 0;
   background: $accent-tint;
   border-left: 3px solid $link-color;
-  border-radius: 0 6px 6px 0;
+  border-radius: 0;
 
   > :first-child { margin-top: 0; }
   > :last-child { margin-bottom: 0; }
@@ -227,19 +271,192 @@ hr { margin: 2rem 0; }
   > li {
     padding: 0.85rem 1rem;
     margin: 0;
-    font-size: 0.9375rem;
+    font-size: 1rem;
     line-height: 1.5;
-    background-color: $sidebar-color;
+    background-color: rgba($sidebar-color, 0.6);
     border: 1px solid $border-color;
-    border-radius: 8px;
+    border-radius: 2px;
 
     &::before { content: none; }
   }
 
-  > li:first-child { border-color: $accent-line; }
+  > li:first-child { border-color: $link-color; }
 }
 
 // ---- Small screens ---------------------------------------------------------
 // The theme shrinks the root size to 14px below its sm breakpoint; keep body
 // copy at the reader's default size on phones too.
 html { font-size: 100% !important; }
+
+// ---- Landing hero ----------------------------------------------------------
+// index.md opens with a raw-HTML hero: eyebrow, title, standfirst, the core
+// rule, the bands ledger, the four roles, an install snippet, and the calls
+// to action.
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.hero > * { margin: 0 !important; }
+
+.hero .eyebrow {
+  font-size: 1.05rem;
+  font-variant-caps: all-small-caps;
+  color: $link-color;
+  letter-spacing: 0.12em;
+}
+
+.main-content .hero h1.hero-title {
+  margin-top: -0.4rem !important;
+  font-size: clamp(3.25rem, 9vw, 5rem) !important;
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.015em;
+}
+
+.hero .standfirst {
+  max-width: 46ch;
+  font-size: 1.25rem;
+  line-height: 1.55;
+  color: $body-text-color;
+}
+
+.main-content blockquote.creed {
+  max-width: 52ch;
+  padding: 0.25rem 0 0.25rem 1.1rem;
+  font-size: 1.2rem;
+  font-style: italic;
+  line-height: 1.5;
+  background: none;
+  border-left: 2px solid $link-color;
+
+  strong {
+    font-style: normal;
+    font-weight: 600;
+    color: $link-color;
+  }
+}
+
+.hero .caption {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-variant-caps: all-small-caps;
+  color: $muted-color;
+  letter-spacing: 0.1em;
+}
+
+// The bands, kept like a ledger: a red double margin and ruled rows.
+.ledger {
+  position: relative;
+  padding-left: 1.4rem;
+
+  &::before {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0.4rem;
+    width: 4px;
+    content: "";
+    border-right: 1px solid rgba($link-color, 0.55);
+    border-left: 1px solid rgba($link-color, 0.55);
+  }
+}
+
+.main-content dl.bands {
+  display: block;
+  margin: 0;
+
+  > div {
+    display: grid;
+    grid-template-columns: 1.9em minmax(9.5em, max-content) minmax(0, 1fr);
+    gap: 0 0.9rem;
+    align-items: baseline;
+    padding: 0.45rem 0;
+    border-top: 1px solid $border-color;
+  }
+
+  > div:last-child { border-bottom: 1px solid $border-color; }
+
+  dt,
+  dd {
+    padding: 0;
+    margin: 0;
+    text-align: left;
+  }
+
+  dt { display: contents; font-weight: 600; }
+  dt::after { content: none; }
+
+  .mark {
+    font-size: 1.35rem;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  dd { color: $muted-color; }
+
+  .band-a-row { color: if($color-scheme == dark, $band-a-lamp, $band-a-ink); }
+  .band-b-row { color: if($color-scheme == dark, $band-b-lamp, $band-b-ink); }
+  .band-c-row { color: if($color-scheme == dark, $band-c-lamp, $band-c-ink); }
+
+  @media (max-width: 40rem) {
+    > div { grid-template-columns: 1.9em minmax(0, 1fr); }
+    dd { grid-column: 2; }
+  }
+}
+
+.main-content ol.roles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  border-top: 1px solid $border-color;
+
+  > li {
+    display: grid;
+    gap: 0.1rem;
+    align-content: start;
+    padding: 0.6rem 0.75rem 0.2rem 0;
+    margin: 0;
+    line-height: 1.35;
+
+    &::before { content: none; }
+  }
+
+  > li + li {
+    padding-left: 0.85rem;
+    border-left: 1px solid $border-color;
+  }
+
+  .n { color: $link-color; }
+  .r { font-weight: 600; color: $body-heading-color; }
+  .q { font-size: 1rem; font-style: italic; color: $muted-color; }
+
+  @media (max-width: 50rem) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    > li:nth-child(3) {
+      padding-left: 0;
+      border-left: 0;
+    }
+  }
+}
+
+.hero .actions,
+.hero .actions > p {
+  margin: 0;
+}
+
+.hero .actions > p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+
+  .btn { margin: 0; font-size: 1.05rem; }
+  a:not(.btn) { font-size: 1.05rem; }
+}

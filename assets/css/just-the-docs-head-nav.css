@@ -8,11 +8,11 @@
    The two colors must match $feedback-color in _sass/color_schemes/steward.scss
    and steward-dark.scss. */
 .site-nav ul li a {
-  background-image: linear-gradient(-90deg, #e9eef3 0%, rgba(233, 238, 243, 0.8) 80%, rgba(233, 238, 243, 0) 100%);
+  background-image: linear-gradient(-90deg, #dacfb6 0%, rgba(218, 207, 182, 0.8) 80%, rgba(218, 207, 182, 0) 100%);
 }
 
 @media screen and (prefers-color-scheme: dark) {
   .site-nav ul li a {
-    background-image: linear-gradient(-90deg, #162030 0%, rgba(22, 32, 48, 0.8) 80%, rgba(22, 32, 48, 0) 100%);
+    background-image: linear-gradient(-90deg, #2a2219 0%, rgba(42, 34, 25, 0.8) 80%, rgba(42, 34, 25, 0) 100%);
   }
 }
