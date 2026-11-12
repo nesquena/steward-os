@@ -63,6 +63,66 @@ footer .d-md-none { color: $muted-color; }
 .band-c { @include pill(#f87171, #b91c1c); }
 .role-tag { @include pill(#7fdbcf, #115e59); }
 
+// ---- Typography ------------------------------------------------------------
+.main-content h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.main-content h2,
+.main-content h3 {
+  margin-bottom: 0.5em;
+  font-weight: 600;
+}
+
+// The theme's sizes are !important and step down on phones, where an h2
+// ends up barely larger than body copy; hold the larger size at every width.
+.main-content h2 {
+  margin-top: 2.5em;
+  font-size: 1.5rem !important;
+  letter-spacing: -0.01em;
+}
+
+.main-content h3 {
+  margin-top: 1.75em;
+  font-size: 1.125rem !important;
+}
+
+.main-content h1 + h2,
+.main-content hr + h2 { margin-top: 1em; }
+
+.site-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+// Links: always underlined in running text, stronger on hover.
+.main-content a:not(.btn, .anchor-heading) {
+  text-decoration-color: $accent-line;
+  text-underline-offset: 0.18em;
+
+  &:hover { text-decoration-color: currentcolor; }
+}
+
+// Keyboard focus: one visible ring everywhere.
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid $link-color;
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+// These sit against an edge that would clip an outset ring.
+.nav-list-link:focus-visible,
+.nav-list-expander:focus-visible,
+.site-title:focus-visible,
+.site-button:focus-visible,
+.search-input:focus-visible { outline-offset: -2px; }
+
+.btn:focus:not(:focus-visible) { box-shadow: none; }
+
 // ---- Navigation ------------------------------------------------------------
 // Section links read as text; the accent marks only where you are.
 .nav-list .nav-list-item .nav-list-link { color: $body-text-color; }
