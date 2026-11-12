@@ -13,6 +13,7 @@ nav_order: 1
 [Read the architecture](docs/architecture/)
 [View on GitHub](https://github.com/nesquena/steward-os)
   </div>
+  <img class="mascot" src="assets/images/steward-mascot.webp" alt="Steward’s mascot: a pocket watch in a hooded cape, holding up a lantern" width="520" height="531">
   <blockquote class="creed"><p>Reading is cheap and safe; writing to a public surface in the project’s voice <strong>needs a human decision</strong> unless it is reversible, mechanical and watched.</p></blockquote>
   <div class="ledger">
     <p class="caption">The autonomy bands</p>

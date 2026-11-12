@@ -363,9 +363,9 @@ html { font-size: 100% !important; }
 // for all of them, so the hero has a single right edge.
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) clamp(6.5rem, 30%, 15rem);
+  gap: 1.25rem 1.5rem;
   max-width: 44rem;
-  gap: 1.25rem;
   padding-bottom: 1rem;
   margin-bottom: 1rem;
 }
@@ -527,4 +527,50 @@ html { font-size: 100% !important; }
 
   .btn { margin: 0; font-size: 1.05rem; }
   a:not(.btn) { font-size: 1.05rem; }
+}
+
+// The mascot stands beside the eyebrow, title, standfirst and actions (the
+// hero's first four children), inside the hero's one column. Everything after
+// them spans the full width. It scales with the viewport rather than
+// stacking, so it stays in the first screen on phones too.
+.hero {
+  > * { grid-column: 1 / -1; }
+  > .eyebrow,
+  > .hero-title,
+  > .standfirst,
+  > .actions { grid-column: 1; }
+}
+
+.hero > .mascot {
+  display: block;
+  grid-row: 1 / span 4;
+  grid-column: 2;
+  align-self: center;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+// On phones the mascot sits beside the eyebrow and title only; the standfirst
+// and actions run the full width below.
+@media (max-width: 40rem) {
+  .hero > .standfirst,
+  .hero > .actions { grid-column: 1 / -1; }
+
+  .hero > .mascot {
+    grid-row: 1 / span 2;
+    align-self: start;
+  }
+}
+
+// A small mascot beside the wordmark, on every page.
+.site-title {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.site-mark {
+  width: auto;
+  height: 2.6rem;
 }
