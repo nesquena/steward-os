@@ -851,6 +851,13 @@ class ProjectShapeContractTest < Minitest::Test
                        '([the sandbox](docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)).'
   end
 
+  def test_quickstart_keeps_steward_files_out_of_a_package
+    assert_includes read('quickstart.md'), 'Keep Steward\'s files out of the package manifest. A file list built ' \
+                                           'from a Git pathspec such as `git ls-files \'*.md\'` matches in ' \
+                                           'subdirectories too, so it also picks up the copied `SKILL.md` files ' \
+                                           'and a Markdown rules file.'
+  end
+
   def test_quickstart_names_ruby_for_the_lint
     assert_includes read('quickstart.md'), 'Ruby, to run `bin/config-lint` from the steward-os checkout.'
   end
