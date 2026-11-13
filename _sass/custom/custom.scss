@@ -570,6 +570,8 @@ html { font-size: 100% !important; }
 // On phones the mascot sits beside the eyebrow only; the title, standfirst
 // and actions run the full width below.
 @media (max-width: 40rem) {
+  .hero { column-gap: 1rem; }
+
   .hero > .hero-title,
   .hero > .standfirst,
   .hero > .actions { grid-column: 1 / -1; }
