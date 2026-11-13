@@ -2,9 +2,11 @@
 // (the OFL-*.txt files there). Set here (imported after the theme's
 // variables, before the color scheme) so both the light and the dark
 // stylesheet pick them up. Source Serif 4 (reading text) and EB Garamond
-// (title and headings) are Google Fonts' Latin subsets of the variable fonts;
-// IBM Plex Mono is IBM's own Latin-1 split, unmodified, since the Plex name
-// is reserved for unmodified files.
+// (title and h1-h3) are Google Fonts' Latin subsets, as Google ships them
+// (Garamond's italic is Google's static 400); Adobe reserves the name
+// "Source", so the Source Serif files stay Google's. IBM Plex Mono is IBM's
+// own Latin-1 and Pi splits, unmodified, since the Plex name is reserved for
+// unmodified files.
 
 $body-font-family: "Source Serif 4", "Iowan Old Style", georgia, serif;
 $display-font-family: "EB Garamond", garamond, "Iowan Old Style", georgia, serif;

@@ -65,7 +65,8 @@ $latin: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
   src: url("../fonts/IBMPlexMono-Medium-Latin1.woff2") format("woff2");
 }
 
-// Arrows and box-drawing characters, so diagrams set in one font.
+// Arrows and box-drawing lines for the diagrams. Plex has no triangle
+// arrowheads (U+25B6, U+25BC, U+25C0), so those still fall back.
 @font-face {
   font-family: "IBM Plex Mono";
   font-style: normal;
@@ -195,7 +196,7 @@ $band-c-lamp: #e0907d;
 
 // ---- Typography ------------------------------------------------------------
 // Source Serif carries the reading text; Garamond is kept for the title and
-// headings, where its thin strokes have the size to hold up.
+// h1-h3, where its thin strokes have the size to hold up.
 .main-content {
   font-size: 1.0625rem;
   line-height: 1.65;
@@ -204,7 +205,6 @@ $band-c-lamp: #e0907d;
 .main-content h1,
 .main-content h2,
 .main-content h3,
-.main-content h4,
 .site-title {
   font-family: $display-font-family;
 }
@@ -245,7 +245,8 @@ $band-c-lamp: #e0907d;
 // The theme sets nav sizes with !important, so this needs it too.
 .site-nav .nav-list .nav-list-item { font-size: 1rem !important; }
 
-// The theme sets the footer note at its smallest size; hold it at 15px.
+// The theme sets the footer note at its smallest size; hold it at 15px at the
+// default size.
 .site-footer,
 footer .d-md-none {
   font-size: 0.9375rem !important;
