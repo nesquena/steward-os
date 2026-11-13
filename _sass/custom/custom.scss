@@ -47,6 +47,16 @@ $latin: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
   src: url("../fonts/IBMPlexMono-Medium-Latin1.woff2") format("woff2");
 }
 
+// Arrows and box-drawing characters, so diagrams set in one font.
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/IBMPlexMono-Regular-Pi.woff2") format("woff2");
+  unicode-range: U+2190-2199, U+2500-259F;
+}
+
 // ---- Color: surfaces the scheme variables don't reach ----------------------
 .btn {
   border: 1px solid $border-color;
@@ -369,7 +379,7 @@ html { font-size: 100% !important; }
 // for all of them, so the hero has a single right edge.
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(6.5rem, 30%, 15rem);
+  grid-template-columns: minmax(0, 1fr) min(30%, 15rem);
   gap: 1.25rem 1.5rem;
   max-width: 44rem;
   padding-bottom: 1rem;
@@ -557,7 +567,7 @@ html { font-size: 100% !important; }
   height: auto;
 }
 
-// On phones the mascot sits beside the eyebrow and title only; the standfirst
+// On phones the mascot sits beside the eyebrow only; the title, standfirst
 // and actions run the full width below.
 @media (max-width: 40rem) {
   .hero > .hero-title,
