@@ -14,6 +14,24 @@ $latin: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
   U+2215, U+FEFF, U+FFFD;
 
 @font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../fonts/source-serif-4-latin.woff2") format("woff2");
+  unicode-range: $latin;
+}
+
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../fonts/source-serif-4-italic-latin.woff2") format("woff2");
+  unicode-range: $latin;
+}
+
+@font-face {
   font-family: "EB Garamond";
   font-style: normal;
   font-weight: 400 600;
@@ -176,10 +194,19 @@ $band-c-lamp: #e0907d;
 }
 
 // ---- Typography ------------------------------------------------------------
-// Garamond sets small for its size; the reading column runs a step larger.
+// Source Serif carries the reading text; Garamond is kept for the title and
+// headings, where its thin strokes have the size to hold up.
 .main-content {
-  font-size: 1.125rem;
-  line-height: 1.6;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+.main-content h1,
+.main-content h2,
+.main-content h3,
+.main-content h4,
+.site-title {
+  font-family: $display-font-family;
 }
 
 .main-content h1,
@@ -216,9 +243,9 @@ $band-c-lamp: #e0907d;
 }
 
 // The theme sets nav sizes with !important, so this needs it too.
-.site-nav .nav-list .nav-list-item { font-size: 1.0625rem !important; }
+.site-nav .nav-list .nav-list-item { font-size: 1rem !important; }
 
-// The theme sets the footer note at its smallest size; Garamond reads thin there.
+// The theme sets the footer note at its smallest size; hold it at 15px.
 .site-footer,
 footer .d-md-none {
   font-size: 0.9375rem !important;
@@ -475,6 +502,7 @@ html { font-size: 100% !important; }
   dt::after { content: none; }
 
   .mark {
+    font-family: $display-font-family;
     font-size: 1.35rem;
     font-weight: 500;
     line-height: 1;
