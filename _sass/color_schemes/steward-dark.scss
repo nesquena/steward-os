@@ -1,23 +1,24 @@
-// Steward, dark: served on top of the light scheme to readers whose system
-// asks for a dark theme (assets/css/just-the-docs-steward-dark.scss, linked
-// from _includes/head_custom.html). Keep the variable list in step with
+// Steward, dark ("lamplight"): served on top of the light scheme to readers
+// whose system asks for a dark theme (assets/css/just-the-docs-steward-dark.scss,
+// linked from _includes/head_custom.html). Umber paper, cream ink, the oxblood
+// lifted so it reads by lamplight. Keep the variable list in step with
 // steward.scss.
 
 $color-scheme: dark;
-$body-background-color: #0f1620;
-$body-heading-color: #f2f5f9;
-$body-text-color: #d5dce5;
-$link-color: #4fd1c5;
-$nav-child-link-color: #9aa7b5;
-$sidebar-color: #0c121b;
-$base-button-color: #1a2533;
-$btn-primary-color: #0f766e;
-$code-background-color: #0a1018;
-$code-linenumber-color: #e6edf3;
-$feedback-color: #162030;  // also in assets/css/just-the-docs-head-nav.css (dark)
-$table-background-color: #121b27;
-$search-background-color: #162030;
-$search-result-preview-color: #d5dce5;
-$border-color: #2a3646;
+$body-background-color: #1c1712;
+$body-heading-color: #f0e6d0;
+$body-text-color: #e0d4bc;
+$link-color: #d68a77;
+$nav-child-link-color: #a6977f;
+$sidebar-color: #17130f;
+$base-button-color: #2a231b;
+$btn-primary-color: #8a2a2c;
+$code-background-color: #15110d;
+$code-linenumber-color: #e0d4bc;
+$feedback-color: #2a2219;  // also in assets/css/just-the-docs-head-nav.css (dark)
+$table-background-color: #211b15;
+$search-background-color: #2a2219;
+$search-result-preview-color: #e0d4bc;
+$border-color: #3d342a;
 
 @import "./vendor/accessible-pygments/github-dark";
