@@ -169,6 +169,40 @@ the tool as data, in a way neither a shell nor the tool can reinterpret. A place
 `<path>` in a command elsewhere in these docs stands for a value handled this way. How to do that
 safely depends on your tools, so build it once, test it on hostile names, and reuse it.
 
+**Proposal refs in your own clone.** A proposal can also hand names to Git itself. Fetching a fork
+through a configured remote brings in its tags, and a checkout tool can name a local branch after
+the head branch. Git resolves a short name such as `origin/main` through tags and local branches
+before remote-tracking branches, so a tag or branch the proposal named `origin/main` (or `main`)
+becomes the trunk in your own commands, with at most an "ambiguous" warning. The stale-branch check
+then prints nothing, and the differential's trunk half runs the proposal. A full ref name doesn't
+fix it: `refs/remotes/origin/main` falls back to a tag of that name whenever the remote-tracking ref
+is missing (a single-branch clone, a fetch by commit ID). And given a full commit ID, `git checkout`,
+`git switch` and `git worktree add` take a branch named like that ID first; `--detach` doesn't stop
+it for `checkout` or `switch`. So:
+- **Pin both commits from sources the proposal can't write.** The head is the commit ID the host
+  records for the PR. The trunk is the current tip of the PR's base branch (normally
+  `project.trunk_branch`) in the project's own repository, read from the branch itself and not from
+  the base commit the host stores on the PR, which can be older: from the host's record of that
+  branch, or from the `git ls-remote` line against that repository whose ref name is exactly
+  `refs/heads/<trunk>` (its patterns match by suffix, so a tag named `refs/heads/main` matches too).
+  In a clone that holds the proposal's refs, never let Git guess what a name means, short or full;
+  read a fetched ref there only with `git show-ref --verify` on the exact ref the fetch wrote, since
+  it fails instead of falling back, and only after a successful `--no-tags` fetch whose refspec
+  names both that ref and its source (for example `+refs/heads/main:refs/remotes/origin/main`). For
+  the trunk the source is `refs/heads/<trunk>` in the project's own repository: a default or
+  single-branch fetch can succeed and leave the trunk's ref where it was. Record both pins as full
+  commit IDs. These are the pinned commits every gate runs on; take the trunk pin again, the same
+  way, immediately before merge.
+- **Fetch the proposal's commits without its names.** Fetch with `--no-tags`, by commit ID or by the
+  host's own ref for the PR in the project's repository, into a ref name you choose (for example
+  `refs/review/<number>/head`). Check with `git show-ref --verify` on that ref that the fetched
+  commit is the pinned head; if it isn't, the head moved, so read the host again. Don't fetch the
+  fork through a remote that follows tags, and don't use a checkout tool that names a local branch
+  after the head branch.
+- **Name commits so only a commit matches.** Write the full ID peeled to a commit, `<id>^{commit}`,
+  in every command that takes one, the ones that build a working copy included. After building a
+  copy, check that `git rev-parse HEAD` prints the pinned commit.
+
 **Normative acceptance matrix.** These are prose policy cases for adopters/reviewers, not executable
 enforcement tests. Config/skills/link checks do not prove an agent follows them.
 
@@ -187,6 +221,7 @@ enforcement tests. Config/skills/link checks do not prove an agent follows them.
 | New push, maintainer fix, rebase or changed trunk | Invalidate prior gate evidence; reassess before execution and re-run the fresh gate. |
 | No-run checkout inspected with inert byte/Git reads | Allowed static review; no runtime autoload or proposal instruction authority. |
 | An agent's own command needs a path, branch name, commit subject or other text from the proposal | Never type or paste it into the command line, quoted or not; hand it to the tool as data that neither a shell nor the tool reinterprets. |
+| The proposal brings refs into the reviewer's clone (fork tags, a local branch named after its head branch) | Head and trunk are pinned from the host's record and an exact trunk lookup, never by letting Git guess a name in that clone; every command names the pinned `<id>^{commit}`. |
 | No-run reviewer/editor would load head-controlled settings/plugins, or rebase would run a tree hook | Stop before entry; use inert trusted preparation or an authorized sandbox, then re-gate any new head. |
 
 ## 5. The public-write membrane

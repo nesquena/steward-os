@@ -150,8 +150,11 @@ rewrite. The guards:
   fix had no reason to touch, appearing in the diff, is the red flag — being merely *behind* on files
   it didn't touch is normal and safe.
 - **Read the effective diff, not just the commit list.** A hunk that deletes recent trunk work is the
-  tell. `git log HEAD..origin/main -- <changed files>` shows what landed on the trunk since you
-  branched; if any of it overlaps your diff, inspect that overlap before merging.
+  tell. `git log <head-id>^{commit}..<trunk-id>^{commit} -- <changed files>` shows what landed on
+  the trunk since you branched; if any of it overlaps your diff, inspect that overlap before
+  merging. `<head-id>` and `<trunk-id>` are commit IDs pinned the way the
+  [security spine](security-spine.md#4-the-sandbox-untrusted-code-execution) describes, not names
+  resolved in your clone: a proposal can bring in a tag called `origin/main` that hides the trunk.
 - **Re-fetch the trunk immediately before merge and preview the merge result.** A green change can be
   superseded during its own CI run by a parallel fix; ten seconds of checking beats discovering it
   after the fact.

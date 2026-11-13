@@ -214,8 +214,11 @@ non-standard salvage.
 a file the fix had no reason to touch is the red flag (being merely *behind* on untouched files is
 normal and safe). Read the effective diff, not the commit list: a hunk that deletes recent trunk work
 is the tell. Re-fetch the trunk immediately before merge (a green change can be superseded during its
-own CI run by a parallel fix) and preview the merge result; `git log HEAD..origin/main -- <changed
-files>` shows what landed since you branched so you can inspect any overlap.
+own CI run by a parallel fix) and preview the merge result;
+`git log <head-id>^{commit}..<trunk-id>^{commit} -- <changed files>` shows what landed since you
+branched so you can inspect any overlap. Use commit IDs pinned the way the
+[security spine](security-spine.md#4-the-sandbox-untrusted-code-execution) describes, not names
+resolved in your clone: a proposal can bring in a tag called `origin/main` that empties this check.
 
 _Contributed by Teknium — see [reviewing at volume](reviewing-at-volume.md#the-stale-branch-revert)._
 
