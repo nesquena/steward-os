@@ -30,7 +30,11 @@ repositories:                   # list every repo the project spans
                                 # or for a continuous release model; config-lint refuses true on
                                 # github.com and gitlab.com otherwise. An enabled action-watchdog flags a
                                 # host close; config-lint warns on false there with none enabled
-  # - { host: github.com, owner: "", name: "", role: "desktop", visibility: public, host_closes_on_merge: false }
+    maintainers: []             # handles on this host that reply for the project, the agent's posting
+                                # account included (setup-interview question 2). issue-triage's
+                                # dropped-ball check reads them; [] skips that check. Issues in a
+                                # separate tracker: leave [], since tracker accounts aren't handles here
+  # - { host: github.com, owner: "", name: "", role: "desktop", visibility: public, host_closes_on_merge: false, maintainers: [] }
 
 scope:                          # the fit/scope screen — the most important section
   anchors:                      # a change must serve at least one of these to be in-scope; the scoreboard grades how directly (scope_fit)

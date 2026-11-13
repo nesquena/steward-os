@@ -20,6 +20,7 @@ repositories:
     role: "site"
     visibility: "public"
     host_closes_on_merge: true  # continuous: a merge is the release, so closing at merge is right
+    maintainers: ["nesquena", "nesquena-hermes"]   # the owner and the maintainer agent's account
 
 scope:
   anchors:

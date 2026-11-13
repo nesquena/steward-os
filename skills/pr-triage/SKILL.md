@@ -69,7 +69,10 @@ Also load it for a PR with a stale judgment an agent set (step 8). Runs
    [its rule](../../docs/playbooks/triage-scoreboard.md#severity-is-a-flag). Write no judgment for a
    `hold` or draft PR. Record each value with setter `agent`, the judgment stamp from the shared
    routine (none when you can't call it) and the rubric identifier, in
-   [the board format](../../docs/playbooks/triage-scoreboard.md#the-board-format). Write an empty
+   [the board format](../../docs/playbooks/triage-scoreboard.md#the-board-format).
+   Write nothing to the board when there is no board, when it has no format line, when its format
+   line names a format you don't know, or when it doesn't parse. Give the judgment in your output
+   and say why. Write an empty
    dimension, or
    re-judge a stale one an agent set, or a `legacy` one on a PR a human named (step 8); any other
    stands

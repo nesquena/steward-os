@@ -110,6 +110,12 @@ Rules for the marker:
    closes or moves an issue when a linked PR merges, and turn that off where it can be. Where it
    can't, the release names the version on those issues as `release-pipeline` step 6 says.
    `host_closes_on_merge` describes only the code host.
+
+   And for each: **which handles reply for the project there?** List them as `maintainers`,
+   including the account your agent posts from. `issue-triage` reads them to find reporters
+   waiting on a reply ([the dropped-ball guard](../docs/lifecycle/issue-lifecycle.md#the-dropped-ball-guard)).
+   `[]` skips that check. Issues in a separate tracker: record `[]`, since tracker accounts aren't
+   handles on the code host.
 3. **What's the default branch / trunk?** (e.g. `main`.)
 4. **What's the release model?** Tag-per-release? A changelog file? How does "shipped" get verified
    (a tag, a deploy, a running version)? Do you publish an artifact others install or pull (a

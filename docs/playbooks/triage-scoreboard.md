@@ -321,12 +321,15 @@ backslash, write `<` as `&lt;`, and replace line breaks with spaces.
   line names a format you don't know, or when it doesn't parse. Give the judgment in your output and say why.
 
 **Two writers at once.** Each writer writes its copy under a temporary name in the board's
-directory and notes the board's content as it reads it. It holds the
-[scheduled-jobs](scheduled-jobs.md) lock from that check through the rename. Before it renames the
+directory and notes the board's content as it reads it. It holds one lock on the board, as
+[scheduled-jobs](scheduled-jobs.md) asks, from that check through the rename; a writer that finds it
+held waits and tries again, and doesn't skip the write. Before it renames the
 copy into place, it checks the board is still that content. If not, triage discards its copy,
 re-reads the board and applies its write rule again, without repeating replies, labels or routing;
 the refresh stops as a run killed there would, and runs again (its step 7). Where the board is
 committed from separate clones, a push the host rejects as not fast-forward is the same signal.
+There the board is in place only once the push lands: the refresh pushes before its last state
+write, and a writer whose push is rejected drops its unpushed copy and takes the host's.
 Otherwise a refresh that read the board before a triage write would erase it.
 
 ## Evidence-readiness tags
