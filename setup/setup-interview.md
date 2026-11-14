@@ -95,11 +95,12 @@ Rules for the marker:
    `issue-autoclose` closes only on github.com; on any other host, an issue the host left open is
    closed at release (by `release-pipeline` step 6 for the PRs it ships, by hand otherwise).
 
-   An enabled [watchdog](https://github.com/nesquena/steward-os/blob/main/skills/action-watchdog/SKILL.md)
-   checks that the host hasn't closed an issue at merge, and the config lint checks this answer against
-   the host and the release model (the
-   [config template](https://github.com/nesquena/steward-os/blob/main/setup/config.template.yaml) says
-   what each enforces). On a self-managed instance neither can tell: record what it actually does.
+   GitHub's setting can't be read through its API, so an enabled
+   [watchdog](https://github.com/nesquena/steward-os/blob/main/skills/action-watchdog/SKILL.md)
+   reads close events instead, and the config lint checks this answer against the host and the release
+   model (the [config template](https://github.com/nesquena/steward-os/blob/main/setup/config.template.yaml)
+   says what each enforces). On any other host than github.com and gitlab.com (a self-managed
+   instance, Gitea, Forgejo) neither can tell: record what it actually does.
    `host` is a bare host name, such as `github.com` (a port is allowed; a URL isn't).
    With a separate tracker (Section 0, question D), ask whether the code host still takes issues. If
    it doesn't (issues are turned off on the repository), the settings change doesn't apply: record
