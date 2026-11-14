@@ -181,7 +181,8 @@ _Contributed by Teknium — see [reviewing at volume](reviewing-at-volume.md#two
 **Shape:** A sibling site *looks* like the same bug as one you just fixed — unbounded growth of a map,
 say — so you add the same cleanup there. But that site is a different lifecycle phase where the state
 is still needed. Pruning per-item state at cache-eviction time is wrong if an evicted item's
-*session* is still alive and rebuilds itself from that state.
+*session* is still alive and rebuilds itself from that state: the correct home is session-finalize,
+not eviction.
 
 **Why checks miss it:** The cleanup looks correct and its immediate test passes — the state does get
 freed. The breakage only appears when something *downstream* tries to read the state after it's been
@@ -204,7 +205,8 @@ keeps the trunk's newer version. The revert happens when the old copy rides *ins
 agent that committed its whole working tree, a regenerated or vendored artifact, a wholesale file
 rewrite, a conflict resolution that took the branch's side — or a salvage done with non-merge
 mechanics (`git diff main..branch | git apply`, `git checkout branch -- .`) that replays stale
-content wholesale.
+content wholesale. A cherry-pick and rebase salvage still carries the trap if a cherry-picked commit
+contains a stale whole-file rewrite.
 
 **Why checks miss it:** The change under review looks correct and its tests pass. The reverted file
 rides in on the diff as an incidental hunk nobody scrutinizes, or on the merge mechanics of a
@@ -230,7 +232,19 @@ _Contributed by Teknium — see [reviewing at volume](reviewing-at-volume.md#the
 prefix that must stay stable across turns, a message sequence that must alternate roles, an id that
 must be derived deterministically so a content-keyed cache still hits, a cache key that must include
 every identity axis. The change behaves *identically* in every test and breaks (or silently taxes
-everyone) in production.
+everyone) in production. Examples of the genre from an agent codebase:
+
+- **Prompt-cache stability.** A long conversation reuses a cached prefix every turn. Any change that
+  mutates past context, swaps toolsets mid-conversation, or rebuilds the system prompt invalidates
+  the cache and multiplies every user's cost.
+- **Message-role alternation.** Many providers reject or mishandle two same-role messages in a row,
+  so a change that injects a synthetic message mid-loop breaks in production.
+- **Determinism where a cache keys off content.** A random-id fallback for a missing identifier looks
+  harmless; it silently makes every replay of the same input a cache miss. Deriving the id
+  deterministically from content is the invisible-but-mandatory choice.
+- **Key by complete identity.** A partially-keyed cache leaks across profiles, sessions, or tenants,
+  exactly and only under concurrency (see
+  [scope by complete identity](authoring-changes.md#validate-at-the-point-of-use-and-scope-by-complete-identity)).
 
 **Why checks miss it:** The invariant isn't written down as an assertion anywhere, so "passes tests"
 says nothing about it. The cost is often invisible (a cache-hit-rate collapse, a per-request price

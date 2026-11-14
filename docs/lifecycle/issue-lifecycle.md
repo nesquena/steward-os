@@ -50,12 +50,6 @@ Two rules make capture trustworthy:
   [watchdog-verified](../playbooks/watchdog-pattern.md).
 
 ## Investigate & file (Band C)
-Before any tier decision, apply the [vulnerability divert](../reference/security-spine.md#6-the-vulnerability-divert):
-a suspected vulnerability (unauthorized access, data exposure, tampering, code execution, or
-attacker-triggerable service loss — by wording or shape) is never filed to the public tracker. It
-goes to the private disclosure path; a human decides disclosure. If no private destination is
-configured, it is still suppressed — never a fall-back to public-filing.
-
 Before a staging item becomes a tracker issue: reproduce it if possible, check it isn't a duplicate
 or already-fixed, and draft a clean, structured issue. **Filing is human-gated:** the agent
 drafts, and a human files each item (Band C), HIGH-confidence ones included. A new public issue

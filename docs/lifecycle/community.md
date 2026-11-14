@@ -41,14 +41,8 @@ dedupe, queue, ledger, reaction, and checkpoint. Chat must not implement a secon
 `issue-capture` assigns the tier and stages the record; it never files. The tier decides what is
 drafted and surfaced for the human who files, because *filing an issue to the public tracker from a
 chat report* is a public write:
-- **SECURITY** (checked first, before the tiers) → **never filed, never drafted publicly.** A
-  report that looks like a vulnerability — unauthorized access, data exposure, tampering, code
-  execution, or attacker-triggerable service loss, by wording or by shape — diverts to the [private disclosure path](../reference/security-spine.md#6-the-vulnerability-divert):
-  a PII-scrubbed summary through its complete fail-closed destination chain, a neutral private
-  acknowledgement to the reporter, and **no public "captured" reaction**. Missing configuration
-  suppresses the draft and raises setup privately — it never falls back to the public tracker or a
-  silent drop. Detection is high-recall on purpose: a false positive is a private glance, a false
-  negative is an irreversible public leak.
+- **SECURITY** (checked first, before the tiers) → **never filed, never drafted publicly.** A report
+  that looks like a vulnerability diverts to the [private disclosure path](../reference/security-spine.md#6-the-vulnerability-divert).
 - **HIGH** (a concrete, reproducible bug naming a specific surface, that passed dedup) → **draft** a
   privacy-safe issue and surface it to a human, who files it (Band C). Filing isn't
   [reversible](../playbooks/autonomy-ladder.md#what-reversible-means): a new public issue reaches
