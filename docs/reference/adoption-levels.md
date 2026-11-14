@@ -25,8 +25,7 @@ consistency you didn't have before. **This is where most projects should start.*
 
 ## Level 2 — The scoreboard + digests (Band A reads, Band B acts)
 Add the read-only autonomous layer: a [triage scoreboard](../playbooks/triage-scoreboard.md) that
-ranks open work, a "what's waiting on us" digest, a chat [Watcher](../lifecycle/community.md) that
-captures reports. Nothing acts on the world yet — these just *surface* what needs attention so your
+ranks open work, and a "what's waiting on us" digest. Nothing acts on the world yet — these just *surface* what needs attention so your
 Band-B sessions are sharper. Cost: a few scheduled jobs. Value: nothing falls through the cracks.
 
 ## Level 3 — Mechanical autonomous actions (Band A, watchdogged)

@@ -61,16 +61,10 @@ thing unattended *safe*.
 
 ## Start here
 
-1. **[Quickstart](quickstart.md)** — adopt Steward on your repo in one sitting:
-   get the skills in, run the setup interview, and run one supervised loop.
-2. **Read the [architecture overview](docs/architecture/index.md)** — the four roles, the bands,
-   the security spine. ~15 minutes; everything else builds on it.
-3. **Run the [setup interview](setup/setup-interview.md)** — the agent asks you the questions it
-   needs (your repos, chat platform, CI, review tools) and writes your project's config.
-4. **Pick your lifecycle area** — [issues](docs/lifecycle/issue-lifecycle.md),
-   [pull requests](docs/lifecycle/pr-lifecycle.md), [quality gates](docs/lifecycle/quality-gates.md),
-   [community](docs/lifecycle/community.md), [contributor recognition](docs/lifecycle/contributor-recognition.md).
-5. **Load the [skills](skills/)** as you enter each phase.
+- **[Quickstart](quickstart.md)**: adopt Steward on your repo in one sitting. It gets the skills in, runs the
+  setup interview and runs one supervised loop.
+- **[Architecture overview](docs/architecture/index.md)**: the four roles, the bands and the security spine.
+  About 15 minutes; everything else builds on it.
 
 Full map: **[docs/README.md](docs/README.md)** · Published site: **<https://nesquena.github.io/steward-os/>**
 
