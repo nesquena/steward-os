@@ -143,8 +143,9 @@ spine is the set of rules that hold regardless of what any of that content says.
 6. **A suspected vulnerability is never public-filed.** A report that looks like a security
    vulnerability diverts to a private disclosure path where a human decides disclosure, at every
    entry point: the agent's own capture/filing, a vuln a reporter opens directly as an issue, and
-   one that arrives as a public pull request. This is the public-write membrane (rule 5) applied to
-   its worst case; the detector and the fail-closed divert are in
+   one that arrives as a public pull request. Detection is high-recall: when unsure, treat it as a
+   vulnerability. This is the public-write membrane (rule 5) applied to its worst case; the detector
+   and the fail-closed divert are in
    [the vulnerability divert](../reference/security-spine.md#6-the-vulnerability-divert).
 
 See the [security spine reference](../reference/security-spine.md) for the concrete patterns
