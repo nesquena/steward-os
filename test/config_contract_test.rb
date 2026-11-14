@@ -881,6 +881,11 @@ class SemanticTest < Minitest::Test
     assert_includes v.first.message, 'repositories[0] (github.com)'
   end
 
+  # The setup interview cites this warning by rule name, so the printed line must carry it.
+  def test_the_printed_line_names_the_rule
+    assert_match(/ \[host_closing_unwatched\]\z/, unwatched.first.to_line)
+  end
+
   def test_the_warning_names_every_unwatched_repository_once
     v = unwatched(hosts: ['GitLab.com:443', 'codeberg.org', 'github.com'])
     assert_equal 1, v.size

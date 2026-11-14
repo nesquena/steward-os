@@ -14,7 +14,7 @@ module ConfigContract
     SYMBOL = { error: 'x', warning: '!', info: '·' }.freeze
 
     def to_line
-      "  #{SYMBOL.fetch(severity)} #{key} — #{message}"
+      "  #{SYMBOL.fetch(severity)} #{key} — #{message} [#{rule}]"
     end
   end
 
