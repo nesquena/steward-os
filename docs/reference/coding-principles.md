@@ -230,7 +230,7 @@ close so the contributor isn't left thinking their code was bad:
 > The footprint ladder was contributed by Teknium ([@teknium1](https://github.com/teknium1)),
 > co-founder of Nous Research, from high-volume review of the open-source Hermes agent codebase; the
 > [reviewing at volume](reviewing-at-volume.md#the-footprint-ladder-where-a-capability-lands)
-> field notes carry the maintainer-side version.
+> field notes summarize it from the review side.
 
 ---
 

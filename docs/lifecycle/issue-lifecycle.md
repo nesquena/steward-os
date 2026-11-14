@@ -44,14 +44,16 @@ Two rules make capture trustworthy:
   reporter and the maintainer can see it was logged — without the agent writing a full public reply
   (keep public voice human; see [community](community.md)). **Exception — a suspected vulnerability
   gets no public mark.** Run the [vulnerability divert](../reference/security-spine.md#6-the-vulnerability-divert)
-  *before* reacting: on a hit, leave no public reaction (a visible mark is itself a partial
+  *before* tiering or reacting: on a hit, leave no public reaction (a visible mark is itself a partial
   disclosure) — the reporter gets only the neutral private acknowledgement on the disclosure path.
   Every autonomous normal-capture mark is ledgered and independently
   [watchdog-verified](../playbooks/watchdog-pattern.md).
 
 ## Investigate & file (Band C)
 Before a staging item becomes a tracker issue: reproduce it if possible, check it isn't a duplicate
-or already-fixed, and draft a clean, structured issue. **Filing is human-gated:** the agent
+or already-fixed, and draft a clean, structured issue. If reproducing it shows a vulnerability shape
+the capture missed, it goes to the [divert](../reference/security-spine.md#6-the-vulnerability-divert)
+now, not to a draft. **Filing is human-gated:** the agent
 drafts, and a human files each item (Band C), HIGH-confidence ones included. A new public issue
 reaches every watcher, and a noisy or wrong one costs more than the few seconds saved.
 

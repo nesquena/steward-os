@@ -213,8 +213,8 @@ that they're coupling decisions, not quality bars.
 
 Every mature codebase has architectural invariants a locally-correct diff can silently violate:
 they pass every test and behave identically until production, so CI can't catch them. Keep a short
-**invariants list** in the repo's agent-entry file and check any review of a touched subsystem
-against it; [bug-shape #12](bug-shapes.md#12-the-invariant-the-tests-dont-encode) has examples of
+**invariants list** in the repo's agent-entry file and require any review of a touched subsystem to
+check the change against it; [bug-shape #12](bug-shapes.md#12-the-invariant-the-tests-dont-encode) has examples of
 the genre and how to catch them.
 
 ---

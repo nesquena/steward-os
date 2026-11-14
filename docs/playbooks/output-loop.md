@@ -262,7 +262,7 @@ Anything that isn't one of the three leaves no decision record:
 | The human approved, with or without a text change, and the stamp comparison passed (the steward's, or the human's before sending by hand) | `accepted` or `edited` | the write, on the live system |
 | The human declined | `rejected` | |
 | The inputs changed before the write, whether or not the human had approved | none | nothing is sent; the decision row expires and a new one is prepared |
-| The human made the write by hand and didn't mark the decision row first | none | the write is on the live system, and rule 3 of the loop marks the item done |
+| The human made the write by hand and didn't mark the decision row first, or marked it after the write | none | the write is on the live system, and rule 3 of the loop marks the item done |
 | Nobody has decided yet, or the human said "not now" | none | the item stays open in the index |
 
 One workable form:
