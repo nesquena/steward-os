@@ -883,7 +883,7 @@ class SemanticTest < Minitest::Test
 
   # The setup interview cites this warning by rule name, so the printed line must carry it.
   def test_the_printed_line_names_the_rule
-    assert_includes unwatched.first.to_line, 'host_closing_unwatched'
+    assert_match(/ \[host_closing_unwatched\]\z/, unwatched.first.to_line)
   end
 
   def test_the_warning_names_every_unwatched_repository_once
