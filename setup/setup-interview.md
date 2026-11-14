@@ -10,7 +10,8 @@ This is how the system wires itself to *your* project. An agent works through th
 you, and the answers produce your project's [config](https://github.com/nesquena/steward-os/blob/main/setup/config.template.yaml) — which then
 parameterizes every playbook and skill.
 
-**How to run it:** point your agent at this file and say *"run the setup interview."* It asks the
+**How to run it:** load the [`project-system-setup`](https://github.com/nesquena/steward-os/blob/main/skills/project-system-setup/SKILL.md)
+skill (this file is its script) and say *"run the setup interview."* It asks the
 questions below in order, confirms each answer, and writes `config.yaml`. You can also fill the
 [config template](https://github.com/nesquena/steward-os/blob/main/setup/config.template.yaml) by hand. The agent should ask only what it needs, accept
 "skip / not yet" for any optional area, and **never guess** — an unanswered question becomes a
@@ -96,11 +97,10 @@ Rules for the marker:
 
    GitHub's setting can't be read through its API, so an enabled
    [watchdog](https://github.com/nesquena/steward-os/blob/main/skills/action-watchdog/SKILL.md)
-   checks that the host hasn't closed an issue at merge (on GitLab it also reads the setting). The
-   config lint refuses `true` on github.com and gitlab.com unless the release model is continuous,
-   and warns on `false` there with no watchdog enabled. It knows those two hosts only by name, so it
-   enforces nothing on a self-managed GitLab or GitHub Enterprise instance, and the watchdog can't
-   observe closes there or on Gitea and Forgejo: record what the instance actually does.
+   reads close events instead, and the config lint checks this answer against the host and the release
+   model (the [config template](https://github.com/nesquena/steward-os/blob/main/setup/config.template.yaml)
+   says what each enforces). On any other host than github.com and gitlab.com (a self-managed
+   instance, Gitea, Forgejo) neither can tell: record what it actually does.
    `host` is a bare host name, such as `github.com` (a port is allowed; a URL isn't).
    With a separate tracker (Section 0, question D), ask whether the code host still takes issues. If
    it doesn't (issues are turned off on the repository), the settings change doesn't apply: record
@@ -202,9 +202,4 @@ The system can't screen PRs/issues for fit without knowing what "fits."
 
 Once config exists, every playbook and skill reads from it — the scope anchors drive the PR screen,
 the repo list drives routing, the test command drives the gate, and so on. Re-run the interview any
-time your project changes; it reconciles rather than overwrites.
-
----
-
-_Next: load the [`project-system-setup`](https://github.com/nesquena/steward-os/blob/main/skills/project-system-setup/SKILL.md) skill, which runs
-this interview as a guided procedure._
+time your project changes.
