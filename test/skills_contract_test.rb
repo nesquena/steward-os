@@ -1344,8 +1344,8 @@ class BoardFormatContractTest < Minitest::Test
     assert_includes skill, 'A board with no format line, while state has no format mark, is from before the board ' \
                            'format was defined: read it as the run that wrote it did, render the format, and adopt ' \
                            'the format mark (step 7).'
-    assert_includes skill, 'Any run whose state has no format mark and whose board carries the format line adopts ' \
-                           'the mark, a first run included.'
+    assert_includes skill, 'Any run that doesn\'t stop, whose state has no format mark and whose board carries the ' \
+                           'format line, adopts the mark, a first run included.'
     assert_includes skill, '(its count and first five in mechanical order, the rest as rows beneath, collapsed)'
   end
 
@@ -1357,7 +1357,7 @@ class BoardFormatContractTest < Minitest::Test
     assert_includes read('skills', 'issue-triage', 'SKILL.md'), rule
     assert_includes read('skills', 'pr-triage', 'SKILL.md'), rule
     assert_includes read('skills', 'issue-triage', 'SKILL.md'),
-                    'The judgment isn\'t on record, so don\'t mark the issue handled: it stays new.'
+                    'The judgment isn\'t on record, so don\'t mark the issue handled: a new issue stays new.'
   end
 
   def test_maintainers_feed_the_dropped_ball_check
@@ -1367,6 +1367,9 @@ class BoardFormatContractTest < Minitest::Test
     assert_includes skill, 'When the list is empty, don\'t guess maintainers from the host\'s permissions: skip ' \
                            'this step and say in your output that it didn\'t run for that repository, and why.'
     assert_includes read('setup', 'setup-interview.md'), '**which handles reply for the project there?**'
+    assert_includes skill, 'compare handles without regard to case and without a leading `@`'
+    assert_includes read('setup', 'setup-interview.md'), 'With a separate tracker, list them only if the code host ' \
+                                                         'still takes issues; if it doesn\'t, record `[]`'
   end
 
   def test_a_board_from_before_the_format_is_read_once

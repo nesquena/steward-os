@@ -87,7 +87,7 @@ run still runs steps 3, 5 and 6 on it.
    [the board format](../../docs/playbooks/triage-scoreboard.md#the-board-format).
    Write nothing to the board when there is no board, when it has no format line, when its format
    line names a format you don't know, or when it doesn't parse. Give the judgment in your output
-   and say why. The judgment isn't on record, so don't mark the issue handled: it stays new.
+   and say why. The judgment isn't on record, so don't mark the issue handled: a new issue stays new.
    Write an empty dimension, or re-judge a stale one an agent set, or a `legacy` one on an issue
    a human named (step 9); any other stands
    ([who set it](../../docs/playbooks/triage-scoreboard.md#who-set-it)). If you disagree with it,
@@ -101,7 +101,8 @@ run still runs steps 3, 5 and 6 on it.
 7. **Dropped-ball surfacer.** Find open issues where a maintainer replied, the reporter answered
    *after* that, and no PR exists — sorted by days-waiting. **Surface only** (never auto-reply); it
    tells the human who to get back to. A maintainer is a handle in that repository's
-   `maintainers`. Skip an issue whose reporter is one. When the list is empty, don't guess
+   `maintainers`; compare handles without regard to case and without a leading `@`, since GitHub
+   and GitLab handles are case-insensitive. Skip an issue whose reporter is one. When the list is empty, don't guess
    maintainers from the host's permissions: skip this step and say in your output that it didn't
    run for that repository, and why.
 8. **Resume after a ruling.** A ruling reaches you where you escalated: the index's decision row,
@@ -150,4 +151,4 @@ run still runs steps 3, 5 and 6 on it.
 - Every new issue this run finished carries a handled mark; one it didn't finish carries none.
 - Un-replied issues got a grounded reply or a deliberate skip (a judgment-only run skips every reply).
 - Labels are add-only and didn't override humans.
-- The dropped-ball list was surfaced (not acted on).
+- The dropped-ball list was surfaced (not acted on), or the output says it didn't run for a repository with no `maintainers`.

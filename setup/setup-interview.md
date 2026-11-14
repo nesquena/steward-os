@@ -114,8 +114,8 @@ Rules for the marker:
    And for each: **which handles reply for the project there?** List them as `maintainers`,
    including the account your agent posts from. `issue-triage` reads them to find reporters
    waiting on a reply ([the dropped-ball guard](../docs/lifecycle/issue-lifecycle.md#the-dropped-ball-guard)).
-   `[]` skips that check. Issues in a separate tracker: record `[]`, since tracker accounts aren't
-   handles on the code host.
+   `[]` skips that check. With a separate tracker, list them only if the code host still takes issues;
+   if it doesn't, record `[]`, since tracker accounts aren't handles on the code host.
 3. **What's the default branch / trunk?** (e.g. `main`.)
 4. **What's the release model?** Tag-per-release? A changelog file? How does "shipped" get verified
    (a tag, a deploy, a running version)? Do you publish an artifact others install or pull (a

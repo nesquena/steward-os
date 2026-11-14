@@ -64,8 +64,8 @@ displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job
    count and no state is from before this skill kept state: read it, and this run creates the
    state. A board with no format line, while state has no format mark, is from before the board
    format was defined: read it as the run that wrote it did, render the format, and adopt the
-   format mark (step 7). Any run whose state has no format mark and whose board carries the
-   format line adopts the mark, a first run included. A board with a row count and no state, or any other state with no
+   format mark (step 7). Any run that doesn't stop, whose state has no format mark and whose board carries the
+   format line, adopts the mark, a first run included. A board with a row count and no state, or any other state with no
    board, stops the run the same way: the state held judgment, and a human decides where it went. Compute each item's
    judgment stamp with the shared routine; if
    you can't call it, write no stamp, carry each
