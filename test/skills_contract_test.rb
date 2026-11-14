@@ -1319,12 +1319,57 @@ class BoardFormatContractTest < Minitest::Test
   def test_refresh_rechecks_the_board_before_writing
     assert_includes format_section, 'If not, triage discards its copy, re-reads the board and applies its write ' \
                                     'rule again'
-    assert_includes format_section, 'It holds the [scheduled-jobs](scheduled-jobs.md) lock from that check through ' \
-                                    'the rename.'
+    assert_includes format_section, 'It holds one lock on the board, as [scheduled-jobs](scheduled-jobs.md) asks, ' \
+                                    'from that check through the rename; a writer that finds it held waits and ' \
+                                    'tries again, and doesn\'t skip the write.'
+    assert_includes format_section, 'Before it renames the copy into place, it checks the board is still that content.'
     assert_includes read('skills', 'triage-scoreboard', 'SKILL.md'),
                     'Before the first write, and again before renaming the board into place, check the board still ' \
                     'holds what step 3 read; if a triage run wrote it meanwhile, stop as a run killed there would, ' \
                     'and run again.'
+  end
+
+  def test_separate_clones_push_before_the_last_state_write
+    assert_includes format_section, 'There the board is in place only once the push lands: the refresh pushes ' \
+                                    'before its last state write, and a writer whose push is rejected drops its ' \
+                                    'unpushed copy and takes the host\'s.'
+    assert_includes read('skills', 'triage-scoreboard', 'SKILL.md'),
+                    'Where the board is committed from separate clones, it\'s in place only once the push lands: ' \
+                    'push before the last state write, and if the host rejects the push, drop the unpushed copy ' \
+                    'and take the host\'s.'
+  end
+
+  def test_the_refresh_skill_reads_and_renders_the_format
+    skill = read('skills', 'triage-scoreboard', 'SKILL.md')
+    assert_includes skill, 'A board with no format line, while state has no format mark, is from before the board ' \
+                           'format was defined: read it as the run that wrote it did, render the format, and adopt ' \
+                           'the format mark (step 7).'
+    assert_includes skill, 'Any run that doesn\'t stop, whose state has no format mark and whose board carries the ' \
+                           'format line, adopts the mark, a first run included.'
+    assert_includes skill, '(its count and first five in mechanical order, the rest as rows beneath, collapsed)'
+  end
+
+  # The playbook's write-nothing rule, where each triage agent reads it.
+  def test_triage_skills_write_nothing_to_an_unreadable_board
+    rule = 'Write nothing to the board when there is no board, when it has no format line, when its format ' \
+           'line names a format you don\'t know, or when it doesn\'t parse. Give the judgment in your output ' \
+           'and say why.'
+    assert_includes read('skills', 'issue-triage', 'SKILL.md'), rule
+    assert_includes read('skills', 'pr-triage', 'SKILL.md'), rule
+    assert_includes read('skills', 'issue-triage', 'SKILL.md'),
+                    'The judgment isn\'t on record, so don\'t mark the issue handled: a new issue stays new.'
+  end
+
+  def test_maintainers_feed_the_dropped_ball_check
+    skill = read('skills', 'issue-triage', 'SKILL.md')
+    assert_includes skill, 'each repository\'s `maintainers` (for the dropped-ball check)'
+    assert_includes skill, 'Skip an issue whose reporter is one.'
+    assert_includes skill, 'When the list is empty, don\'t guess maintainers from the host\'s permissions: skip ' \
+                           'this step and say in your output that it didn\'t run for that repository, and why.'
+    assert_includes read('setup', 'setup-interview.md'), '**which handles reply for the project there?**'
+    assert_includes skill, 'compare handles without regard to case and without a leading `@`'
+    assert_includes read('setup', 'setup-interview.md'), 'With a separate tracker, list them only if the code host ' \
+                                                         'still takes issues; if it doesn\'t, record `[]`'
   end
 
   def test_a_board_from_before_the_format_is_read_once

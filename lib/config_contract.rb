@@ -441,6 +441,11 @@ module ConfigContract
     unless [true, false].include?(closes)
       found << type_error(:type_boolean, "repositories[#{i}].host_closes_on_merge", closes, 'true or false')
     end
+    maintainers = repo['maintainers']
+    unless maintainers.is_a?(Array) && maintainers.all? { |h| h.is_a?(String) && !blank?(h) }
+      found << type_error(:type_string_array, "repositories[#{i}].maintainers", maintainers,
+                          'a list of handles, [] for none')
+    end
     found
   end
 

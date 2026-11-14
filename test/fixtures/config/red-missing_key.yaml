@@ -16,6 +16,7 @@ repositories:
     role: "primary"
     visibility: "private"
     host_closes_on_merge: false
+    maintainers: []
 
 scope:
   anchors:
