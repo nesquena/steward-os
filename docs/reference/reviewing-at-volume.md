@@ -20,10 +20,6 @@ changes are written by AI agents.
 > one carrying heavy contribution volume from both humans and agents. Shared here with his permission
 > and generalized for any open-source project: the project-specific detail is stripped, the scars kept.
 
-Some of what follows sharpens rules this repo already states from the author's side. Those are kept
-here on purpose, in the reviewer's voice, so this page reads as one coherent playbook rather than a
-list of cross-references. Where a point has a fuller home elsewhere, it links there.
-
 ---
 
 ## Wrong premise beats bad code
@@ -83,19 +79,11 @@ finish it first.*
 
 ### Two traps when you widen
 
-Widening a fix across sibling sites has two failure modes worth naming, both cataloged as bug shapes:
-
-- **A shared helper can deadlock.** Factoring the fix into one helper that every sibling calls is the
-  right dedupe move — but the call sites differ in whether they already hold a lock. A helper that
-  unconditionally re-acquires a non-reentrant lock hangs the caller that already holds it. A mocked
-  lock in a test doesn't block, so unit tests stay green; only a real-object end-to-end run catches
-  it. See [bug-shape #9](bug-shapes.md#9-the-shared-helper-that-deadlocks-under-a-held-lock).
-- **The same structure at the wrong lifecycle phase.** A sibling site that *looks* like the same bug
-  (say, unbounded growth of a map) may be a phase where the state is still needed. Pruning
-  per-item state at cache-eviction time is wrong if an evicted item's *session* is still alive and
-  rebuilds itself from that state — the correct home is session-finalize, not eviction. Before
-  widening a cleanup, grep for where the state is *read* on resume. "Evicted from cache" and "the
-  work ended" are different lifecycle phases. See [bug-shape #10](bug-shapes.md#10-cleanup-at-the-wrong-lifecycle-phase).
+Widening a fix across sibling sites has two failure modes worth naming, both cataloged as bug
+shapes: a shared helper that re-acquires a lock some of its callers already hold
+([bug-shape #9](bug-shapes.md#9-the-shared-helper-that-deadlocks-under-a-held-lock)), and a cleanup
+copied to a sibling site at a lifecycle phase where the state is still needed
+([bug-shape #10](bug-shapes.md#10-cleanup-at-the-wrong-lifecycle-phase)).
 
 ---
 
@@ -136,30 +124,10 @@ in the commits.
 ### The stale-branch revert
 
 A named trap that belongs with salvage work: **merging a stale branch can silently revert recent
-fixes — but only when the stale copy is actually part of the branch's changes.** A normal merge
-(including a squash) is a three-way merge against the merge-base, so a file the branch never touched
-keeps the *trunk's* newer version — no revert. The revert happens when an old copy of an unrelated
-file rides *inside the branch's diff*: an agent that committed its whole working tree, a regenerated
-or vendored artifact, a wholesale file rewrite, or a conflict resolution that took the branch's side.
-It also happens when you salvage with non-merge mechanics — a two-dot `git diff main..branch | git
-apply`, or `git checkout branch -- .` — which replay the stale content wholesale. The cherry-pick +
-rebase flow above still carries the trap if a cherry-picked commit contains a stale whole-file
-rewrite. The guards:
-
-- **Scan the branch's changed-file list for anything outside the change's stated intent.** A file the
-  fix had no reason to touch, appearing in the diff, is the red flag — being merely *behind* on files
-  it didn't touch is normal and safe.
-- **Read the effective diff, not just the commit list.** A hunk that deletes recent trunk work is the
-  tell. `git log <head-id>^{commit}..<trunk-id>^{commit} -- <changed files>` shows what landed on
-  the trunk since you branched; if any of it overlaps your diff, inspect that overlap before
-  merging. `<head-id>` and `<trunk-id>` are commit IDs pinned the way the
-  [security spine](security-spine.md#4-the-sandbox-untrusted-code-execution) describes, not names
-  resolved in your clone: a proposal can bring in a tag called `origin/main` that hides the trunk.
-- **Re-fetch the trunk immediately before merge and preview the merge result.** A green change can be
-  superseded during its own CI run by a parallel fix; ten seconds of checking beats discovering it
-  after the fact.
-
-See [bug-shape #11](bug-shapes.md#11-the-stale-branch-that-reverts-recent-work-on-merge).
+fixes, but only when the stale copy rides inside the branch's own diff**, a risk the flow above
+carries when a cherry-picked commit contains a stale whole-file rewrite. The shape and its guards
+(scan the changed-file list, read the effective diff, re-fetch the trunk and preview the merge) are
+[bug-shape #11](bug-shapes.md#11-the-stale-branch-that-reverts-recent-work-on-merge).
 
 ---
 
@@ -223,55 +191,31 @@ these are the hardest closes to make — real bug, clean diff, passing tests, wr
 line to hold: reject *open-ended, heuristic* repair that masks the failure; a *bounded, documented*
 compatibility shim can be a legitimate, deliberate feature when the project can't control an upstream
 consumer — the test is whether the behavior is finite and declared, not whether it touches model
-output at all. This is also an [anti-pattern](anti-patterns.md#review--quality-anti-patterns).
+output at all. For a scheduled job,
+[the model-output rules](../playbooks/scheduled-jobs.md#when-a-models-output-feeds-a-script) draw
+the line: declared shims for how a reply arrives, then a closed schema that rejects. This is also an
+[anti-pattern](anti-patterns.md#review--quality-anti-patterns).
 
 ---
 
 ## The footprint ladder: where a capability lands
 
-The [minimalism ladder](coding-principles.md#the-minimalism-ladder) is about *lines of code*. There
-is a second axis: **where a capability lands determines its permanent cost.** In an agent codebase,
-every core tool schema ships on every request for every user, forever — so a 100-line core tool can
-be more expensive than a 1,000-line plugin. This has its own home next to the minimalism ladder — the
-[footprint ladder](coding-principles.md#the-footprint-ladder) — which weighs each landing site across
-several cost axes (always-on footprint, maintenance ownership, security, latency, deployment) rather
-than as a strict cheapest-to-priciest order. The review habit is to ask **"which layer is this landing
-in, and what does that layer cost forever?"** *before* "is the code good?"
-
-Two ladder-adjacent closes recur, and both are coupling decisions rather than quality bars — say so
-in the close:
-
-- **Speculative infrastructure.** A hook or callback with no concrete consumer. Adding one is easy;
-  removing it after third parties depend on it is nearly impossible. The nuance: a hook is *not*
-  speculative if the contributor names a real use case, even if the consumer ships separately. The
-  test is a real problem, not bundled consumer code.
-- **Third-party product integrations in the core tree.** A vendor connector in the main repo becomes
-  the maintainer's burden against a backend they don't own. Ship it as a standalone plugin. The
-  plugin can be excellent and still be a close.
+The [minimalism ladder](coding-principles.md#the-minimalism-ladder) is about *lines of code*; the
+[footprint ladder](coding-principles.md#the-footprint-ladder) is the second axis: **where a
+capability lands determines its permanent cost.** The review habit is to ask **"which layer is this
+landing in, and what does that layer cost forever?"** *before* "is the code good?", and to say in
+its two recurring closes (speculative infrastructure, third-party integrations in the core tree)
+that they're coupling decisions, not quality bars.
 
 ---
 
 ## Invariants a reviewer can't see in the diff
 
-Every mature codebase has architectural invariants a locally-correct diff can silently violate.
-These are the bugs CI can't catch — they pass every test and behave identically until production. A
-review framework should force naming them. Examples of the genre from an agent codebase:
-
-- **Prompt-cache stability.** A long conversation reuses a cached prefix every turn. Any change that
-  mutates past context, swaps toolsets mid-conversation, or rebuilds the system prompt invalidates
-  the cache and multiplies every user's cost — while behaving *identically* in tests.
-- **Message-role alternation.** Many providers reject or mishandle two same-role messages in a row. A
-  change that injects a synthetic message mid-loop passes every unit test and breaks in production.
-- **Determinism where a cache keys off content.** A random-id fallback for a missing identifier looks
-  harmless; it silently makes every replay of the same input a cache miss. Deriving the id
-  deterministically from content is the invisible-but-mandatory choice.
-- **Key by complete identity.** A partially-keyed cache leaks across profiles, sessions, or tenants —
-  exactly and only under concurrency. (This one already has a home:
-  [scope by complete identity](authoring-changes.md#validate-at-the-point-of-use-and-scope-by-complete-identity).)
-
-The teachable move: keep a short **invariants list** in the repo's agent-entry file, and require any
-review of a touched subsystem to check the change against it. "Passes tests" says nothing about the
-invariants the tests don't encode. See [bug-shape #12](bug-shapes.md#12-the-invariant-the-tests-dont-encode).
+Every mature codebase has architectural invariants a locally-correct diff can silently violate:
+they pass every test and behave identically until production, so CI can't catch them. Keep a short
+**invariants list** in the repo's agent-entry file and require any review of a touched subsystem to
+check the change against it; [bug-shape #12](bug-shapes.md#12-the-invariant-the-tests-dont-encode) has examples of
+the genre and how to catch them.
 
 ---
 
@@ -334,8 +278,7 @@ moment a change *doesn't* land.
   guard. (An [environment-divergence](bug-shapes.md#5-environment-divergence-works-locally-fails-in-ci)
   sibling.)
 - **Mark deliberate ceilings.** A shortcut a reviewer can't distinguish from an oversight *is* an
-  oversight. The repo already holds this — [mark deliberate simplifications](coding-principles.md#mark-deliberate-simplifications)
-  — and it is worth endorsing loudly from the review side.
+  oversight: [mark deliberate simplifications](coding-principles.md#mark-deliberate-simplifications).
 - **No lazy-reading escape hatches on instructional content.** If a tool or doc serves procedural
   content an agent must follow completely, don't paginate it — models read page one and confidently
   skip the pitfalls on page three. Pagination belongs where partial reading is legitimate, not on a

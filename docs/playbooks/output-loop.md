@@ -234,8 +234,9 @@ passes, so when the steward sends, the order is comparison, decision record, wri
 comparison voids the decision row, the approval is discarded, there's no decision record, and the
 human decides again on the new decision row.
 
-Where the human sends by hand, they make that comparison themselves, as rule 2 of the decision row
-asks: before sending, they check the live inputs against the stamp the decision row carried, and if
+Where the human sends by hand, they make that comparison themselves, as
+[the decision row](#the-decision-row)'s rule "A decision row expires when its inputs change" asks:
+before sending, they check the live inputs against the stamp the decision row carried, and if
 any changed, the decision row has expired and they wait for a new one. Marking the decision row
 before sending is the approval. The mark carries its time and its outcome: `accepted`, or `edited`
 with the text that went out. A chat reply carries both on its own; a checkbox needs them written
@@ -261,14 +262,8 @@ Anything that isn't one of the three leaves no decision record:
 | The human approved, with or without a text change, and the stamp comparison passed (the steward's, or the human's before sending by hand) | `accepted` or `edited` | the write, on the live system |
 | The human declined | `rejected` | |
 | The inputs changed before the write, whether or not the human had approved | none | nothing is sent; the decision row expires and a new one is prepared |
-| The human made the write by hand and didn't mark the decision row first | none | the write is on the live system, and rule 3 of the loop marks the item done |
+| The human made the write by hand and didn't mark the decision row first, or marked it after the write | none | the write is on the live system, and rule 3 of the loop marks the item done |
 | Nobody has decided yet, or the human said "not now" | none | the item stays open in the index |
-
-The test is one question: does a decision stand? A rejection the human gave, or an approval whose
-stamp comparison passed before the write (the steward's, or the human's when they send by hand), is
-exactly one outcome. Anything else leaves no decision record. That includes an approval marked on a
-decision row that has already expired, and a mark that is undated or dated after the write the
-human sent by hand: each applies to nothing.
 
 One workable form:
 

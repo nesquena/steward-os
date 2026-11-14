@@ -85,14 +85,11 @@ part — true for a markdown file, a database row, or a runtime's memory store a
 The record never *is* the truth; it is the map to the truth. Role B always closes the loop against
 the live system before it acts.
 
-**Execution clearances need protected evidence.** A human-run gate receipt follows the
-[sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution): keep original
-trusted evidence in an operator/reviewer-owned location outside the contributor-writable tree or
-PR thread. A generic handoff may point there, but cannot authorize execution/merge by claiming a
-runner name or matching commit. The consumer verifies origin, current head/trunk, fresh completion,
-required scopes/results and independent review evidence; missing or unverifiable evidence stays
-blocked. This stronger requirement is for security/execution clearance, not a ban on ordinary
-handoff notes in the mechanisms below.
+**Execution clearances need protected evidence.** A handoff record may point to a human-run gate
+receipt but never authorizes execution or merge itself: where the receipt is kept and what its
+consumer verifies are in the
+[sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution), a
+requirement for execution clearance only, not for the ordinary handoff notes below.
 
 ---
 

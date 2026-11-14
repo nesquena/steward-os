@@ -62,31 +62,17 @@ paths with the same bug. When you find a defect, grep for its class.
 next round's fix refuses something legitimate or misses a variant. Test both sides of the rule.
 (See [bug-shape #13](bug-shapes.md#13-the-refusal-rule-fixed-one-hole-at-a-time).)
 
-**The change-detector test.** A test that fails whenever data *expected to change* is updated — a
-catalog count, a version literal, an enumeration size, a hardcoded list — *and that data isn't itself
-the contract.* `assert len(providers) == 8` adds zero behavioral coverage and breaks CI on every
-routine update. The litmus: incidental current data → delete it; a contract about how two pieces of
-data must relate → keep it. (When a specific value or member genuinely *is* the guarantee, pinning it
-is a real contract, not a change-detector.) _(Field note
+**The change-detector test.** A test that fails whenever data *expected to change* is updated (a
+count, a version literal, a hardcoded list) when that data isn't itself the contract. _(Field note
 from Teknium; see [reviewing at volume](reviewing-at-volume.md#two-test-anti-patterns-that-generate-the-most-noise).)_
 
-**Reading source code in a test.** A test that regexes a source file tests the *shape of the code*,
-not its behavior — it passes when the implementation is subtly broken, fails on correct refactors, and
-blocks structural cleanup forever. If the logic can't be called directly, extract it into a testable
-function instead of regexing around it. Agent-authored changes produce this constantly, because it's
-the cheapest way to make a test go green. (Narrow exception: when a structural/layout property itself
-is the contract — a generated-file marker, a no-forbidden-import policy — a direct assertion is fine,
-provided it fails on a real violation.) _(Field note from Teknium.)_
+**Reading source code in a test.** A test that regexes a source file tests the shape of the code,
+not its behavior; extract the logic into a testable function instead. _(Field note from Teknium; see
+[reviewing at volume](reviewing-at-volume.md#two-test-anti-patterns-that-generate-the-most-noise).)_
 
-**Absorbing model failures into the codebase.** In a project whose consumers include LLMs, a
-well-built change may be *compensating for a model's mistakes* — an alias table for wrong parameter
-names, a repair pass for malformed model output. Both are open-ended games against every way a model
-can misbehave, and they mask the failure instead of surfacing it. Fix wire-transport artifacts;
-surface model non-compliance. A *bounded, documented* compatibility shim can be legitimate — the test
-is whether the behavior is finite and declared. For a scheduled job,
-[the model-output rules](../playbooks/scheduled-jobs.md#when-a-models-output-feeds-a-script) draw
-the line: declared shims for how a reply arrives, then a closed schema that rejects. _(Field note
-from Teknium; see
+**Absorbing model failures into the codebase.** An alias table or repair pass that compensates for a
+model's mistakes masks the failure: fix wire-transport artifacts, surface model non-compliance.
+_(Field note from Teknium; see
 [reviewing at volume](reviewing-at-volume.md#dont-absorb-model-failures-into-the-codebase).)_
 
 ## Scope & contributor anti-patterns
@@ -143,8 +129,7 @@ the built-in it duplicates. Climb the minimalism ladder: reuse, stdlib, and nati
 before hand-written code or a new dependency. See [coding principles](coding-principles.md#the-minimalism-ladder).
 
 **An unmarked deliberate shortcut.** A simplification a reviewer can't tell apart from an oversight
-*is* an oversight. When a shortcut has a known limit, mark it with the ceiling and the upgrade path
-so the debt stays legible instead of being silently flagged for deletion — or silently forgotten.
+*is* an oversight: mark it with the ceiling and the upgrade path.
 See [coding principles](coding-principles.md#mark-deliberate-simplifications).
 
 ## Secret & safety anti-patterns
