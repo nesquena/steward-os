@@ -129,6 +129,14 @@ board. The skills record judgments on a scoreboard once the refresh has made one
 starts a board ([the board format](docs/playbooks/triage-scoreboard.md#the-board-format)). Without
 one, judgments don't carry over to later runs.
 
+Your project's shape can change this first loop. Where
+[which skills fit which shape](docs/reference/adoption-levels.md#which-skills-fit-which-shape)
+differs from this step, the table wins. A private team with a separate tracker gets a supervised
+preview of its Level 2 start: start the board first, then name one issue for a judgment-only
+`issue-triage` run. That run records its judgment on the board or escalates the issue, drafts no
+reply and sets no labels. The vulnerability divert still runs. Leave `pr-triage` until Level 2 is
+steady.
+
 Nothing is posted without your say-so. That's Level 1: the playbooks run in supervised sessions, so
 you get value on day one without handing over any autonomy.
 
