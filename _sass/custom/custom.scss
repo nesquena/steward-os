@@ -452,7 +452,8 @@ html { font-size: 100% !important; }
   }
 }
 
-.hero .caption {
+.hero .caption,
+.safety .caption {
   margin: 0 0 0.35rem;
   font-size: 1rem;
   font-variant-caps: all-small-caps;
@@ -621,4 +622,243 @@ html { font-size: 100% !important; }
 .site-mark {
   width: auto;
   height: 2.6rem;
+}
+
+// ---- Landing: the eight jobs -----------------------------------------------
+// index.md follows the hero with <section class="jobs">: a five-phase rail and
+// eight cards. The first and last cards span the grid, so each row is one phase.
+.jobs,
+.safety {
+  max-width: 44rem;
+  padding-top: 1.5rem;
+  margin: 0.5rem 0 2.5rem;
+  border-top: 1px solid $border-color;
+
+  > .eyebrow {
+    margin: 0;
+    font-size: 1.05rem;
+    font-variant-caps: all-small-caps;
+    color: $link-color;
+    letter-spacing: 0.12em;
+  }
+}
+
+.main-content .jobs > h2,
+.main-content .safety > h2 { margin-top: 0.15rem; }
+
+.jobs-lede {
+  max-width: 38rem;
+  margin: 0 0 1.5rem;
+  font-size: 1.125rem;
+  line-height: 1.55;
+}
+
+// The rail: a ruled line with a dot per phase, labels beneath.
+.main-content ol.rail {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 0;
+  margin: 0 0 1.25rem;
+
+  > li {
+    position: relative;
+    padding: 0 0.5rem 0 0;
+    margin: 0;
+    font-size: 1rem;
+    font-variant-caps: all-small-caps;
+    line-height: 1.3;
+    color: $body-heading-color;
+    letter-spacing: 0.08em;
+  }
+
+  // The theme's step counter becomes the connecting rule.
+  > li::before {
+    position: absolute;
+    top: 0.3rem;
+    right: 0;
+    left: 0;
+    height: 1px;
+    content: "";
+    counter-increment: none;
+    background: $accent-line;
+  }
+
+  > li:last-child::before {
+    right: auto;
+    width: 0.65rem;
+  }
+
+  .dot {
+    position: relative;
+    display: block;
+    width: 0.65rem;
+    height: 0.65rem;
+    margin-bottom: 0.4rem;
+    background: $link-color;
+    border-radius: 50%;
+  }
+}
+
+.main-content ol.job-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+  gap: 0.75rem;
+  padding: 0;
+  margin: 0;
+
+  > li.job {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem 1.1rem 0.85rem;
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5;
+    background-color: rgba($sidebar-color, 0.6);
+    border: 1px solid $border-color;
+    border-radius: 2px;
+    break-inside: avoid;
+
+    &::before { content: none; }
+    > * { margin: 0; }
+    > .job-foot { margin-top: auto; }
+  }
+
+  > li.job:first-child,
+  > li.job:last-child { grid-column: 1 / -1; }
+}
+
+.job-head {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.job .icon {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: none;
+  stroke: $link-color;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.job .phase {
+  display: flex;
+  flex: 1;
+  gap: 0.5rem;
+  align-items: baseline;
+  margin: 0;
+  font-size: 1rem;
+  font-variant-caps: all-small-caps;
+  color: $muted-color;
+  letter-spacing: 0.1em;
+}
+
+// The job's number, set apart on the right so it isn't read as a phase number.
+.job .num {
+  margin-left: auto;
+  font-family: $display-font-family;
+  font-size: 1.35rem;
+  font-variant-caps: normal;
+  line-height: 1;
+  color: $link-color;
+  letter-spacing: 0;
+}
+
+.main-content .job h3 {
+  margin: 0 !important;
+  line-height: 1.2;
+}
+
+.job .promise {
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  color: $body-heading-color;
+}
+
+.main-content .job ul {
+  padding-left: 1.1rem;
+  margin: 0.15rem 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: $body-text-color;
+
+  > li { margin: 0 0 0.3rem; }
+
+  > li::before {
+    margin-left: -1.1rem;
+    color: $link-color;
+    content: "\2013";
+  }
+}
+
+// The human's decision: band C ink, behind a dashed rule.
+.job .call {
+  padding-top: 0.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  border-top: 1px dashed $border-color;
+
+  > span {
+    font-size: 1rem;
+    font-weight: 600;
+    font-variant-caps: all-small-caps;
+    color: if($color-scheme == dark, $band-c-lamp, $band-c-ink);
+    letter-spacing: 0.08em;
+  }
+}
+
+.job .job-foot {
+  padding-top: 0.55rem;
+  font-size: 0.9375rem;
+  border-top: 1px solid $border-color;
+}
+
+// Where the grid has two columns, the two full-width cards set their bullets
+// beside the promise.
+@media (min-width: 40rem) and (max-width: 49.99rem), (min-width: 60rem) {
+  .main-content ol.job-grid > li.job:first-child,
+  .main-content ol.job-grid > li.job:last-child {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.5rem 1.5rem;
+    align-content: start;
+
+    > .job-head,
+    > h3,
+    > .promise { grid-column: 1; }
+
+    > ul {
+      grid-row: 1 / span 3;
+      grid-column: 2;
+      margin-top: 0;
+    }
+
+    > .call,
+    > .job-foot { grid-column: 1 / -1; }
+  }
+}
+
+// ---- Landing: how it stays safe ---------------------------------------------
+.safety > * { margin-top: 0; margin-bottom: 1rem; }
+.safety .caption { margin-bottom: 0.35rem; }
+.safety .ledger { margin-bottom: 1.5rem; }
+.safety .safety-note { margin-top: 0.75rem; color: $muted-color; }
+
+// Three short cards in one row where there is room ("What you install").
+@media (min-width: 60rem) {
+  .main-content ul.cards.cards-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+// Phones with larger default text: keep each phase label whole.
+@media (max-width: 30rem) {
+  .main-content ol.rail > li {
+    padding-right: 0.25rem;
+    font-size: 0.875rem;
+    letter-spacing: 0.02em;
+    overflow-wrap: normal;
+  }
 }
