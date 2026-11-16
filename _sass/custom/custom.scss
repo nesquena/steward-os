@@ -852,3 +852,13 @@ html { font-size: 100% !important; }
 @media (min-width: 60rem) {
   .main-content ul.cards.cards-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+// Phones with larger default text: keep each phase label whole.
+@media (max-width: 30rem) {
+  .main-content ol.rail > li {
+    padding-right: 0.25rem;
+    font-size: 0.875rem;
+    letter-spacing: 0.02em;
+    overflow-wrap: normal;
+  }
+}
