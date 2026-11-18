@@ -125,7 +125,8 @@ in the commits.
 
 A named trap that belongs with salvage work: **merging a stale branch can silently revert recent
 fixes, but only when the stale copy rides inside the branch's own diff**, a risk the flow above
-carries when a cherry-picked commit contains a stale whole-file rewrite. The shape and its guards
+carries when a cherry-picked commit contains a stale whole-file rewrite, as does a salvage done with
+non-merge mechanics (`git diff | git apply`, `git checkout branch -- .`). The shape and its guards
 (scan the changed-file list, read the effective diff, re-fetch the trunk and preview the merge) are
 [bug-shape #11](bug-shapes.md#11-the-stale-branch-that-reverts-recent-work-on-merge).
 
@@ -214,8 +215,8 @@ that they're coupling decisions, not quality bars.
 Every mature codebase has architectural invariants a locally-correct diff can silently violate:
 they pass every test and behave identically until production, so CI can't catch them. Keep a short
 **invariants list** in the repo's agent-entry file and require any review of a touched subsystem to
-check the change against it; [bug-shape #12](bug-shapes.md#12-the-invariant-the-tests-dont-encode) has examples of
-the genre and how to catch them.
+check the change against it; [bug-shape #12](bug-shapes.md#12-the-invariant-the-tests-dont-encode)
+has examples of the genre and how to catch them.
 
 ---
 

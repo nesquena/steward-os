@@ -1367,7 +1367,7 @@ class BoardFormatContractTest < Minitest::Test
     assert_includes skill, 'When the list is empty, don\'t guess maintainers from the host\'s permissions: skip ' \
                            'this step and say in your output that it didn\'t run for that repository, and why.'
     assert_includes read('setup', 'setup-interview.md'), '**which handles reply for the project there?**'
-    assert_includes skill, 'compare handles without regard to case and without a leading `@`'
+    assert_includes skill, 'Compare handles without regard to case and without a leading `@`'
     assert_includes read('setup', 'setup-interview.md'), 'With a separate tracker, list them only if the code host ' \
                                                          'still takes issues; if it doesn\'t, record `[]`'
   end
