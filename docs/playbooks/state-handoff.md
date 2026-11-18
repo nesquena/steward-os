@@ -88,8 +88,8 @@ the live system before it acts.
 **Execution clearances need protected evidence.** A handoff record may point to a human-run gate
 receipt but never authorizes execution or merge itself: where the receipt is kept and what its
 consumer verifies are in the
-[sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution), a
-requirement for execution clearance only, not for the ordinary handoff notes below.
+[sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution). That
+requirement covers execution clearance only, not the ordinary handoff notes below.
 
 ---
 

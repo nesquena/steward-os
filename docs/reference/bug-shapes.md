@@ -172,7 +172,7 @@ it — an integration condition unit tests don't set up.
 already holds that lock, and make the helper's locking explicit (reentrant, or take-lock vs.
 assume-lock variants). Prove it with a real-object end-to-end run, not a mock.
 
-_Contributed by Teknium — see [reviewing at volume](reviewing-at-volume.md#two-traps-when-you-widen)._
+_Contributed by [Teknium](reviewing-at-volume.md)._
 
 ---
 
@@ -192,7 +192,7 @@ pruned, on a path the cleanup test never exercises.
 "Evicted from cache" and "the work ended" are different lifecycle phases; put the cleanup at the phase
 where the state is provably no longer needed, not at the first phase that resembles the original bug.
 
-_Contributed by Teknium — see [reviewing at volume](reviewing-at-volume.md#two-traps-when-you-widen)._
+_Contributed by [Teknium](reviewing-at-volume.md)._
 
 ---
 
@@ -222,7 +222,7 @@ branched so you can inspect any overlap. Use commit IDs pinned the way the
 [security spine](security-spine.md#4-the-sandbox-untrusted-code-execution) describes, not names
 resolved in your clone: a proposal can bring in a tag called `origin/main` that empties this check.
 
-_Contributed by Teknium — see [reviewing at volume](reviewing-at-volume.md#the-stale-branch-revert)._
+_Contributed by [Teknium](reviewing-at-volume.md)._
 
 ---
 
@@ -255,7 +255,7 @@ of a touched subsystem to check the change against it. When you discover a new i
 add it to the list *and* — where possible — add a test that encodes it so it graduates from tribal
 knowledge to an automatic check.
 
-_Contributed by Teknium — see [reviewing at volume](reviewing-at-volume.md#invariants-a-reviewer-cant-see-in-the-diff)._
+_Contributed by [Teknium](reviewing-at-volume.md)._
 
 ---
 

@@ -67,12 +67,13 @@ count, a version literal, a hardcoded list) when that data isn't itself the cont
 from Teknium; see [reviewing at volume](reviewing-at-volume.md#two-test-anti-patterns-that-generate-the-most-noise).)_
 
 **Reading source code in a test.** A test that regexes a source file tests the shape of the code,
-not its behavior; extract the logic into a testable function instead. _(Field note from Teknium; see
+not its behavior; extract the logic into a testable function instead, unless a structural property
+is itself the contract. _(Field note from Teknium; see
 [reviewing at volume](reviewing-at-volume.md#two-test-anti-patterns-that-generate-the-most-noise).)_
 
-**Absorbing model failures into the codebase.** An alias table or repair pass that compensates for a
-model's mistakes masks the failure: fix wire-transport artifacts, surface model non-compliance.
-_(Field note from Teknium; see
+**Absorbing model failures into the codebase.** An open-ended alias table or repair pass that
+compensates for a model's mistakes masks the failure: fix wire-transport artifacts, surface model
+non-compliance. _(Field note from Teknium; see
 [reviewing at volume](reviewing-at-volume.md#dont-absorb-model-failures-into-the-codebase).)_
 
 ## Scope & contributor anti-patterns
