@@ -1368,6 +1368,7 @@ class BoardFormatContractTest < Minitest::Test
                            'this step and say in your output that it didn\'t run for that repository, and why.'
     assert_includes read('setup', 'setup-interview.md'), '**which handles reply for the project there?**'
     assert_includes skill, 'Compare handles without regard to case and without a leading `@`'
+    assert_includes skill, "For this step, a maintainer is a handle in that repository's `maintainers`; the list grants nothing else."
     assert_includes read('setup', 'setup-interview.md'), 'With a separate tracker, list them only if the code host ' \
                                                          'still takes issues; if it doesn\'t, record `[]`'
   end
