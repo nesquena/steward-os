@@ -681,7 +681,8 @@ module AnchorContract
       tracked_names(root).reject(&:valid_encoding?).sort
     end
 
-    # The tracked names the lint can read. The rest are rejected first, by invalid_file_names.
+    # The tracked names the lint can read. bin/anchor-lint rejects the rest first (invalid_file_names); a caller
+    # that skips that check never sees them.
     def tracked_files(root)
       tracked_names(root).select(&:valid_encoding?)
     end

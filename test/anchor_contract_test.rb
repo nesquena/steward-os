@@ -1463,10 +1463,18 @@ class DiscoveryTest < Minitest::Test
     with_repo do |dir|
       write(dir, 'fine.md')
       write(dir, 'café.md')
-      File.binwrite("#{dir.b}/docs\xFF.md", "# x\n")
-      File.binwrite("#{dir.b}/img\xFE.png", 'png')
       File.write(File.join(dir, '_config.yml'), "exclude: []\n")
       add_all(dir)
+      # Straight into the index: macOS file systems refuse to create a name that isn't valid UTF-8. Added after
+      # add_all, which would drop these index-only entries.
+      blob = IO.popen(['git', '-C', dir, 'hash-object', '-w', '--stdin'], 'r+') do |io|
+        io.write("# x\n")
+        io.close_write
+        io.read.strip
+      end
+      ["docs\xFF.md", "img\xFE.png"].each do |name|
+        system('git', '-C', dir, 'update-index', '--add', '--cacheinfo', "100644,#{blob},#{name}".b, exception: true)
+      end
       assert_equal ["docs\xFF.md".b, "img\xFE.png".b], AnchorContract::Extract.invalid_file_names(dir).map(&:b)
       assert_equal %w[café.md fine.md], AnchorContract::Extract.markdown_files(dir)
 
