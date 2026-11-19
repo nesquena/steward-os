@@ -47,6 +47,15 @@ readers](../../docs/lifecycle/quality-gates.md#independent-readers)). A revert d
 who already pulled or deployed, so a merge isn't
 [reversible](../../docs/playbooks/autonomy-ladder.md#what-reversible-means).
 
+Where a human owns the publish (a package they publish by hand, say), steps 1–5 can run as a
+read-only check ahead of it, on the commit the human names as the release commit. The run reads the
+gate receipts, the credit and the merge calls, and builds and uses the candidate as step 4 says,
+under the same sandbox rule and human-run receipt. It rebases, merges, stamps, tags, publishes,
+deploys and closes nothing, and step 6 doesn't run. It keeps the candidate and its digest as step
+4 says, and reports to the human what passed, what failed and what it couldn't check, naming the
+release commit and the digest. A pass is step 4's for that release commit only. Step 5's check runs
+once the human has published, against that digest.
+
 > Precondition: **do not enter this skill on a self-report.** The gate must have been run fresh by
 > [`pr-deep-review`](../pr-deep-review/SKILL.md) and come back aggregate all-clear: **both independent
 > reading legs clear AND all required execution legs successful**, with no unresolved required
