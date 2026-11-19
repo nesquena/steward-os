@@ -1045,8 +1045,11 @@ class UnportableTest < Minitest::Test
   # name), and others depend on which pass catches them. So on a page the site builds, a link is allowed only in
   # the plain form both passes always rewrite, and anything else is rejected as unverified, wherever it is (a
   # reference definition, a raw tag, a footnote): its path ends in `.md`, has no query, and decodes to letters,
-  # digits and `. _ - ~ /` only, in NFC. Non-ASCII letters, those characters in the fragment, and a non-Markdown or
-  # external target are fine.
+  # digits and `. _ - ~ /` only, in NFC, with no name ending in `.` (Jekyll skips it, so `a./b.md` is never built).
+  # Non-ASCII letters, those characters in the fragment, and a non-Markdown or external target are fine. Three
+  # accepted cases pin the allowlist's edges: a directory ending in `_`, a compatibility character (`ﬁ` is NFC
+  # but not NFKC, so it fails if the NFC check is loosened to NFKC), and an empty segment, which the plugin and
+  # cleanpath both collapse.
   def test_a_markdown_page_link_the_plugin_cannot_always_match_is_rejected
     message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
     ['[x](&eacute;.md)', '[x](&#233;.md#real)', '[x](a&amp;b.md)', '[x](x.md&num;top)', '[x](a&b.md)',
@@ -1062,7 +1065,8 @@ class UnportableTest < Minitest::Test
      '[x](a%2Bb.md)', '[x](%25.md)', '[x](e%CC%81x.md)', '<a href="e%CC%81x.md">x</a>', '<a href="a<b.md">x</a>',
      '<a href="a>b.md">x</a>', '[x](<a"b.md>)', '[x](plain.MD)', '[x](&sol;docs/x.md)', '[x](~missing.md#real)',
      '[x](%2Fx.md#sub)', '[x](a..b.md#first)', '[x](sub/a..b.md)', '[x](_x.md)', '[x](.x.md)', '[x](.md)',
-     '[x](_d/y.md)', '[x](v~/plain.md)', '[x](%7E/x.md)', '<a href="~x.md">x</a>'].each do |link|
+     '[x](_d/y.md)', '[x](v~/plain.md)', '[x](%7E/x.md)', '<a href="~x.md">x</a>', '[x](a./b.md)',
+     '[x](v1./plain.md)', '[x](a%2E/b.md)'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
       assert_equal [[3, message]], found.map { |r| [r.line, r.message] }, link
     end
@@ -1073,7 +1077,8 @@ class UnportableTest < Minitest::Test
      '[x](%D9%A3.md)', '[x](../x.md#real)', '[x](sub/../x.md)', '[x](x~1.md)', '[x](-x-.md)', '[x](x_.md)',
      '[x](x~.md)',
      '<a href="&eacute;.png">x</a>', '[x](./plain.md)', '[x](sub/../plain.md)', '[x](sub%2Fplain.md)',
-     '[x](%C3%A9.md)', '<a href="%C3%A9.md#x">x</a>', '![x](a.png)', '[x](a%00.md)'].each do |link|
+     '[x](%C3%A9.md)', '<a href="%C3%A9.md#x">x</a>', '![x](a.png)', '[x](a%00.md)', '[x](x_/plain.md)',
+     '[x](ﬁ.md)', '[x](a//b.md)'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
       assert_empty found.select { |r| r.message == message }, link
     end
