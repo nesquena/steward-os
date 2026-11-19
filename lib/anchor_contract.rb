@@ -221,14 +221,15 @@ module AnchorContract
                                  'always rewrite — the built page then keeps a broken link; link a page, not an ' \
                                  'image, end the path in a literal .md with no query, and keep the path to ' \
                                  'letters, digits and . _ - ~ / in NFC form, with no leading / and no .. inside a ' \
-                                 'name, and no name starting with . _ or ~ or ending with ~ (non-ASCII letters ' \
+                                 'name, and no name starting with . _ or ~ or ending with . or ~ (non-ASCII letters ' \
                                  'may be percent-encoded); write a character reference as the character itself ' \
                                  'or percent-encoded (é or %C3%A9, not &eacute;), and rename a page whose name ' \
                                  'needs anything else'
     # The page paths the lint allows a link to: `/`-separated names of letters, marks and digits in any script and
-    # `. _ - ~`, where no name starts with `.`, `_` or `~` or ends with `~` (Jekyll never builds those), plus `.`
-    # and `..` segments.
-    PLAIN_SEGMENT = %r{(?:\.\.?|[\p{L}\p{M}\p{N}-](?:[\p{L}\p{M}\p{N}._~-]*[\p{L}\p{M}\p{N}._-])?)}.freeze
+    # `. _ - ~`, where no name starts with `.`, `_` or `~` or ends with `.` or `~` (Jekyll never builds those), plus
+    # `.` and `..` segments. An empty segment (`a//b.md`) is allowed: the plugin and Pathname#cleanpath both collapse
+    # it, so it builds to the same page as `a/b.md`.
+    PLAIN_SEGMENT = %r{(?:\.\.?|[\p{L}\p{M}\p{N}-](?:[\p{L}\p{M}\p{N}._~-]*[\p{L}\p{M}\p{N}_-])?)}.freeze
     PLAIN_PAGE_PATH = %r{\A(?:#{PLAIN_SEGMENT}?/)*#{PLAIN_SEGMENT}\z}.freeze
     INVALID_UTF8_MESSAGE = 'not valid UTF-8 — both renderers read the file as UTF-8, so its text and anchors ' \
                            'are not what was written; save it as UTF-8'
