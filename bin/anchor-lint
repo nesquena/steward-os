@@ -29,6 +29,15 @@ unless conflicts.empty?
   exit 1
 end
 
+# Names no link can spell. Rejected before anything else reads the file list.
+unreadable = AnchorContract::Extract.invalid_file_names(ROOT)
+unless unreadable.empty?
+  warn "FAILED — #{unreadable.size} tracked file name(s) that aren't valid UTF-8:"
+  unreadable.each { |rel| warn AnchorContract.printable("  x #{rel.inspect[1..-2]}") }
+  warn 'Links are read as UTF-8, so no link can reach these. Rename them to valid UTF-8.'
+  exit 1
+end
+
 # Files the scanner would skip while both renderers still publish them, taking
 # their links out of the gate. Rejected here rather than quietly ignored.
 strays = AnchorContract::Extract.stray_markdown_files(ROOT)

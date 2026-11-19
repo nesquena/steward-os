@@ -675,11 +675,24 @@ module AnchorContract
       [files, dirs]
     end
 
+    # Tracked names that aren't valid UTF-8. Every link is read as UTF-8, so no link can name one of these and
+    # nothing below can compare them; the lint rejects the name instead. Returned as git wrote them.
+    def invalid_file_names(root)
+      tracked_names(root).reject(&:valid_encoding?).sort
+    end
+
+    # The tracked names the lint can read. bin/anchor-lint rejects the rest first (invalid_file_names); a caller
+    # that skips that check never sees them.
     def tracked_files(root)
-      out = IO.popen(['git', '-C', root, 'ls-files', '-z'], encoding: 'UTF-8', &:read)
+      tracked_names(root).select(&:valid_encoding?)
+    end
+
+    # Split as bytes: a name that isn't valid UTF-8 makes a UTF-8 split raise before anything is reported.
+    def tracked_names(root)
+      out = IO.popen(['git', '-C', root, 'ls-files', '-z'], 'rb', &:read)
       raise "git ls-files failed in #{root}" unless $?&.success?
 
-      out.split("\x00").reject(&:empty?)
+      out.split("\x00").reject(&:empty?).map { |rel| rel.force_encoding(Encoding::UTF_8) }
     end
 
     # The set of tracked markdown files _config.yml excludes from the built site.

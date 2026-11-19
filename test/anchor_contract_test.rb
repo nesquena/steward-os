@@ -1456,4 +1456,35 @@ class DiscoveryTest < Minitest::Test
       refute_match(/input string invalid \(ArgumentError\)|\.rb:\d+:in /, out, 'a report, not a backtrace')
     end
   end
+
+  # A tracked name that isn't valid UTF-8, markdown or not, is reported by name rather than crashing the lint
+  # while it lists the repository's files. The readable names beside it are still listed.
+  def test_a_file_name_that_is_not_utf8_is_reported_not_a_crash
+    with_repo do |dir|
+      write(dir, 'fine.md')
+      write(dir, 'café.md')
+      File.write(File.join(dir, '_config.yml'), "exclude: []\n")
+      add_all(dir)
+      # Straight into the index: macOS file systems refuse to create a name that isn't valid UTF-8. Added after
+      # add_all, which would drop these index-only entries.
+      blob = IO.popen(['git', '-C', dir, 'hash-object', '-w', '--stdin'], 'r+') do |io|
+        io.write("# x\n")
+        io.close_write
+        io.read.strip
+      end
+      ["docs\xFF.md", "img\xFE.png"].each do |name|
+        system('git', '-C', dir, 'update-index', '--add', '--cacheinfo', "100644,#{blob},#{name}".b, exception: true)
+      end
+      assert_equal ["docs\xFF.md".b, "img\xFE.png".b], AnchorContract::Extract.invalid_file_names(dir).map(&:b)
+      assert_equal %w[café.md fine.md], AnchorContract::Extract.markdown_files(dir)
+
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_includes out, "2 tracked file name(s) that aren't valid UTF-8"
+      assert_includes out, '  x docs\\xFF.md'
+      assert_includes out, '  x img\\xFE.png'
+      refute_includes out, 'café', 'a valid non-ASCII name is not reported'
+      refute_match(/ArgumentError|\.rb:\d+:in /, out, 'a report, not a backtrace')
+    end
+  end
 end
