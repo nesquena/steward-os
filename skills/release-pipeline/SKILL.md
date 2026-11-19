@@ -39,6 +39,18 @@ merged, awaiting release, after cleaning up its branch/worktree; steps 4–6 run
 cut. Whether the project does comes from the operator-accepted configuration
 (`project.release_model`; `style: continuous` says it doesn't, and no other `style` value says either
 way); if it doesn't say, ask the operator.
+Steps 1–5 can also run as a read-only check while a human still owns the publish, the common case
+for a hand-published package. The check pushes, merges, stamps, tags, publishes, closes and
+comments on nothing; the only thing it keeps is step 4's candidate and digest, where step 4 keeps
+them. It reports each step's result to that human. For a PR not yet merged: whether its head is
+current on trunk (step 1), whether the credit holds (step 2) and how the merge would keep
+attribution (step 3). For a release cut from trunk: each merge's receipt and every other commit,
+as above. For either: whether the changelog entry and version marker on the release commit match
+the tag the human names and credit the right authors, and whether the candidate passed (step 4,
+under the same sandbox rule and human-run receipt). It also
+lists the PRs and issues step 6 would close. Step 5 runs once the human has published, on what
+they published. The check's report is not a ship signal: it authorizes no merge, tag or publish,
+and a new head or release commit voids it.
 Band B, and it stays there — a human owns the final merge call. A human's standing instruction
 covers a merge by an agent that wrote no commit in the PR's range; an agent whose account pushed a
 commit in the range merges only on a human's explicit instruction, on an authenticated channel,
@@ -228,6 +240,8 @@ trailer exists; it does **not** prove the *name* is right.
   standing instruction, for an agent that wrote no commit in the PR's range, or else an explicit decision naming the gated head; either is recorded outside the
   contributor-writable thread.
 - A release cut from trunk was tagged by a human, on the release commit step 4 passed.
+- A read-only check wrote nothing to the repository, the host or the registry, and kept only step
+  4's candidate and digest.
 - The author is credited identically on every surface, and the handle is the real author of the work.
 - Every PR the release contains, and every issue each links as closing, is closed with version +
   thanks, except an issue a human holds, which stays open and is named to the maintainer; the

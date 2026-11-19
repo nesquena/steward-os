@@ -310,6 +310,23 @@ class BatchedReleaseContractTest < Minitest::Test
                     'credential the sandbox withholds.'
   end
 
+  def test_release_steps_run_as_a_read_only_check_before_a_human_publish
+    skill = read('skills', 'release-pipeline', 'SKILL.md')
+    load = skill[/\*\*When to load:\*\*.*?(?=> Precondition)/m]
+    assert_includes load, 'Steps 1–5 can also run as a read-only check while a human still owns the publish, the ' \
+                          'common case for a hand-published package. The check pushes, merges, stamps, tags, ' \
+                          'publishes, closes and comments on nothing; the only thing it keeps is step 4\'s ' \
+                          'candidate and digest, where step 4 keeps them.'
+    assert_includes load, 'whether the candidate passed (step 4, under the same sandbox rule and human-run receipt).'
+    assert_includes load, 'It also lists the PRs and issues step 6 would close.'
+    assert_includes load, 'Step 5 runs once the human has published, on what they published.'
+    assert_includes load, 'The check\'s report is not a ship signal: it authorizes no merge, tag or publish, and a ' \
+                          'new head or release commit voids it.'
+    assert_includes skill.split('## Verification').last,
+                    'A read-only check wrote nothing to the repository, the host or the registry, and kept only ' \
+                    'step 4\'s candidate and digest.'
+  end
+
   def test_proactive_sweep_keeps_bands_and_the_inner_rings
     sweep = read('docs', 'playbooks', 'proactive-sweep.md')
     assert_includes sweep, 'Rings 0 and 1 run every sweep.'
