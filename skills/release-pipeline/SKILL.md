@@ -39,10 +39,27 @@ merged, awaiting release, after cleaning up its branch/worktree; steps 4–6 run
 cut. Whether the project does comes from the operator-accepted configuration
 (`project.release_model`; `style: continuous` says it doesn't, and no other `style` value says either
 way); if it doesn't say, ask the operator.
-Band B, and it stays there — a human owns the final merge call. A human's standing instruction
-covers a merge by an agent that wrote no commit in the PR's range; an agent whose account pushed a
-commit in the range merges only on a human's explicit instruction, on an authenticated channel,
-naming the gated head ([independent
+
+Steps 1–5 can also run as a read-only check while a human still owns the publish, the common case
+for a hand-published package. The precondition below holds for the check as for any other run. The
+check pushes, merges, stamps, tags, publishes, deploys, closes and comments on nothing; the only
+thing it keeps is step 4's candidate and digest, where step 4 keeps them. It reports each step's
+result to that human. For a PR not yet merged: whether its head is current on trunk (step 1),
+whether the credit holds (step 2) and how the merge would keep attribution (step 3); it has no
+release commit yet, so the check stops there and says so. For a release cut from trunk: each merge's
+receipt and every other commit, as above. For a release commit the human names (cut from trunk, or
+stamped after a merge; the check stamps none): whether its changelog entry and version marker match
+the tag the human names and credit the right authors, and whether the candidate passed (step 4,
+under the same sandbox rule and human-run receipt); a build of any other commit is not its
+candidate. It also lists the PRs and issues step 6 would close. Step 5 runs once the human has
+published that commit, on what they published, and only verifies. The check's report is not a ship
+signal: it authorizes no merge, tag or publish. A new head or a moved trunk voids its PR results,
+and a new release commit or a different tag voids its release results.
+
+This skill is Band B, and it stays there — a human owns the final merge call. A human's standing
+instruction covers a merge by an agent that wrote no commit in the PR's range; an agent whose
+account pushed a commit in the range merges only on a human's explicit instruction, on an
+authenticated channel, naming the gated head ([independent
 readers](../../docs/lifecycle/quality-gates.md#independent-readers)). A revert doesn't reach anyone
 who already pulled or deployed, so a merge isn't
 [reversible](../../docs/playbooks/autonomy-ladder.md#what-reversible-means).
@@ -228,6 +245,8 @@ trailer exists; it does **not** prove the *name* is right.
   standing instruction, for an agent that wrote no commit in the PR's range, or else an explicit decision naming the gated head; either is recorded outside the
   contributor-writable thread.
 - A release cut from trunk was tagged by a human, on the release commit step 4 passed.
+- A read-only check pushed nothing to the project's repository, wrote nothing to the host, the
+  registry or a deploy target, and kept only step 4's candidate and digest.
 - The author is credited identically on every surface, and the handle is the real author of the work.
 - Every PR the release contains, and every issue each links as closing, is closed with version +
   thanks, except an issue a human holds, which stays open and is named to the maintainer; the
