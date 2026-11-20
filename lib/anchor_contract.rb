@@ -231,6 +231,11 @@ module AnchorContract
     # it, so it builds to the same page as `a/b.md`.
     PLAIN_SEGMENT = %r{(?:\.\.?|[\p{L}\p{M}\p{N}-](?:[\p{L}\p{M}\p{N}._~-]*[\p{L}\p{M}\p{N}_-])?)}.freeze
     PLAIN_PAGE_PATH = %r{\A(?:#{PLAIN_SEGMENT}?/)*#{PLAIN_SEGMENT}\z}.freeze
+    # The link is in NFC but a directory the linking page sits in is not. Only renaming that directory fixes it.
+    DECOMPOSED_DIRECTORY_MESSAGE = 'a link to a Markdown page through a directory whose name is not in NFC ' \
+                                   'form (%s); Jekyll builds the link in NFC but keeps the directory\'s ' \
+                                   'decomposed bytes, so the built page keeps a broken link; rename the ' \
+                                   'directory to its NFC form'
     INVALID_UTF8_MESSAGE = 'not valid UTF-8 — both renderers read the file as UTF-8, so its text and anchors ' \
                            'are not what was written; save it as UTF-8'
 
@@ -328,8 +333,8 @@ module AnchorContract
         line = el.options[:location] || line
         message = unportable_message(el)
         out << Rejection.new(source: source, line: line, message: message) if message
-        if unmatchable_page_link?(el, source)
-          out << Rejection.new(source: source, line: line, message: MARKDOWN_LINK_PATH_MESSAGE)
+        if (link_message = page_link_message(el, source))
+          out << Rejection.new(source: source, line: line, message: link_message)
         end
         next unless el.type == :text && el.value.match?(RAW_HTML_TAG)
 
@@ -350,32 +355,46 @@ module AnchorContract
     # `. _ - ~ /` only (PLAIN_PAGE_PATH), in NFC (Jekyll NFC-normalizes the href it builds but keeps a decomposed
     # name's bytes in the file it writes). Anything else is rejected as unverified. An image of a Markdown page is
     # rejected too: rewritten or not, an image whose source is a page is broken.
-    def unmatchable_page_link?(element, source)
+    #
+    # The message for a rejected link, or nil. The page's own name not in NFC, and every other failure, gets
+    # MARKDOWN_LINK_PATH_MESSAGE, as does a decomposed directory written in the link. A decomposed directory the
+    # linking page sits in gets DECOMPOSED_DIRECTORY_MESSAGE, naming it, since only renaming it fixes the link.
+    def page_link_message(element, source)
       href = link_target(element)
-      return false if href.nil? || href.empty?
+      return nil if href.nil? || href.empty?
 
       # external or root-relative as written: the lint leaves those to other checks, as it always has; one only a
       # character reference makes root-relative (`&sol;docs/x.md`) is still judged here
-      return false if href.match?(EXTERNAL)
+      return nil if href.match?(EXTERNAL)
 
       rendered = site_href(href)
 
       target = decode(rendered.split(/[?#]/, 2).first.to_s).scrub
       # a NUL can't be a path (Pathname raises on it); build_link reports such a link as missing
-      return false if target.include?("\0")
-      return false unless Pathname.new(target).cleanpath.to_s.match?(MARKDOWN_EXT)
-      return true if element.type == :img || (element.type == :html_element && element.value == 'img')
+      return nil if target.include?("\0")
+      return nil unless Pathname.new(target).cleanpath.to_s.match?(MARKDOWN_EXT)
+      image = element.type == :img || (element.type == :html_element && element.value == 'img')
+      return MARKDOWN_LINK_PATH_MESSAGE if image
 
       path, query = href.split('#', 2).first.to_s.split('?', 2)
       name = decode(path).scrub
-      return true if !query.nil? || !path.end_with?('.md') || !name.match?(PLAIN_PAGE_PATH)
+      return MARKDOWN_LINK_PATH_MESSAGE if !query.nil? || !path.end_with?('.md') || !name.match?(PLAIN_PAGE_PATH)
 
       # Where it points, too: a decoded leading `/` (the plugin roots it), `..` inside a name (`a..b.md` and
       # `a/b.md` build to one page), and a target path, its directories included, not in NFC. PLAIN_PAGE_PATH has
-      # already refused a name starting with `~`, which the plugin's File.expand_path would expand or fail on.
+      # already refused a name starting with `~`, which Jekyll skips unless `include:` lists it.
+      if name.start_with?('/') || name.split('/').any? { |seg| seg != '..' && seg.include?('..') }
+        return MARKDOWN_LINK_PATH_MESSAGE
+      end
+
       full = Pathname.new(File.join(File.dirname(source), name)).cleanpath.to_s
-      name.start_with?('/') || name.split('/').any? { |seg| seg != '..' && seg.include?('..') } ||
-        !full.unicode_normalized?(:nfc)
+      return nil if full.unicode_normalized?(:nfc)
+      # A decomposed name in the link itself (the page's or a directory's): only the link text can fix it.
+      return MARKDOWN_LINK_PATH_MESSAGE unless name.unicode_normalized?(:nfc)
+
+      segments = File.dirname(full).split('/')
+      first = segments.index { |seg| !seg.unicode_normalized?(:nfc) }
+      format(DECOMPOSED_DIRECTORY_MESSAGE, segments[0..first].join('/'))
     end
 
     # A page the site's parser raises on. kramdown-parser-gfm cannot build a heading or definition term whose text

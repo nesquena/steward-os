@@ -984,7 +984,7 @@ class UnportableTest < Minitest::Test
   end
 
   def test_a_quoted_html_link_with_a_character_reference_is_not_a_raw_html_rejection
-    # Only the raw-HTML rule: its .md path holds `&` and a query, which unmatchable_page_link? rejects.
+    # Only the raw-HTML rule: its .md path holds `&` and a query, which page_link_message rejects.
     found = rejections(%(<a href="a&amp;b.md?x&sol;y">x</a>\n)).map(&:message)
     refute_includes found, AnchorContract::Extract::RAW_HTML_MESSAGE
   end
@@ -1086,11 +1086,41 @@ class UnportableTest < Minitest::Test
 
   # The target's whole path must be NFC, its directories included: Jekyll builds the link NFC but keeps a
   # decomposed directory's bytes, so a plain link from a page in such a directory is broken.
+  # The message names the directory to rename (#64): renaming the page leaves the link broken.
   def test_a_link_from_a_decomposed_directory_is_rejected
-    message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
+    message = format(AnchorContract::Extract::DECOMPOSED_DIRECTORY_MESSAGE, "docs/e\u0301")
     found = AnchorContract::Extract.unportable("# T\n\n[x](plain.md#real)\n", source: "docs/e\u0301/index.md")
     assert_equal [message], found.map(&:message)
+    assert_includes message, 'rename the directory'
     assert_empty AnchorContract::Extract.unportable("# T\n\n[x](plain.md#real)\n", source: "docs/\u00e9/index.md")
+  end
+
+  # A decomposed directory written in the link itself: Jekyll leaves that href decomposed whatever the directory's
+  # name on disk, so only the link text can fix it, and the general message says so.
+  def test_a_link_through_a_decomposed_directory_keeps_the_general_message
+    message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
+    found = AnchorContract::Extract.unportable("# T\n\n[x](e\u0301/plain.md)\n", source: 'docs/p.md')
+    assert_equal [message], found.map(&:message)
+    found = AnchorContract::Extract.unportable("# T\n\n[x](../../e\u0301/x.md)\n", source: 'docs/p.md')
+    assert_equal [message], found.map(&:message)
+  end
+
+  # The message names the first decomposed directory, not the last or the whole path.
+  def test_the_directory_message_names_the_first_decomposed_directory
+    message = format(AnchorContract::Extract::DECOMPOSED_DIRECTORY_MESSAGE, "docs/e\u0301")
+    found = AnchorContract::Extract.unportable("# T\n\n[x](plain.md)\n", source: "docs/e\u0301/sub/index.md")
+    assert_equal [message], found.map(&:message)
+    found = AnchorContract::Extract.unportable("# T\n\n[x](plain.md)\n", source: "docs/e\u0301/o\u0308/index.md")
+    assert_equal [message], found.map(&:message)
+  end
+
+  # A decomposed page name is the page's own problem: the general message, which says to rename the page.
+  def test_a_link_to_a_decomposed_page_name_keeps_the_general_message
+    message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
+    found = AnchorContract::Extract.unportable("# T\n\n[x](e\u0301.md)\n", source: 'docs/p.md')
+    assert_equal [message], found.map(&:message)
+    found = AnchorContract::Extract.unportable("# T\n\n[x](plain.md)\n", source: "docs/e\u0301.md")
+    assert_empty found
   end
 
   # A footnote's definition is rendered once at the foot of the page, so a link in it is checked once.

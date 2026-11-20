@@ -4,7 +4,9 @@ source "https://rubygems.org"
 gem "jekyll", "~> 4.3"
 gem "just-the-docs", "~> 0.10"
 gem "jekyll-remote-theme"
-gem "jekyll-relative-links"
+# 0.9.2 resolves a link without File.expand_path, which raised on a `~`-led
+# relative link ([x](~a.png)) and failed the site build (#64).
+gem "jekyll-relative-links", "~> 0.9", ">= 0.9.2"
 
 # The markdown parser Jekyll renders with. bin/anchor-lint reads links and
 # heading ids straight out of it rather than predicting them, so it depends on
