@@ -730,9 +730,44 @@ module AnchorContract
       Jekyll::Configuration[raw].validate
       cfg = Jekyll::Configuration.from(raw)
       site = JekyllSite.new(File.expand_path(root), cfg['exclude'], cfg['include'])
-      Set.new(markdown_files(root).reject { |rel| jekyll_reads?(site, rel) })
+      docs = markdown_files(root)
+      built = specially_named_built_markdown(site, docs)
+      unless built.empty?
+        raise "#{config_path}: its include: list makes Jekyll build #{built.join(', ')}, a page under a name " \
+              'starting with . _ # or ~ or ending with ~, which the lint assumes Jekyll skips (a link to such a ' \
+              'name is rejected as unbuilt); take the entry out of include: or rename the page'
+      end
+      Set.new(docs.reject { |rel| jekyll_reads?(site, rel) })
     rescue Psych::Exception, Jekyll::Errors::InvalidConfigurationError => e
       raise "could not parse #{config_path}: #{e.message}"
+    end
+
+    # The tracked pages an `include:` entry makes Jekyll build although a name on their path is one Jekyll skips
+    # unless included: a leading `.`, `_`, `#` or `~`, or a trailing `~` (EntryFilter#special? and #backup?). The lint
+    # assumes those names are never built (PLAIN_SEGMENT), so with one built it would judge links to it wrongly, and
+    # it fails closed rather than model the include. Jekyll's default `include` (`.htaccess`) and an entry that reaches
+    # no tracked page (`.well-known`, say) leave this empty. The walk mirrors EntryFilter#filter, minus symlinks, plus
+    # the reader's outright read of a file an entry names by its full path (as in jekyll_reads?).
+    def specially_named_built_markdown(site, docs)
+      docs.select do |rel|
+        names = rel.split('/')
+        skipped = Jekyll::EntryFilter::SPECIAL_LEADING_CHAR_REGEX
+        special = names.any? { |name| name.match?(skipped) || name.end_with?('~') }
+        next false unless special
+
+        path = File.join(site.source, rel)
+        next true if site.include.any? { |entry| File.expand_path(entry.to_s, site.source) == path }
+
+        dir = ''
+        names.all? do |name|
+          filter = Jekyll::EntryFilter.new(site, dir)
+          dir = File.join(dir, name)
+          included = filter.included?(name)
+          next false if filter.excluded?(name) && !included
+
+          included || !(filter.special?(name) || filter.backup?(name))
+        end
+      end
     end
 
     # Jekyll walks the source a directory at a time and filters each directory's

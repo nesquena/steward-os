@@ -1389,6 +1389,44 @@ class DiscoveryTest < Minitest::Test
     end
   end
 
+  # An include entry can make Jekyll build a page under a `_`- or `.`-led name, which the lint assumes it skips
+  # (#64): the lint stops and names the page instead of judging links to it wrongly. Each fixture checks the
+  # premise against a real Jekyll read first.
+  def test_site_excluded_markdown_fails_closed_when_include_builds_a_specially_named_page
+    {
+      "include:\n  - _notes\n" => %w[_notes/a.md index.md],
+      "include:\n  - .hidden.md\n" => %w[.hidden.md index.md],
+      "include:\n  - docs/_partial.md\n" => %w[docs/_partial.md index.md]
+    }.each do |config, paths|
+      with_repo do |dir|
+        paths.each { |rel| write(dir, rel, "---\n---\n# x\n") }
+        File.write(File.join(dir, '_config.yml'), config)
+        add_all(dir)
+        special = paths.first
+        assert_includes jekyll_reads(dir), special, "premise: Jekyll builds #{special} under #{config.inspect}"
+        error = assert_raises(RuntimeError) do
+          AnchorContract::Extract.site_excluded_markdown(dir, File.join(dir, '_config.yml'))
+        end
+        assert_includes error.message, "makes Jekyll build #{special},"
+        assert_includes error.message, 'take the entry out of include: or rename the page'
+      end
+    end
+  end
+
+  # An include entry that reaches no tracked page is fine: Jekyll's own default (`.htaccess`), a `.well-known`
+  # directory of non-Markdown files, an entry for a page that doesn't exist, and a special page nothing includes
+  # (which Jekyll skips, and the lint keeps checked, as before).
+  def test_site_excluded_markdown_ignores_an_include_that_builds_no_specially_named_page
+    with_repo do |dir|
+      write(dir, '.well-known/security.txt', "x\n")
+      %w[_skipped.md index.md].each { |rel| write(dir, rel, "---\n---\n# x\n") }
+      File.write(File.join(dir, '_config.yml'), "include:\n  - .well-known\n  - _missing.md\n")
+      add_all(dir)
+      refute_includes jekyll_reads(dir), '_skipped.md', 'premise: Jekyll skips _skipped.md'
+      assert_empty AnchorContract::Extract.site_excluded_markdown(dir, File.join(dir, '_config.yml'))
+    end
+  end
+
   # Jekyll adds its own default excludes to whatever the config lists.
   def test_site_excluded_markdown_applies_jekylls_default_excludes
     with_repo do |dir|
