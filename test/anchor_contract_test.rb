@@ -1396,7 +1396,10 @@ class DiscoveryTest < Minitest::Test
     {
       "include:\n  - _notes\n" => %w[_notes/a.md index.md],
       "include:\n  - .hidden.md\n" => %w[.hidden.md index.md],
-      "include:\n  - docs/_partial.md\n" => %w[docs/_partial.md index.md]
+      "include:\n  - docs/_partial.md\n" => %w[docs/_partial.md index.md],
+      # Jekyll roots a leading `/` at the source and never expands a `~` (Jekyll.sanitized_path).
+      "include:\n  - /docs/_partial.md\n" => %w[docs/_partial.md index.md],
+      "include:\n  - '~t.md'\n" => %w[~t.md index.md]
     }.each do |config, paths|
       with_repo do |dir|
         paths.each { |rel| write(dir, rel, "---\n---\n# x\n") }

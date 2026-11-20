@@ -226,9 +226,10 @@ module AnchorContract
                                  'or percent-encoded (é or %C3%A9, not &eacute;), and rename a page whose name ' \
                                  'needs anything else'
     # The page paths the lint allows a link to: `/`-separated names of letters, marks and digits in any script and
-    # `. _ - ~`, where no name starts with `.`, `_` or `~` or ends with `.` or `~` (Jekyll never builds those), plus
-    # `.` and `..` segments. An empty segment (`a//b.md`) is allowed: the plugin and Pathname#cleanpath both collapse
-    # it, so it builds to the same page as `a/b.md`.
+    # `. _ - ~`, where no name starts with `.`, `_` or `~` or ends with `.` or `~` (Jekyll skips those unless
+    # `include:` lists one, and site_excluded_markdown stops the lint when it does), plus `.` and `..` segments. An
+    # empty segment (`a//b.md`) is allowed: the plugin and Pathname#cleanpath both collapse it, so it builds to the
+    # same page as `a/b.md`.
     PLAIN_SEGMENT = %r{(?:\.\.?|[\p{L}\p{M}\p{N}-](?:[\p{L}\p{M}\p{N}._~-]*[\p{L}\p{M}\p{N}_-])?)}.freeze
     PLAIN_PAGE_PATH = %r{\A(?:#{PLAIN_SEGMENT}?/)*#{PLAIN_SEGMENT}\z}.freeze
     # The link is in NFC but a directory the linking page sits in is not. Only renaming that directory fixes it.
@@ -733,9 +734,10 @@ module AnchorContract
       docs = markdown_files(root)
       built = specially_named_built_markdown(site, docs)
       unless built.empty?
-        raise "#{config_path}: its include: list makes Jekyll build #{built.join(', ')}, a page under a name " \
-              'starting with . _ # or ~ or ending with ~, which the lint assumes Jekyll skips (a link to such a ' \
-              'name is rejected as unbuilt); take the entry out of include: or rename the page'
+        raise "#{config_path}: include: (its list, or Jekyll's default .htaccess) makes Jekyll build " \
+              "#{built.join(', ')}, a page under a name starting with . _ # or ~ or ending with ~, which the lint " \
+              'assumes Jekyll skips (a link to such a name is rejected); take the entry out of include: or rename ' \
+              'the page'
       end
       Set.new(docs.reject { |rel| jekyll_reads?(site, rel) })
     rescue Psych::Exception, Jekyll::Errors::InvalidConfigurationError => e
@@ -756,7 +758,7 @@ module AnchorContract
         next false unless special
 
         path = File.join(site.source, rel)
-        next true if site.include.any? { |entry| File.expand_path(entry.to_s, site.source) == path }
+        next true if included_by_path?(site, path)
 
         dir = ''
         names.all? do |name|
@@ -783,9 +785,16 @@ module AnchorContract
     #
     # The walk is not the only way in: Jekyll's reader also reads every file an
     # `include` entry names outright, wherever it sits.
+    # Jekyll's reader reads outright every file an include entry names by its full path, resolving the entry the
+    # way Reader#read_included_excludes does: Jekyll.sanitized_path, which roots a leading `/` at the source and
+    # never expands a `~`. (File.expand_path sent `/docs/x.md` to the filesystem root and raised on `~x.md`.)
+    def included_by_path?(site, path)
+      site.include.any? { |entry| Jekyll.sanitized_path(site.source, entry.to_s) == path }
+    end
+
     def jekyll_reads?(site, rel)
       path = File.join(site.source, rel)
-      return true if site.include.any? { |entry| File.expand_path(entry.to_s, site.source) == path }
+      return true if included_by_path?(site, path)
 
       dir = ''
       rel.split('/').all? do |name|
