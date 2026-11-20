@@ -1419,10 +1419,12 @@ class DiscoveryTest < Minitest::Test
   def test_site_excluded_markdown_ignores_an_include_that_builds_no_specially_named_page
     with_repo do |dir|
       write(dir, '.well-known/security.txt', "x\n")
-      %w[_skipped.md index.md].each { |rel| write(dir, rel, "---\n---\n# x\n") }
-      File.write(File.join(dir, '_config.yml'), "include:\n  - .well-known\n  - _missing.md\n")
+      %w[_skipped.md _dot./a.md index.md].each { |rel| write(dir, rel, "---\n---\n# x\n") }
+      File.write(File.join(dir, '_config.yml'), "include:\n  - .well-known\n  - _missing.md\n  - _dot.\n")
       add_all(dir)
       refute_includes jekyll_reads(dir), '_skipped.md', 'premise: Jekyll skips _skipped.md'
+      # Jekyll never reads a name ending in `.`, even one include lists.
+      refute_includes jekyll_reads(dir), '_dot./a.md', 'premise: Jekyll skips _dot./a.md'
       assert_empty AnchorContract::Extract.site_excluded_markdown(dir, File.join(dir, '_config.yml'))
     end
   end

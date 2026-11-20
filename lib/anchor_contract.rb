@@ -762,6 +762,9 @@ module AnchorContract
         names.all? do |name|
           filter = Jekyll::EntryFilter.new(site, dir)
           dir = File.join(dir, name)
+          # filter's first rule: a name ending in `.` is never read, included or not
+          next false if name.end_with?('.')
+
           included = filter.included?(name)
           next false if filter.excluded?(name) && !included
 
