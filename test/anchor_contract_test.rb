@@ -1095,10 +1095,22 @@ class UnportableTest < Minitest::Test
     assert_empty AnchorContract::Extract.unportable("# T\n\n[x](plain.md#real)\n", source: "docs/\u00e9/index.md")
   end
 
-  # A decomposed directory written in the link itself is named the same way, from the repo root.
-  def test_a_link_through_a_decomposed_directory_names_it
-    message = format(AnchorContract::Extract::DECOMPOSED_DIRECTORY_MESSAGE, "docs/e\u0301")
+  # A decomposed directory written in the link itself: Jekyll leaves that href decomposed whatever the directory's
+  # name on disk, so only the link text can fix it, and the general message says so.
+  def test_a_link_through_a_decomposed_directory_keeps_the_general_message
+    message = AnchorContract::Extract::MARKDOWN_LINK_PATH_MESSAGE
     found = AnchorContract::Extract.unportable("# T\n\n[x](e\u0301/plain.md)\n", source: 'docs/p.md')
+    assert_equal [message], found.map(&:message)
+    found = AnchorContract::Extract.unportable("# T\n\n[x](../../e\u0301/x.md)\n", source: 'docs/p.md')
+    assert_equal [message], found.map(&:message)
+  end
+
+  # The message names the first decomposed directory, not the last or the whole path.
+  def test_the_directory_message_names_the_first_decomposed_directory
+    message = format(AnchorContract::Extract::DECOMPOSED_DIRECTORY_MESSAGE, "docs/e\u0301")
+    found = AnchorContract::Extract.unportable("# T\n\n[x](plain.md)\n", source: "docs/e\u0301/sub/index.md")
+    assert_equal [message], found.map(&:message)
+    found = AnchorContract::Extract.unportable("# T\n\n[x](plain.md)\n", source: "docs/e\u0301/o\u0308/index.md")
     assert_equal [message], found.map(&:message)
   end
 

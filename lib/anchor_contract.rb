@@ -231,7 +231,7 @@ module AnchorContract
     # it, so it builds to the same page as `a/b.md`.
     PLAIN_SEGMENT = %r{(?:\.\.?|[\p{L}\p{M}\p{N}-](?:[\p{L}\p{M}\p{N}._~-]*[\p{L}\p{M}\p{N}_-])?)}.freeze
     PLAIN_PAGE_PATH = %r{\A(?:#{PLAIN_SEGMENT}?/)*#{PLAIN_SEGMENT}\z}.freeze
-    # The page's own name is in NFC but a directory on the way to it is not. Renaming the page can't fix that link.
+    # The link is in NFC but a directory the linking page sits in is not. Only renaming that directory fixes it.
     DECOMPOSED_DIRECTORY_MESSAGE = 'a link to a Markdown page through a directory whose name is not in NFC ' \
                                    'form (%s); Jekyll builds the link in NFC but keeps the directory\'s ' \
                                    'decomposed bytes, so the built page keeps a broken link; rename the ' \
@@ -357,8 +357,8 @@ module AnchorContract
     # rejected too: rewritten or not, an image whose source is a page is broken.
     #
     # The message for a rejected link, or nil. The page's own name not in NFC, and every other failure, gets
-    # MARKDOWN_LINK_PATH_MESSAGE; a decomposed directory on the target's path gets DECOMPOSED_DIRECTORY_MESSAGE,
-    # naming the directory, since renaming the page leaves it broken.
+    # MARKDOWN_LINK_PATH_MESSAGE, as does a decomposed directory written in the link. A decomposed directory the
+    # linking page sits in gets DECOMPOSED_DIRECTORY_MESSAGE, naming it, since only renaming it fixes the link.
     def page_link_message(element, source)
       href = link_target(element)
       return nil if href.nil? || href.empty?
@@ -382,14 +382,15 @@ module AnchorContract
 
       # Where it points, too: a decoded leading `/` (the plugin roots it), `..` inside a name (`a..b.md` and
       # `a/b.md` build to one page), and a target path, its directories included, not in NFC. PLAIN_PAGE_PATH has
-      # already refused a name starting with `~`, which Jekyll never builds, so such a link stays broken.
+      # already refused a name starting with `~`, which Jekyll skips unless `include:` lists it.
       if name.start_with?('/') || name.split('/').any? { |seg| seg != '..' && seg.include?('..') }
         return MARKDOWN_LINK_PATH_MESSAGE
       end
 
       full = Pathname.new(File.join(File.dirname(source), name)).cleanpath.to_s
       return nil if full.unicode_normalized?(:nfc)
-      return MARKDOWN_LINK_PATH_MESSAGE unless File.basename(full).unicode_normalized?(:nfc)
+      # A decomposed name in the link itself (the page's or a directory's): only the link text can fix it.
+      return MARKDOWN_LINK_PATH_MESSAGE unless name.unicode_normalized?(:nfc)
 
       segments = File.dirname(full).split('/')
       first = segments.index { |seg| !seg.unicode_normalized?(:nfc) }
