@@ -735,9 +735,9 @@ module AnchorContract
       built = specially_named_built_markdown(site, docs)
       unless built.empty?
         raise "#{config_path}: include: (its list, or Jekyll's default .htaccess) makes Jekyll build " \
-              "#{built.join(', ')}, a page under a name starting with . _ # or ~ or ending with ~, which the lint " \
-              'assumes Jekyll skips (a link to such a name is rejected); take the entry out of include: or rename ' \
-              'the page'
+              "#{built.join(', ')}, a page under a name starting with . _ # or ~ or ending with . or ~, " \
+              'which the lint assumes Jekyll skips (a link to such a name is rejected); take the entry out of ' \
+              'include: or rename the page'
       end
       Set.new(docs.reject { |rel| jekyll_reads?(site, rel) })
     rescue Psych::Exception, Jekyll::Errors::InvalidConfigurationError => e
@@ -745,16 +745,17 @@ module AnchorContract
     end
 
     # The tracked pages an `include:` entry makes Jekyll build although a name on their path is one Jekyll skips
-    # unless included: a leading `.`, `_`, `#` or `~`, or a trailing `~` (EntryFilter#special? and #backup?). The lint
-    # assumes those names are never built (PLAIN_SEGMENT), so with one built it would judge links to it wrongly, and
-    # it fails closed rather than model the include. Jekyll's default `include` (`.htaccess`) and an entry that reaches
-    # no tracked page (`.well-known`, say) leave this empty. The walk mirrors EntryFilter#filter, minus symlinks, plus
-    # the reader's outright read of a file an entry names by its full path (as in jekyll_reads?).
+    # unless included: a leading `.`, `_`, `#` or `~`, or a trailing `~` (EntryFilter#special? and #backup?), or a
+    # trailing `.` (filter never walks into one, but the reader reads an exact path to one). The lint assumes those
+    # names are never built (PLAIN_SEGMENT), so with one built it would judge links to it wrongly, and it fails closed
+    # rather than model the include. An include entry, including the default `.htaccess`, leaves this empty when it
+    # reaches no tracked Markdown page (`.well-known`, say). The walk mirrors EntryFilter#filter, minus symlinks, plus
+    # the reader's outright read of a file an entry names by its full path (included_by_path?).
     def specially_named_built_markdown(site, docs)
       docs.select do |rel|
         names = rel.split('/')
         skipped = Jekyll::EntryFilter::SPECIAL_LEADING_CHAR_REGEX
-        special = names.any? { |name| name.match?(skipped) || name.end_with?('~') }
+        special = names.any? { |name| name.match?(skipped) || name.end_with?('~', '.') }
         next false unless special
 
         path = File.join(site.source, rel)
@@ -775,16 +776,6 @@ module AnchorContract
       end
     end
 
-    # Jekyll walks the source a directory at a time and filters each directory's
-    # entries by name, so a path is read only when every level of it survives:
-    # an excluded directory is never entered, whatever `include` says about a
-    # file inside it. Only the config-driven half of the filter is asked. Its
-    # other rules (dot- and underscore-prefixed names, backups, symlinks) are not
-    # routing a config can express, and skipping them keeps such a file checked
-    # against both renderers rather than one.
-    #
-    # The walk is not the only way in: Jekyll's reader also reads every file an
-    # `include` entry names outright, wherever it sits.
     # Jekyll's reader reads outright every file an include entry names by its full path, resolving the entry the
     # way Reader#read_included_excludes does: Jekyll.sanitized_path, which roots a leading `/` at the source and
     # never expands a `~`. (File.expand_path sent `/docs/x.md` to the filesystem root and raised on `~x.md`.)
@@ -792,6 +783,17 @@ module AnchorContract
       site.include.any? { |entry| Jekyll.sanitized_path(site.source, entry.to_s) == path }
     end
 
+    # Jekyll walks the source a directory at a time and filters each directory's
+    # entries by name, so a path is read only when every level of it survives:
+    # an excluded directory is never entered, whatever `include` says about a
+    # file inside it. Only the config-driven half of the filter is asked. Its
+    # other rules (dot- and underscore-prefixed names, backups, symlinks) are left
+    # to specially_named_built_markdown, which stops the lint when an include makes
+    # Jekyll build such a name; otherwise such a file stays checked against both
+    # renderers rather than one.
+    #
+    # The walk is not the only way in: Jekyll's reader also reads every file an
+    # `include` entry names outright, wherever it sits (included_by_path?).
     def jekyll_reads?(site, rel)
       path = File.join(site.source, rel)
       return true if included_by_path?(site, path)
