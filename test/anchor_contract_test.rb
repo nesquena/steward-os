@@ -1389,6 +1389,76 @@ class DiscoveryTest < Minitest::Test
     end
   end
 
+  # An include entry can make Jekyll build a page under a `_`- or `.`-led name, which the lint assumes it skips
+  # (#64): the lint stops and names the page instead of judging links to it wrongly. Each fixture checks the
+  # premise against a real Jekyll read first.
+  def test_site_excluded_markdown_fails_closed_when_include_builds_a_specially_named_page
+    {
+      "include:\n  - _notes\n" => %w[_notes/a.md index.md],
+      "include:\n  - .hidden.md\n" => %w[.hidden.md index.md],
+      "include:\n  - docs/_partial.md\n" => %w[docs/_partial.md index.md],
+      # Jekyll roots a leading `/` at the source and never expands a `~` (Jekyll.sanitized_path).
+      "include:\n  - /docs/_partial.md\n" => %w[docs/_partial.md index.md],
+      "include:\n  - '~t.md'\n" => %w[~t.md index.md],
+      "include:\n  - d~\n" => %w[d~/x.md index.md],
+      "include:\n  - '#d'\n" => %w[#d/x.md index.md],
+      # filter never walks into a name ending in `.`, but the reader reads an exact path to one
+      "include:\n  - a./b.md\n" => %w[a./b.md index.md],
+      # Jekyll's default include (.htaccess) matches as a prefix, with no include: key at all
+      "title: x\n" => %w[.htaccess.md index.md]
+    }.each do |config, paths|
+      with_repo do |dir|
+        paths.each { |rel| write(dir, rel, "---\n---\n# x\n") }
+        File.write(File.join(dir, '_config.yml'), config)
+        add_all(dir)
+        special = paths.first
+        assert_includes jekyll_reads(dir), special, "premise: Jekyll builds #{special} under #{config.inspect}"
+        error = assert_raises(RuntimeError) do
+          AnchorContract::Extract.site_excluded_markdown(dir, File.join(dir, '_config.yml'))
+        end
+        assert_includes error.message, "makes Jekyll build #{special},"
+        assert_includes error.message, 'take the entry out of include: or rename the page'
+      end
+    end
+  end
+
+  # An include entry that reaches no tracked page is fine: Jekyll's own default (`.htaccess`), a `.well-known`
+  # directory of non-Markdown files, an entry for a page that doesn't exist, and a special page nothing includes
+  # (which Jekyll skips, and the lint keeps checked, as before).
+  def test_site_excluded_markdown_ignores_an_include_that_builds_no_specially_named_page
+    with_repo do |dir|
+      write(dir, '.well-known/security.txt', "x\n")
+      %w[_skipped.md _dot./a.md index.md].each { |rel| write(dir, rel, "---\n---\n# x\n") }
+      File.write(File.join(dir, '_config.yml'), "include:\n  - .well-known\n  - _missing.md\n  - _dot.\n")
+      add_all(dir)
+      refute_includes jekyll_reads(dir), '_skipped.md', 'premise: Jekyll skips _skipped.md'
+      # Jekyll never reads a name ending in `.`, even one include lists.
+      refute_includes jekyll_reads(dir), '_dot./a.md', 'premise: Jekyll skips _dot./a.md'
+      assert_empty AnchorContract::Extract.site_excluded_markdown(dir, File.join(dir, '_config.yml'))
+    end
+    # An excluded directory hides an included special name below it, and so does a skipped name deeper down.
+    {
+      "exclude:\n  - docs\ninclude:\n  - _p.md\n" => %w[docs/_p.md index.md],
+      "include:\n  - _n\n" => %w[_n/x~/a.md index.md]
+    }.each do |config, paths|
+      with_repo do |dir|
+        paths.each { |rel| write(dir, rel, "---\n---\n# x\n") }
+        File.write(File.join(dir, '_config.yml'), config)
+        add_all(dir)
+        refute_includes jekyll_reads(dir), paths.first, "premise: Jekyll skips #{paths.first} under #{config.inspect}"
+        AnchorContract::Extract.site_excluded_markdown(dir, File.join(dir, '_config.yml'))
+      end
+    end
+  end
+
+  # The routing half of the full-path rule: Jekyll resolves an include entry with sanitized_path, so a leading `/`
+  # still names a file inside the source, and Jekyll reads it outright even inside an excluded directory.
+  def test_site_excluded_markdown_reads_a_root_relative_include_by_its_path
+    with_repo do |dir|
+      assert_empty excluded_in(dir, "exclude:\n  - docs\ninclude:\n  - /docs/x.md\n", %w[docs/x.md index.md])
+    end
+  end
+
   # Jekyll adds its own default excludes to whatever the config lists.
   def test_site_excluded_markdown_applies_jekylls_default_excludes
     with_repo do |dir|
