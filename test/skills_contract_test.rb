@@ -985,9 +985,14 @@ class IndependentReadersContractTest < Minitest::Test
     assert_includes rule, 'Gates 2 and 3 count only when their reader didn\'t write the change. A reader wrote it if ' \
                           'it made any commit in the PR\'s range, trunk to head: authoring, fixing, rebasing, ' \
                           'absorbing or cherry-picking it all count.'
-    assert_includes rule, 'Being the same model or the same account doesn\'t decide it; what the reader was given does.'
+    assert_includes rule, 'Being the same model or the same account doesn\'t decide it; what the reader was ' \
+                          'given, and what it read, does.'
     assert_includes rule, 'A subagent that inherits the writer\'s context, a resumed session and an inherited ' \
                           'transcript are not.'
+    assert_includes rule, 'Nor is such a session once it reads notes on this PR that it can reach for itself: ' \
+                          'the writer\'s or an earlier reviewer\'s reasoning, findings or verdicts in a memory or ' \
+                          'handoff file, or in the PR\'s comments and reviews. A reader that saw any says so, and ' \
+                          'its pass doesn\'t count.'
     assert_includes rule, 'A fresh session given the PR as the host shows it (diff, commits and their messages, ' \
                           'description), the trunk and the gate\'s configured rubric, and nothing of the writer\'s own ' \
                           'reasoning, findings or earlier verdicts for this PR, is independent.'
@@ -1010,6 +1015,10 @@ class IndependentReadersContractTest < Minitest::Test
     assert_includes step5, '**Independent readers.** A reading leg counts only if a reader that wrote no commit in ' \
                            'the PR\'s range produced it'
     assert_includes step5, 'A fix you make in step 4, 7 or 8 makes you a writer of the new head'
+    assert_includes step5, 'Tell each reader to keep notes on this PR (the writer\'s or an earlier reviewer\'s ' \
+                           'reasoning, findings or verdicts, in a memory or handoff file or in the PR\'s comments ' \
+                           'and reviews) out of its reading and searches, and to say if it saw any; if it did, its ' \
+                           'leg is missing, not passed.'
     assert_includes step5, 'Your own read of your fix is not a leg; with no independent reader, the leg is missing, ' \
                            'not passed.'
     assert_includes step5, 'Independence is on top of the second pass being differently tuned, not instead of it.'
@@ -1021,7 +1030,8 @@ class IndependentReadersContractTest < Minitest::Test
     assert_includes skill_step('pr-deep-review', 7),
                     'or bounces under step 4\'s no-run or no-independent-reader restriction'
     assert_includes read('skills', 'pr-deep-review', 'SKILL.md').split('## Verification').last,
-                    'Neither reading leg was produced by a reader that wrote a commit in the PR\'s range.'
+                    'Neither reading leg was produced by a reader that wrote a commit in the PR\'s range or ' \
+                    'reported seeing notes on this PR.'
   end
 
   def test_release_merge_call_is_a_humans
