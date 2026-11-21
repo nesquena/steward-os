@@ -7,9 +7,9 @@
 # carries a #fragment no heading in the target produces. It fails too when a
 # page the site builds links a page _config.yml excludes, which the site keeps
 # as a broken .md link, and when a built page links anything but a .md page
-# root-relatively, which the site can serve without its baseurl. It also fails on the constructs the
-# site and GitHub render differently, which would otherwise take a link or an
-# anchor out of the gate's reach.
+# root-relatively, whose built href can lack the baseurl. It also fails on the
+# constructs the site and GitHub render differently, which would otherwise take
+# a link or an anchor out of the gate's reach.
 #
 # Complements ci.yml's html-proofer run, which only sees the built _site/ and so
 # cannot check README.md, CONTRIBUTING.md, docs/README.md, SECURITY.md, skills/

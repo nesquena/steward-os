@@ -103,20 +103,24 @@ module AnchorContract
                           'site\'s baseurl and it 404s there; link the page by name (/docs/index.md), or make the ' \
                           'link relative'
 
-  # A root-relative link from a built page to anything but a `.md` page: a directory (`/` itself is the root, `.`),
-  # an extensionless page, or another file. The plugin indexes pages and files only, so it leaves a directory's
-  # href as written; a file it rewrites only in the plain `[x](/path)` and `![x](/path)` forms, not in a raw
-  # <a>/<img> tag, an angle-bracketed `[x](</path>)` or an entity-spelled slash. Either way the site keeps the href
-  # without the baseurl. Rather than model which forms the plugin rewrites, every such link is reported; that is
-  # over-strict only for the plain forms, whose relative spelling works the same.
-  def self.root_relative_unrewritten?(link)
-    Extract.rooted?(link.href) && !link.path.nil? && !link.path.end_with?('.md')
+  # A root-relative link from a built page to anything but a `.md` page: a directory (`/` itself is the root, `.`,
+  # and a directory named like a page, `notes.md/`, counts), an extensionless page, or another file. The plugin
+  # indexes pages and files only, so it leaves a directory's href as written; a file it rewrites only in the plain
+  # markdown forms (an inline link or image, titled or not, and a reference definition), not in a raw <a>/<img>
+  # tag, an angle-bracketed `[x](</path>)` or an entity-spelled slash. Either way the site keeps the href without
+  # the baseurl. Rather than model which forms the plugin rewrites, every such link is reported; that is
+  # over-strict only for the plain forms, whose relative spelling works the same. A nil path (an escape no file
+  # name holds, `/%FF.png`) is left to `resolve`, which reports it missing.
+  def self.root_relative_unrewritten?(link, dirs)
+    return false unless Extract.rooted?(link.href) && !link.path.nil?
+
+    !link.path.end_with?('.md') || dirs.include?(link.path)
   end
   private_class_method :root_relative_unrewritten?
 
   def self.check_link(link, headings, files, dirs, excluded, rendered, unpublished = Set.new)
     source_rendered = rendered ? rendered.include?(link.source) : !excluded.include?(link.source)
-    if source_rendered && root_relative_unrewritten?(link)
+    if source_rendered && root_relative_unrewritten?(link, dirs)
       return Violation.new(rule: :root_relative, link: link, message: ROOT_RELATIVE_MESSAGE)
     end
 
@@ -195,7 +199,8 @@ module AnchorContract
 
     # Whether a link is root-relative: its target as the page carries it (character references resolved, percent
     # escapes not) starts with `/`. A `%2F` doesn't root a link: GitHub keeps it relative. Link building, dedup and
-    # the root-relative rule all ask this one question.
+    # the root-relative rule ask this one question of the extracted href, and page_link_message asks it of the raw
+    # attribute.
     def self.rooted?(href)
       href.to_s.start_with?('/')
     end
@@ -449,11 +454,11 @@ module AnchorContract
       name = decode(path).scrub
       return MARKDOWN_LINK_PATH_MESSAGE if !query.nil? || !path.end_with?('.md') || !name.match?(PLAIN_PAGE_PATH)
 
-      # Where it points, too: a leading `/` only an escape or a character reference spells (the plugin decodes
-      # `%2F` and roots the link while GitHub keeps it relative, and `&sol;` reaches the built page undecoded),
-      # `..` inside a name (`a..b.md` and `a/b.md` build to one page), and a
-      # target path, its directories included, not in NFC. PLAIN_PAGE_PATH has already refused a name starting
-      # with `~`, which Jekyll skips unless `include:` lists it.
+      # Where it points, too. A literal leading `/` is allowed and was stripped above; one only an escape or a
+      # character reference spells is not (the plugin decodes `%2F` and roots the link while GitHub keeps it
+      # relative, and `&sol;` reaches the built page undecoded). Nor is `..` inside a name (`a..b.md` and `a/b.md`
+      # build to one page), or a target path, its directories included, not in NFC. PLAIN_PAGE_PATH has already
+      # refused a name starting with `~`, which Jekyll skips unless `include:` lists it.
       if name.start_with?('/') || name.split('/').any? { |seg| seg != '..' && seg.include?('..') }
         return MARKDOWN_LINK_PATH_MESSAGE
       end
