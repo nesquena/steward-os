@@ -1504,8 +1504,8 @@ class DiscoveryTest < Minitest::Test
   # in a file both renderers publish and in one only GitHub does.
   def test_the_lint_passes_under_a_posix_locale
     with_repo do |dir|
-      # A built page links a built page, and the GitHub-only README links back into the site: a built page
-      # linking the excluded README would be a link the site can't build.
+      # A page links another page, and the GitHub-only README links back into the site. (The pages carry no front
+      # matter, so the site copies them rather than rendering them; the test is about the locale, not routing.)
       write(dir, 'café.md', "# Café — menu\n\n[señor](señor.md#señor--sí)\n")
       write(dir, 'señor.md', "# Señor — sí\n")
       # The README's self-link checks its own non-ASCII id under GitHub's slugger, the only renderer it gets.
@@ -1525,7 +1525,8 @@ class DiscoveryTest < Minitest::Test
     with_repo do |dir|
       File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n  - skills/\n")
       write(dir, 'README.md', "# Read me\n\n[guide](docs/guide.md) [skill](skills/x/SKILL.md)\n")
-      write(dir, 'skills/x/SKILL.md', "# Skill\n\n[readme](../../README.md)\n")
+      # Front matter, so an excluded page that would otherwise render shows the excluded check doing the work.
+      write(dir, 'skills/x/SKILL.md', "---\nname: x\n---\n# Skill\n\n[readme](../../README.md)\n")
       write(dir, 'docs/guide.md', "# Guide\n\n[ok](other.md)\n")
       write(dir, 'docs/other.md', "# Other\n")
       add_all(dir)
@@ -1552,6 +1553,9 @@ class DiscoveryTest < Minitest::Test
       write(dir, '_notes.md', "---\ntitle: Notes\n---\n# Notes\n\n[readme](README.md)\n")
       write(dir, '.hidden/n.md', "---\ntitle: N\n---\n# N\n\n[readme](../README.md)\n")
       write(dir, 'docs/raw.md', "# Raw\n\n[readme](../README.md)\n")
+      write(dir, 'x~/n.md', "---\ntitle: N\n---\n# N\n\n[readme](../README.md)\n")
+      write(dir, 'docs/draft.md', "---\ntitle: Draft\npublished: false\n---\n# Draft\n\n[readme](../README.md)\n")
+      write(dir, 'docs/empty.md', "---\ntitle: Empty\npublished:\n---\n# Empty\n\n[readme](../README.md)\n")
       add_all(dir)
       out = lint(dir)
       assert_equal 0, $?.exitstatus, out
@@ -1562,6 +1566,15 @@ class DiscoveryTest < Minitest::Test
       assert_equal 1, $?.exitstatus, out
       assert_match(%r{unbuilt \(1\)}, out)
       assert_includes out, 'docs/page.md'
+
+      # With `unpublished: true` the site renders both unpublished pages too.
+      File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\nunpublished: true\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(%r{unbuilt \(3\)}, out)
+      assert_includes out, 'docs/draft.md'
+      assert_includes out, 'docs/empty.md'
     end
   end
 
@@ -1574,7 +1587,12 @@ class DiscoveryTest < Minitest::Test
                                excluded: Set['README.md'], rendered: Set['docs/a.md'])
     assert_equal [:unbuilt], got.map(&:rule)
     assert_includes got.first.message, 'README.md is a page the site does not build'
+    assert_includes got.first.message, 'the site has no page at this link'
     got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: Set['docs'])
+    assert_equal [:extension], got.map(&:rule)
+    # From a page the site doesn't render, the link is GitHub's alone, and the extension advice is right.
+    got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: Set['docs'],
+                               excluded: Set['README.md'], rendered: Set.new)
     assert_equal [:extension], got.map(&:rule)
   end
 

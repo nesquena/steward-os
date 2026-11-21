@@ -102,7 +102,7 @@ unless rejections.empty?
   exit 1
 end
 
-rendered = AnchorContract::Extract.site_rendered_markdown(ROOT, docs, excluded)
+rendered = AnchorContract::Extract.site_rendered_markdown(ROOT, docs, excluded, config_path)
 violations = AnchorContract.check(links: links, headings: headings, files: files, dirs: dirs, excluded: excluded,
                                   rendered: rendered)
 

@@ -89,6 +89,8 @@ module AnchorContract
 
   UNBUILT_MESSAGE = '%s is a page the site does not build (_config.yml excludes it), so the site keeps this ' \
                     'link as a broken .md link; link it by its GitHub URL, or stop excluding it'
+  UNBUILT_EXTENSIONLESS_MESSAGE = '%s is a page the site does not build (_config.yml excludes it), so the site ' \
+                                  'has no page at this link; link it by its GitHub URL, or stop excluding it'
 
   def self.check_link(link, headings, files, dirs, excluded, rendered)
     doc = resolve(link, files, dirs)
@@ -96,7 +98,8 @@ module AnchorContract
     # An extensionless link to an excluded page doesn't resolve on the site either, and adding `.md` would only
     # trade it for an unbuilt one, so it is reported as unbuilt.
     if doc.is_a?(Violation) && doc.rule == :extension && source_rendered && excluded.include?("#{link.path}.md")
-      return Violation.new(rule: :unbuilt, link: link, message: format(UNBUILT_MESSAGE, "#{link.path}.md"))
+      return Violation.new(rule: :unbuilt, link: link,
+                           message: format(UNBUILT_EXTENSIONLESS_MESSAGE, "#{link.path}.md"))
     end
     return doc if doc.is_a?(Violation)
     if doc && excluded.include?(doc) && source_rendered
@@ -764,14 +767,32 @@ module AnchorContract
 
     # The tracked pages the site renders as HTML: Jekyll reads them (not in `excluded`), no name on their path is one
     # it skips (a leading `.` `_` `#` or `~`, a trailing `.` or `~`; specially_named_built_markdown stops the lint
-    # when include: builds one), and they start with front matter (without it Jekyll copies the .md file as it is).
-    def site_rendered_markdown(root, docs, excluded)
+    # when include: builds one), they start with front matter (without it Jekyll copies the .md file as it is), and
+    # the front matter doesn't unpublish them (unless _config.yml sets `unpublished: true`). Posts and other
+    # collection documents (`_posts/`, `_<collection>/`) are rendered too but not modelled here: with
+    # `relative_links: collections: false` none of their .md links are rewritten, which is a wider gap than this rule.
+    def site_rendered_markdown(root, docs, excluded, config_path)
       skipped = Jekyll::EntryFilter::SPECIAL_LEADING_CHAR_REGEX
+      raw = YAML.safe_load(File.read(config_path, encoding: 'UTF-8')) || {}
+      show_unpublished = Jekyll::Configuration.from(raw)['unpublished']
       Set.new(docs.reject do |rel|
+        path = File.join(root, rel)
         excluded.include?(rel) ||
           rel.split('/').any? { |name| name.match?(skipped) || name.end_with?('~', '.') } ||
-          !Jekyll::Utils.has_yaml_header?(File.join(root, rel))
+          !Jekyll::Utils.has_yaml_header?(path) ||
+          (!show_unpublished && unpublished_page?(path))
       end)
+    end
+
+    # Jekyll writes nothing for a page whose front matter sets `published` to false or leaves it empty
+    # (Publisher#can_be_published?: `data.fetch('published', true)`). Front matter Jekyll can't parse leaves the
+    # page published, as Jekyll does outside strict_front_matter.
+    def unpublished_page?(path)
+      front = File.read(path, encoding: 'UTF-8')[Jekyll::Document::YAML_FRONT_MATTER_REGEXP, 1]
+      data = front && SafeYAML.load(front)
+      data.is_a?(Hash) && !data.fetch('published', true)
+    rescue Psych::Exception
+      false
     end
 
     # The tracked pages an `include:` entry makes Jekyll build although a name on their path is one Jekyll skips
