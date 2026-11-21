@@ -1059,6 +1059,7 @@ class UnportableTest < Minitest::Test
   # the plain form both passes always rewrite, and anything else is rejected as unverified, wherever it is (a
   # reference definition, a raw tag, a footnote): its path ends in `.md`, has no query, and decodes to letters,
   # digits and `. _ - ~ /` only, in NFC, with no name ending in `.` (Jekyll skips it, so `a./b.md` is never built).
+  # A literal leading `/` is allowed; one spelled `%2F` or `&sol;` is not.
   # Non-ASCII letters, those characters in the fragment, and a non-Markdown or external target are fine. Three
   # accepted cases pin the allowlist's edges: a directory ending in `_`, a compatibility character (`ﬁ` is NFC
   # but not NFKC, so it fails if the NFC check is loosened to NFKC), and an empty segment, which the plugin and
@@ -1691,9 +1692,9 @@ class DiscoveryTest < Minitest::Test
   def test_check_resolves_a_root_relative_link
     files = Set['README.md', 'docs/a.md', 'docs/b.md', 'docs/draft.md', 'assets/x.png']
     link = ->(href, source = 'docs/a.md') { AnchorContract::Extract.links("[x](#{href})\n", source: source).first }
-    rules = lambda do |l|
+    rules = lambda do |l, dirs: Set['docs', 'assets']|
       AnchorContract.check(links: l.is_a?(Array) ? l : [l], headings: { 'docs/b.md' => ['top'] }, files: files,
-                           dirs: Set['docs', 'assets'], excluded: Set['README.md'], rendered: Set['docs/a.md'],
+                           dirs: dirs, excluded: Set['README.md'], rendered: Set['docs/a.md'],
                            unpublished: Set['docs/draft.md']).map(&:rule)
     end
     assert_empty rules.call(link.call('/docs/b.md#top'))
@@ -1713,6 +1714,10 @@ class DiscoveryTest < Minitest::Test
       found = AnchorContract::Extract.merged_links("#{tag}\n", source: 'docs/a.md')
       assert_equal [:root_relative], rules.call(found).uniq, tag
     end
+    # A directory named like a page is still a directory, which the plugin leaves without the baseurl.
+    assert_equal [:root_relative], rules.call(link.call('/notes.md'), dirs: Set['docs', 'assets', 'notes.md'])
+    # An escape no file name holds leaves no path to judge: the link is missing, and the rule doesn't crash on it.
+    assert_equal [:missing], rules.call(link.call('/%FF.png'))
     # A percent-encoded slash is relative on GitHub: these name docs/%2Fdocs/ and docs/%2Fassets/x.png there.
     assert_equal [:missing], rules.call(link.call('%2Fdocs/'))
     assert_equal [:missing], rules.call(link.call('%2Fassets/x.png'))
