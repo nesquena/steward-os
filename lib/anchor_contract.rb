@@ -81,17 +81,25 @@ module AnchorContract
   #            site builds to one of them stays a .md link on the site: the relative-links plugin has no built page
   #            to point it at, so it is broken there while GitHub shows it working. A link between two excluded
   #            pages is fine, since only GitHub renders either one.
-  def self.check(links:, headings:, files:, dirs:, excluded: Set.new)
-    links.filter_map { |link| check_link(link, headings, files, dirs, excluded) }
+  # rendered — the pages the site renders as HTML (Extract.site_rendered_markdown); only a link from one of them is
+  #            reported as unbuilt. nil means every page outside `excluded`.
+  def self.check(links:, headings:, files:, dirs:, excluded: Set.new, rendered: nil)
+    links.filter_map { |link| check_link(link, headings, files, dirs, excluded, rendered) }
   end
 
   UNBUILT_MESSAGE = '%s is a page the site does not build (_config.yml excludes it), so the site keeps this ' \
                     'link as a broken .md link; link it by its GitHub URL, or stop excluding it'
 
-  def self.check_link(link, headings, files, dirs, excluded)
+  def self.check_link(link, headings, files, dirs, excluded, rendered)
     doc = resolve(link, files, dirs)
+    source_rendered = rendered ? rendered.include?(link.source) : !excluded.include?(link.source)
+    # An extensionless link to an excluded page doesn't resolve on the site either, and adding `.md` would only
+    # trade it for an unbuilt one, so it is reported as unbuilt.
+    if doc.is_a?(Violation) && doc.rule == :extension && source_rendered && excluded.include?("#{link.path}.md")
+      return Violation.new(rule: :unbuilt, link: link, message: format(UNBUILT_MESSAGE, "#{link.path}.md"))
+    end
     return doc if doc.is_a?(Violation)
-    if doc && excluded.include?(doc) && !excluded.include?(link.source)
+    if doc && excluded.include?(doc) && source_rendered
       return Violation.new(rule: :unbuilt, link: link, message: format(UNBUILT_MESSAGE, doc))
     end
     return nil if doc.nil? || link.fragment.nil?
@@ -752,6 +760,18 @@ module AnchorContract
       Set.new(docs.reject { |rel| jekyll_reads?(site, rel) })
     rescue Psych::Exception, Jekyll::Errors::InvalidConfigurationError => e
       raise "could not parse #{config_path}: #{e.message}"
+    end
+
+    # The tracked pages the site renders as HTML: Jekyll reads them (not in `excluded`), no name on their path is one
+    # it skips (a leading `.` `_` `#` or `~`, a trailing `.` or `~`; specially_named_built_markdown stops the lint
+    # when include: builds one), and they start with front matter (without it Jekyll copies the .md file as it is).
+    def site_rendered_markdown(root, docs, excluded)
+      skipped = Jekyll::EntryFilter::SPECIAL_LEADING_CHAR_REGEX
+      Set.new(docs.reject do |rel|
+        excluded.include?(rel) ||
+          rel.split('/').any? { |name| name.match?(skipped) || name.end_with?('~', '.') } ||
+          !Jekyll::Utils.has_yaml_header?(File.join(root, rel))
+      end)
     end
 
     # The tracked pages an `include:` entry makes Jekyll build although a name on their path is one Jekyll skips

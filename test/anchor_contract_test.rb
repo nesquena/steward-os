@@ -1508,13 +1508,14 @@ class DiscoveryTest < Minitest::Test
       # linking the excluded README would be a link the site can't build.
       write(dir, 'café.md', "# Café — menu\n\n[señor](señor.md#señor--sí)\n")
       write(dir, 'señor.md', "# Señor — sí\n")
-      write(dir, 'README.md', "# Read — me\n\n[menu](café.md#café--menu)\n")
+      # The README's self-link checks its own non-ASCII id under GitHub's slugger, the only renderer it gets.
+      write(dir, 'README.md', "# Léeme — sí\n\n[menu](café.md#café--menu) [self](#léeme--sí)\n")
       File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
       add_all(dir)
       out = lint(dir)
       assert_equal 0, $?.exitstatus, out
       assert_includes out, 'OK — every link resolves.'
-      assert_match(/2 relative links, 2 anchors/, out, 'both non-ASCII links were checked')
+      assert_match(/3 relative links, 3 anchors/, out, 'every non-ASCII link was checked')
     end
   end
 
@@ -1531,7 +1532,8 @@ class DiscoveryTest < Minitest::Test
       out = lint(dir)
       assert_equal 0, $?.exitstatus, out
 
-      write(dir, 'docs/guide.md', "# Guide\n\n[readme](../README.md#read-me)\n\n[skill](../skills/x/SKILL.md)\n")
+      write(dir, 'docs/guide.md',
+            "---\ntitle: Guide\n---\n# Guide\n\n[readme](../README.md#read-me)\n\n[skill](../skills/x/SKILL.md)\n")
       add_all(dir)
       out = lint(dir)
       assert_equal 1, $?.exitstatus, out
@@ -1539,6 +1541,41 @@ class DiscoveryTest < Minitest::Test
       assert_includes out, 'README.md is a page the site does not build (_config.yml excludes it)'
       assert_includes out, 'skills/x/SKILL.md is a page the site does not build'
     end
+  end
+
+  # A page the site doesn't render keeps its links out of the site too: one under a name Jekyll skips, and one
+  # without front matter, which Jekyll copies as it is. Their links to an excluded page pass; a rendered page's fails.
+  def test_a_link_to_an_excluded_page_from_a_page_the_site_does_not_render_passes
+    with_repo do |dir|
+      File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
+      write(dir, 'README.md', "# Read me\n")
+      write(dir, '_notes.md', "---\ntitle: Notes\n---\n# Notes\n\n[readme](README.md)\n")
+      write(dir, '.hidden/n.md', "---\ntitle: N\n---\n# N\n\n[readme](../README.md)\n")
+      write(dir, 'docs/raw.md', "# Raw\n\n[readme](../README.md)\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 0, $?.exitstatus, out
+
+      write(dir, 'docs/page.md', "---\ntitle: Page\n---\n# Page\n\n[readme](../README.md)\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(%r{unbuilt \(1\)}, out)
+      assert_includes out, 'docs/page.md'
+    end
+  end
+
+  # An extensionless link to an excluded page resolves on neither renderer, and adding `.md` would only make it an
+  # unbuilt link, so it is reported as unbuilt rather than with the extension advice.
+  def test_an_extensionless_link_to_an_excluded_page_is_unbuilt
+    files = Set['README.md', 'docs/a.md']
+    link = AnchorContract::Extract.links("[x](../README)\n", source: 'docs/a.md').first
+    got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: Set['docs'],
+                               excluded: Set['README.md'], rendered: Set['docs/a.md'])
+    assert_equal [:unbuilt], got.map(&:rule)
+    assert_includes got.first.message, 'README.md is a page the site does not build'
+    got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: Set['docs'])
+    assert_equal [:extension], got.map(&:rule)
   end
 
   # The rule through `check` alone: only a link from a built page into the excluded set is reported, and a call
