@@ -104,9 +104,9 @@ reader was given, and what it read, does. A fresh session given the PR as the ho
 commits and their messages, description), the trunk and the gate's configured rubric, and nothing
 of the writer's own reasoning, findings or earlier verdicts for this PR, is independent. A subagent
 that inherits the writer's context, a resumed session and an inherited transcript are not. Nor is
-a fresh session that reads notes on this PR it can reach for itself: the writer's or an earlier
-reviewer's reasoning, findings or verdicts in a memory or handoff file, or in the PR's comments and
-reviews. A reader that saw any says so. A review tool
+such a session once it reads notes on this PR that it can reach for itself: the writer's or an
+earlier reviewer's reasoning, findings or verdicts in a memory or handoff file, or in the PR's
+comments and reviews. A reader that saw any says so, and its pass doesn't count. A review tool
 counts when it is the one configured for the gate, runs on the pinned head with nothing from
 the writer beyond that head and the configured rubric, and its findings are taken verbatim.
 

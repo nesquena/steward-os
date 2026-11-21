@@ -83,10 +83,10 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
    - **Independent readers.** A reading leg counts only if a reader that wrote no commit in the
      PR's range produced it, under
      [the rule](../../docs/lifecycle/quality-gates.md#independent-readers). Tell each reader to
-     keep notes on this PR (the writer's or an earlier reviewer's, in a memory or handoff file or in
-     the PR's comments and reviews) out of its reading and searches, and to say if it saw any; if
-     it did, its leg is missing, not passed. A fix you make in step
-     4, 7 or 8 makes you a writer of the new head: its legs come from a fresh reader, given the
+     keep notes on this PR (the writer's or an earlier reviewer's reasoning, findings or verdicts,
+     in a memory or handoff file or in the PR's comments and reviews) out of its reading and
+     searches, and to say if it saw any; if it did, its leg is missing, not passed. A fix you make
+     in step 4, 7 or 8 makes you a writer of the new head: its legs come from a fresh reader, given the
      PR as the host shows it (diff, commits and their messages, description), the trunk and the
      gate's configured rubric, and nothing of your own reasoning, findings or earlier verdicts for
      this PR. A tool's findings count
