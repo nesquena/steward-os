@@ -988,6 +988,9 @@ class IndependentReadersContractTest < Minitest::Test
     assert_includes rule, 'Being the same model or the same account doesn\'t decide it; what the reader was given does.'
     assert_includes rule, 'A subagent that inherits the writer\'s context, a resumed session and an inherited ' \
                           'transcript are not.'
+    assert_includes rule, 'That holds only if it doesn\'t go looking: a reader that can reach the writer\'s notes for ' \
+                          'this PR (a memory or handoff file, earlier findings) leaves them unread, searches included, ' \
+                          'and a reader that saw any says so, since its pass is then not independent.'
     assert_includes rule, 'A fresh session given the PR as the host shows it (diff, commits and their messages, ' \
                           'description), the trunk and the gate\'s configured rubric, and nothing of the writer\'s own ' \
                           'reasoning, findings or earlier verdicts for this PR, is independent.'
