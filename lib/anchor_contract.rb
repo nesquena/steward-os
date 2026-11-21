@@ -77,13 +77,23 @@ module AnchorContract
   # headings — repo-relative markdown path => heading ids it offers
   # files    — every repo-relative file path
   # dirs     — every repo-relative directory path
-  def self.check(links:, headings:, files:, dirs:)
-    links.filter_map { |link| check_link(link, headings, files, dirs) }
+  # excluded — the tracked pages _config.yml keeps out of the site (site_excluded_markdown). A link from a page the
+  #            site builds to one of them stays a .md link on the site: the relative-links plugin has no built page
+  #            to point it at, so it is broken there while GitHub shows it working. A link between two excluded
+  #            pages is fine, since only GitHub renders either one.
+  def self.check(links:, headings:, files:, dirs:, excluded: Set.new)
+    links.filter_map { |link| check_link(link, headings, files, dirs, excluded) }
   end
 
-  def self.check_link(link, headings, files, dirs)
+  UNBUILT_MESSAGE = '%s is a page the site does not build (_config.yml excludes it), so the site keeps this ' \
+                    'link as a broken .md link; link it by its GitHub URL, or stop excluding it'
+
+  def self.check_link(link, headings, files, dirs, excluded)
     doc = resolve(link, files, dirs)
     return doc if doc.is_a?(Violation)
+    if doc && excluded.include?(doc) && !excluded.include?(link.source)
+      return Violation.new(rule: :unbuilt, link: link, message: format(UNBUILT_MESSAGE, doc))
+    end
     return nil if doc.nil? || link.fragment.nil?
     return nil unless doc.end_with?('.md')
 

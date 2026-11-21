@@ -100,7 +100,7 @@ unless rejections.empty?
   exit 1
 end
 
-violations = AnchorContract.check(links: links, headings: headings, files: files, dirs: dirs)
+violations = AnchorContract.check(links: links, headings: headings, files: files, dirs: dirs, excluded: excluded)
 
 puts "Anchor lint — #{docs.size} documents, #{links.size} relative links, " \
      "#{links.count(&:fragment)} anchors"

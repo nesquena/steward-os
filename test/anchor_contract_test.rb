@@ -1504,7 +1504,10 @@ class DiscoveryTest < Minitest::Test
   # in a file both renderers publish and in one only GitHub does.
   def test_the_lint_passes_under_a_posix_locale
     with_repo do |dir|
-      write(dir, 'café.md', "# Café — menu\n\n[readme](README.md#read--me)\n")
+      # A built page links a built page, and the GitHub-only README links back into the site: a built page
+      # linking the excluded README would be a link the site can't build.
+      write(dir, 'café.md', "# Café — menu\n\n[señor](señor.md#señor--sí)\n")
+      write(dir, 'señor.md', "# Señor — sí\n")
       write(dir, 'README.md', "# Read — me\n\n[menu](café.md#café--menu)\n")
       File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
       add_all(dir)
@@ -1513,6 +1516,47 @@ class DiscoveryTest < Minitest::Test
       assert_includes out, 'OK — every link resolves.'
       assert_match(/2 relative links, 2 anchors/, out, 'both non-ASCII links were checked')
     end
+  end
+
+  # A built page linking a page _config.yml excludes keeps a broken .md link on the site (#64): the lint fails
+  # on it, by the line, while a link between two excluded pages, and from one back into the site, pass.
+  def test_a_link_from_a_built_page_to_an_excluded_page_fails_the_lint
+    with_repo do |dir|
+      File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n  - skills/\n")
+      write(dir, 'README.md', "# Read me\n\n[guide](docs/guide.md) [skill](skills/x/SKILL.md)\n")
+      write(dir, 'skills/x/SKILL.md', "# Skill\n\n[readme](../../README.md)\n")
+      write(dir, 'docs/guide.md', "# Guide\n\n[ok](other.md)\n")
+      write(dir, 'docs/other.md', "# Other\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 0, $?.exitstatus, out
+
+      write(dir, 'docs/guide.md', "# Guide\n\n[readme](../README.md#read-me)\n\n[skill](../skills/x/SKILL.md)\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(%r{unbuilt \(2\)}, out)
+      assert_includes out, 'README.md is a page the site does not build (_config.yml excludes it)'
+      assert_includes out, 'skills/x/SKILL.md is a page the site does not build'
+    end
+  end
+
+  # The rule through `check` alone: only a link from a built page into the excluded set is reported, and a call
+  # with no excluded set reports nothing new.
+  def test_check_reports_a_built_page_linking_an_excluded_page
+    files = Set['README.md', 'docs/a.md', 'docs/b.md']
+    dirs = Set['docs']
+    link = ->(source, href) { AnchorContract::Extract.links("[x](#{href})\n", source: source).first }
+    excluded = Set['README.md']
+    rules = lambda do |l, ex = excluded|
+      AnchorContract.check(links: [l], headings: {}, files: files, dirs: dirs, excluded: ex).map(&:rule)
+    end
+    assert_equal [:unbuilt], rules.call(link.call('docs/a.md', '../README.md'))
+    assert_empty rules.call(link.call('docs/a.md', 'b.md'))
+    assert_empty rules.call(link.call('README.md', 'docs/a.md'))
+    assert_empty rules.call(link.call('docs/a.md', '../README.md'), Set.new)
+    assert_empty AnchorContract.check(links: [link.call('docs/a.md', '../README.md')], headings: {},
+                                      files: files, dirs: dirs)
   end
 
   # The real page exists and GitHub resolves `&eacute;.md` to it, but the built site keeps it a `.md` link it
