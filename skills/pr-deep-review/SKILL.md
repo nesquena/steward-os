@@ -67,7 +67,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
 3. **Exercise the change.** Outcome **no run**: skip this step.
 4. **For each flaw, decide bounce vs. fix:**
    - **Bounce** with an *exact, reproducible* fix-spec. Reconcile against the live thread first so
-     you don't duplicate feedback; that reading is yours, not a gate reader's (step 5).
+     you don't duplicate feedback. Once you have read it, you produce no reading leg for this PR
+     (step 5).
    - **Fix it yourself** (Builder) for mechanical blockers (rebase, a few failing tests, a small
      nit) — on the author's branch, preserving authorship. Outcome **no run**: bounce instead; a
      fix you can't run is a fix you can't verify. With no independent reader for the fixed head
@@ -82,13 +83,13 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      under **no run**. If that cannot be guaranteed, the reading leg is missing, not passed.
    - **Independent readers.** A reading leg counts only if a reader that wrote no commit in the
      PR's range produced it, under
-     [the rule](../../docs/lifecycle/quality-gates.md#independent-readers). Tell each reader to
-     keep notes on this PR, the writer's or an earlier reviewer's (the PR's comments and reviews
-     included), out of its reading and searches, and to say if it saw any; if it did, its leg is
-     missing, not passed. A fix you make in step 4, 7 or 8 makes you a writer of the new head: its legs come
-     from a fresh reader, given the PR as the host shows it (diff, commits and their messages,
-     description), the trunk and the gate's configured rubric, and nothing of your own reasoning,
-     findings or earlier verdicts for this PR. A tool's findings count
+     [the rule](../../docs/lifecycle/quality-gates.md#independent-readers). Give each reader only
+     the PR as the host shows it (diff, commits and their messages, description), the trunk and
+     the gate's configured rubric: no notes on this PR, so none of the writer's or an earlier
+     reviewer's reasoning, findings or verdicts in its brief. Tell it to keep notes, the PR's
+     comments and reviews included, out of its reading and searches, and to say if it saw any; if
+     it did, its leg is missing, not passed. A fix you make in step 4, 7 or 8 makes you a writer of
+     the new head: its legs come from a fresh reader, briefed the same way. A tool's findings count
      verbatim, never your summary of them. Your own read of your fix is not a leg; with no
      independent reader, the leg is missing, not passed. Independence is on top of the second
      pass being differently tuned, not instead of it.
@@ -171,8 +172,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
 - For an all-clear: the full suite passed to completion on the *current* code; any human-run
   replacement has verified trusted origin, fresh completion time, required scope and successful results.
 - Both independent review passes completed on the same current head; no required finding unresolved.
-- Neither reading leg was produced by a reader that wrote a commit in the PR's range, and neither
-  reader reported seeing notes on this PR.
+- Neither reading leg was produced by a reader that wrote a commit in the PR's range, was briefed
+  with notes on this PR or reported seeing any.
 - The differential ran, or the verdict says why none applied; where trunk's accepted configuration
   has CI, the runs it would start for this PR exist and ran in full for this head.
 - Required visible surfaces inspected/driven; regression coverage for fixes present; authorship preserved.

@@ -987,20 +987,20 @@ class IndependentReadersContractTest < Minitest::Test
                           'absorbing or cherry-picking it all count.'
     assert_includes rule, 'Being the same model or the same account doesn\'t decide it; what the reader was given, and ' \
                           'what it read, does.'
+    assert_includes rule, 'A reader is independent when all it has on this PR is the PR as the host shows it (diff, ' \
+                          'commits and their messages, description; not its comments or reviews), the trunk and the ' \
+                          'gate\'s configured rubric.'
+    assert_includes rule, 'Anything else on this PR that carries the writer\'s or an earlier reviewer\'s reasoning, ' \
+                          'findings or verdicts is a note, wherever it is: in the reader\'s brief, in a memory or ' \
+                          'handoff file, or in the PR\'s comments and reviews.'
+    assert_includes rule, 'A record that only points to the PR isn\'t one.'
     assert_includes rule, 'A subagent that inherits the writer\'s context, a resumed session and an inherited ' \
-                          'transcript are not.'
-    assert_includes rule, 'Nor is a fresh session that reads notes on this PR: the writer\'s or an earlier ' \
-                          'reviewer\'s, in a memory or handoff file or in the PR\'s comments and reviews.'
-    assert_includes rule, 'A note carries reasoning, findings or a verdict; a record that only points to the PR ' \
-                          'isn\'t one.'
-    assert_includes rule, 'A reader that can reach notes keeps them out of its reading and its searches, and one that ' \
-                          'saw any says so: its pass is then not independent.'
-    assert_includes rule, 'A fresh session given the PR as the host shows it (diff, commits and their messages, ' \
-                          'description), the trunk and the gate\'s configured rubric, and nothing of the ' \
-                          'writer\'s or an earlier reviewer\'s reasoning, findings or verdicts for this PR, is independent.'
+                          'transcript are not independent.'
+    assert_includes rule, 'A reader that can reach notes keeps them out of its reading and its searches. One that saw ' \
+                          'any says so, and its pass is not independent.'
     assert_includes rule, 'A review tool counts when it is the one configured for the gate, runs on the pinned head ' \
-                          'with nothing from the writer or an earlier reviewer beyond that head and the configured ' \
-                          'rubric, and its findings are taken verbatim.'
+                          'with no notes on this PR, and its findings are taken verbatim; a tool that reads the PR\'s ' \
+                          'comments or reviews doesn\'t count.'
     assert_includes rule, 'when none is available, the reviewer bounces the fix to the author instead of making it.'
     assert_includes rule, 'A human\'s standing instruction can cover merges by an agent that wrote no commit in the ' \
                           'PR\'s range; it lives in operator-controlled configuration or the decision log, never the ' \
@@ -1020,21 +1020,21 @@ class IndependentReadersContractTest < Minitest::Test
     assert_includes step5, 'Your own read of your fix is not a leg; with no independent reader, the leg is missing, ' \
                            'not passed.'
     assert_includes step5, 'Independence is on top of the second pass being differently tuned, not instead of it.'
-    assert_includes step5, 'Tell each reader to keep notes on this PR, the writer\'s or an earlier reviewer\'s ' \
-                           '(the PR\'s comments and reviews included), out of its reading and searches, and to say ' \
-                           'if it saw any; if it did, its leg is missing, not passed.'
-    assert_includes step5, 'given the PR as the host shows it (diff, commits and their messages, description), the ' \
-                           'trunk and the gate\'s configured rubric, and nothing of your own reasoning, findings or ' \
-                           'earlier verdicts for this PR.'
+    assert_includes step5, 'Give each reader only the PR as the host shows it (diff, commits and their messages, ' \
+                           'description), the trunk and the gate\'s configured rubric: no notes on this PR, so none of ' \
+                           'the writer\'s or an earlier reviewer\'s reasoning, findings or verdicts in its brief.'
+    assert_includes step5, 'Tell it to keep notes, the PR\'s comments and reviews included, out of its reading and ' \
+                           'searches, and to say if it saw any; if it did, its leg is missing, not passed.'
+    assert_includes step5, 'its legs come from a fresh reader, briefed the same way.'
     assert_includes skill_step('pr-deep-review', 4),
                     'With no independent reader for the fixed head (step 5), bounce instead too.'
     assert_includes skill_step('pr-deep-review', 4),
-                    'that reading is yours, not a gate reader\'s (step 5).'
+                    'Once you have read it, you produce no reading leg for this PR (step 5).'
     assert_includes skill_step('pr-deep-review', 7),
                     'or bounces under step 4\'s no-run or no-independent-reader restriction'
     assert_includes read('skills', 'pr-deep-review', 'SKILL.md').split('## Verification').last,
-                    'Neither reading leg was produced by a reader that wrote a commit in the PR\'s range, and ' \
-                    'neither reader reported seeing notes on this PR.'
+                    'Neither reading leg was produced by a reader that wrote a commit in the PR\'s range, was ' \
+                    'briefed with notes on this PR or reported seeing any.'
   end
 
   def test_release_merge_call_is_a_humans
