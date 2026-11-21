@@ -1504,15 +1504,163 @@ class DiscoveryTest < Minitest::Test
   # in a file both renderers publish and in one only GitHub does.
   def test_the_lint_passes_under_a_posix_locale
     with_repo do |dir|
-      write(dir, 'café.md', "# Café — menu\n\n[readme](README.md#read--me)\n")
-      write(dir, 'README.md', "# Read — me\n\n[menu](café.md#café--menu)\n")
+      # A page links another page, and the GitHub-only README links back into the site. (The pages carry no front
+      # matter, so the site copies them rather than rendering them; the test is about the locale, not routing.)
+      write(dir, 'café.md', "# Café — menu\n\n[señor](señor.md#señor--sí)\n")
+      write(dir, 'señor.md', "# Señor — sí\n")
+      # The README's self-link checks its own non-ASCII id under GitHub's slugger, the only renderer it gets.
+      write(dir, 'README.md', "# Léeme — sí\n\n[menu](café.md#café--menu) [self](#léeme--sí)\n")
       File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
       add_all(dir)
       out = lint(dir)
       assert_equal 0, $?.exitstatus, out
       assert_includes out, 'OK — every link resolves.'
-      assert_match(/2 relative links, 2 anchors/, out, 'both non-ASCII links were checked')
+      assert_match(/3 relative links, 3 anchors/, out, 'every non-ASCII link was checked')
     end
+  end
+
+  # A built page linking a page _config.yml excludes keeps a broken .md link on the site (#64): the lint fails
+  # on it, by the line, while a link between two excluded pages, and from one back into the site, pass.
+  def test_a_link_from_a_built_page_to_an_excluded_page_fails_the_lint
+    with_repo do |dir|
+      File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n  - skills/\n")
+      write(dir, 'README.md', "# Read me\n\n[guide](docs/guide.md) [skill](skills/x/SKILL.md)\n")
+      # Front matter, so an excluded page that would otherwise render shows the excluded check doing the work.
+      write(dir, 'skills/x/SKILL.md', "---\nname: x\n---\n# Skill\n\n[readme](../../README.md)\n")
+      write(dir, 'docs/guide.md', "# Guide\n\n[ok](other.md)\n")
+      write(dir, 'docs/other.md', "# Other\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 0, $?.exitstatus, out
+
+      write(dir, 'docs/guide.md',
+            "---\ntitle: Guide\n---\n# Guide\n\n[readme](../README.md#read-me)\n\n[skill](../skills/x/SKILL.md)\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(%r{unbuilt \(2\)}, out)
+      assert_includes out, 'README.md is a page the site does not build (_config.yml excludes it)'
+      assert_includes out, 'skills/x/SKILL.md is a page the site does not build'
+    end
+  end
+
+  # A page the site doesn't render keeps its links out of the site too: one under a name Jekyll skips, and one
+  # without front matter, which Jekyll copies as it is. Their links to an excluded page pass; a rendered page's fails.
+  def test_a_link_to_an_excluded_page_from_a_page_the_site_does_not_render_passes
+    with_repo do |dir|
+      File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
+      write(dir, 'README.md', "# Read me\n")
+      write(dir, '_notes.md', "---\ntitle: Notes\n---\n# Notes\n\n[readme](README.md)\n")
+      write(dir, '.hidden/n.md', "---\ntitle: N\n---\n# N\n\n[readme](../README.md)\n")
+      write(dir, 'docs/raw.md', "# Raw\n\n[readme](../README.md)\n")
+      write(dir, 'x~/n.md', "---\ntitle: N\n---\n# N\n\n[readme](../README.md)\n")
+      write(dir, 'a./n.md', "---\ntitle: N\n---\n# N\n\n[readme](../README.md)\n")
+      write(dir, 'docs/draft.md', "---\ntitle: Draft\npublished: false\n---\n# Draft\n\n[readme](../README.md)\n")
+      write(dir, 'docs/empty.md', "---\ntitle: Empty\npublished:\n---\n# Empty\n\n[readme](../README.md)\n")
+      # SafeYAML reads a date where YAML.safe_load refuses it; a CRLF front matter is still front matter.
+      write(dir, 'docs/dated.md', "---\ndate: 2020-01-01\npublished: false\n---\n# Dated\n\n[readme](../README.md)\n")
+      write(dir, 'docs/crlf.md', "---\r\ntitle: C\r\npublished: false\r\n---\r\n# C\r\n\r\n[readme](../README.md)\r\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 0, $?.exitstatus, out
+
+      write(dir, 'docs/page.md', "---\ntitle: Page\n---\n# Page\n\n[readme](../README.md)\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(%r{unbuilt \(1\)}, out)
+      assert_includes out, 'docs/page.md'
+
+      # With `unpublished: true` the site renders the unpublished pages too.
+      File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\nunpublished: true\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(%r{unbuilt \(5\)}, out)
+      %w[docs/draft.md docs/empty.md docs/dated.md docs/crlf.md].each { |page| assert_includes out, page }
+    end
+  end
+
+  # A page whose front matter unpublishes it is read but not written, so a built page's link to it keeps its .md
+  # href and 404s, and the extensionless form has no page either. With `unpublished: true` the site writes it.
+  def test_a_link_to_an_unpublished_page_is_unbuilt
+    with_repo do |dir|
+      File.write(File.join(dir, '_config.yml'), "exclude: []\n")
+      write(dir, 'docs/a.md', "---\ntitle: A\n---\n# A\n\n[draft](draft.md) and [bare](draft)\n")
+      write(dir, 'docs/draft.md', "---\ntitle: Draft\npublished: false\n---\n# Draft\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(%r{unbuilt \(2\)}, out)
+      refute_match(%r{extension \(}, out)
+      assert_includes out, 'docs/draft.md is a page the site does not build (its front matter unpublishes it), ' \
+                           'so the site keeps this link as a broken .md link'
+      assert_includes out, 'docs/draft.md is a page the site does not build (its front matter unpublishes it), ' \
+                           'so the site has no page at this link'
+
+      File.write(File.join(dir, '_config.yml'), "exclude: []\nunpublished: true\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      refute_match(%r{unbuilt \(}, out)
+      assert_match(%r{extension \(1\)}, out)
+    end
+  end
+
+  # Front matter Jekyll can't read (here SafeYAML raises TypeError on a merge key with an undefined alias) leaves the
+  # page published: Jekyll warns and builds it. The lint reads it the same way instead of crashing.
+  def test_a_page_whose_front_matter_jekyll_cannot_read_is_rendered
+    with_repo do |dir|
+      File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
+      write(dir, 'README.md', "# Read me\n")
+      write(dir, 'docs/merge.md', "---\ntitle: M\n<<: *missing\n---\n# M\n\n[readme](../README.md)\n")
+      # A syntax error: Jekyll builds the page with no data, so its `published: false` doesn't count.
+      write(dir, 'docs/bad.md', "---\npublished: false\ntitle: [oops\n---\n# B\n\n[readme](../README.md)\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(%r{unbuilt \(2\)}, out)
+      assert_includes out, 'docs/merge.md'
+      assert_includes out, 'docs/bad.md'
+    end
+  end
+
+  # An extensionless link to an excluded page resolves on neither renderer, and adding `.md` would only make it an
+  # unbuilt link, so it is reported as unbuilt rather than with the extension advice.
+  def test_an_extensionless_link_to_an_excluded_page_is_unbuilt
+    files = Set['README.md', 'docs/a.md']
+    link = AnchorContract::Extract.links("[x](../README)\n", source: 'docs/a.md').first
+    got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: Set['docs'],
+                               excluded: Set['README.md'], rendered: Set['docs/a.md'])
+    assert_equal [:unbuilt], got.map(&:rule)
+    assert_includes got.first.message, 'README.md is a page the site does not build'
+    assert_includes got.first.message, 'the site has no page at this link'
+    got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: Set['docs'])
+    assert_equal [:extension], got.map(&:rule)
+    # From a page the site doesn't render, the link is GitHub's alone, and the extension advice is right.
+    got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: Set['docs'],
+                               excluded: Set['README.md'], rendered: Set.new)
+    assert_equal [:extension], got.map(&:rule)
+  end
+
+  # The rule through `check` alone: only a link from a built page into the excluded set is reported, and a call
+  # with no excluded set reports nothing new.
+  def test_check_reports_a_built_page_linking_an_excluded_page
+    files = Set['README.md', 'docs/a.md', 'docs/b.md']
+    dirs = Set['docs']
+    link = ->(source, href) { AnchorContract::Extract.links("[x](#{href})\n", source: source).first }
+    excluded = Set['README.md']
+    rules = lambda do |l, ex = excluded|
+      AnchorContract.check(links: [l], headings: {}, files: files, dirs: dirs, excluded: ex).map(&:rule)
+    end
+    assert_equal [:unbuilt], rules.call(link.call('docs/a.md', '../README.md'))
+    assert_empty rules.call(link.call('docs/a.md', 'b.md'))
+    assert_empty rules.call(link.call('README.md', 'docs/a.md'))
+    # An excluded page linking an excluded page: the `rendered: nil` fallback reads the source as excluded too.
+    assert_empty rules.call(link.call('README.md', 'README.md'))
+    assert_empty rules.call(link.call('docs/a.md', '../README.md'), Set.new)
+    assert_empty AnchorContract.check(links: [link.call('docs/a.md', '../README.md')], headings: {},
+                                      files: files, dirs: dirs)
   end
 
   # The real page exists and GitHub resolves `&eacute;.md` to it, but the built site keeps it a `.md` link it
