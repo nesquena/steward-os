@@ -785,13 +785,14 @@ module AnchorContract
     end
 
     # Jekyll writes nothing for a page whose front matter sets `published` to false or leaves it empty
-    # (Publisher#can_be_published?: `data.fetch('published', true)`). Front matter Jekyll can't parse leaves the
-    # page published, as Jekyll does outside strict_front_matter.
+    # (Publisher#can_be_published?: `data.fetch('published', true)`). Front matter Jekyll can't read leaves the
+    # page published: Convertible#read_yaml rescues any StandardError (a syntax error, or SafeYAML's TypeError on
+    # `<<: *missing`), warns and builds the page with no data, outside strict_front_matter.
     def unpublished_page?(path)
       front = File.read(path, encoding: 'UTF-8')[Jekyll::Document::YAML_FRONT_MATTER_REGEXP, 1]
       data = front && SafeYAML.load(front)
       data.is_a?(Hash) && !data.fetch('published', true)
-    rescue Psych::Exception
+    rescue StandardError
       false
     end
 

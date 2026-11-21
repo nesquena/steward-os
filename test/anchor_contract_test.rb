@@ -1578,6 +1578,21 @@ class DiscoveryTest < Minitest::Test
     end
   end
 
+  # Front matter Jekyll can't read (here SafeYAML raises TypeError on a merge key with an undefined alias) leaves the
+  # page published: Jekyll warns and builds it. The lint reads it the same way instead of crashing.
+  def test_a_page_whose_front_matter_jekyll_cannot_read_is_rendered
+    with_repo do |dir|
+      File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
+      write(dir, 'README.md', "# Read me\n")
+      write(dir, 'docs/merge.md', "---\ntitle: M\n<<: *missing\n---\n# M\n\n[readme](../README.md)\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(%r{unbuilt \(1\)}, out)
+      assert_includes out, 'docs/merge.md'
+    end
+  end
+
   # An extensionless link to an excluded page resolves on neither renderer, and adding `.md` would only make it an
   # unbuilt link, so it is reported as unbuilt rather than with the extension advice.
   def test_an_extensionless_link_to_an_excluded_page_is_unbuilt
@@ -1609,6 +1624,8 @@ class DiscoveryTest < Minitest::Test
     assert_equal [:unbuilt], rules.call(link.call('docs/a.md', '../README.md'))
     assert_empty rules.call(link.call('docs/a.md', 'b.md'))
     assert_empty rules.call(link.call('README.md', 'docs/a.md'))
+    # An excluded page linking an excluded page: the `rendered: nil` fallback reads the source as excluded too.
+    assert_empty rules.call(link.call('README.md', 'README.md'))
     assert_empty rules.call(link.call('docs/a.md', '../README.md'), Set.new)
     assert_empty AnchorContract.check(links: [link.call('docs/a.md', '../README.md')], headings: {},
                                       files: files, dirs: dirs)
