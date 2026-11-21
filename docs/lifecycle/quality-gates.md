@@ -102,14 +102,15 @@ any commit in the PR's range, trunk to head: authoring, fixing, rebasing, absorb
 cherry-picking it all count. Being the same model or the same account doesn't decide it; what the
 reader was given, and what it read, does. A fresh session given the PR as the host shows it (diff,
 commits and their messages, description), the trunk and the gate's configured rubric, and nothing
-of the writer's own reasoning, findings or earlier verdicts for this PR, is independent. That holds
-only if it doesn't read notes on this PR either: the writer's or an earlier reviewer's, in a memory
-or handoff file or on the PR's thread. A note carries reasoning, findings or a verdict; a record
-that only points to the PR isn't one. A reader that can reach notes keeps them out of its reading
-and its searches, and one that saw any says so: its pass is then not independent. A subagent that
-inherits the writer's context, a resumed session and an inherited transcript are not. A review tool
-counts when it is the one configured for the gate, runs on the pinned head with nothing from
-the writer beyond that head and the configured rubric, and its findings are taken verbatim.
+of the writer's or an earlier reviewer's reasoning, findings or verdicts for this PR, is
+independent. A subagent that inherits the writer's context, a resumed session and an inherited
+transcript are not. Nor is a fresh session that reads notes on this PR: the writer's or an earlier
+reviewer's, in a memory or handoff file or in the PR's comments and reviews. A note carries
+reasoning, findings or a verdict; a record that only points to the PR isn't one. A reader that can
+reach notes keeps them out of its reading and its searches, and one that saw any says so: its pass
+is then not independent. A review tool counts when it is the one configured for the gate, runs on
+the pinned head with nothing from the writer or an earlier reviewer beyond that head and the
+configured rubric, and its findings are taken verbatim.
 
 A fix starts this over. Once a reviewer fixes something, the reading legs for the new head come
 from a fresh reader; when none is available, the reviewer bounces the fix to the author instead of
