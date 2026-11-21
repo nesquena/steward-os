@@ -183,9 +183,20 @@ class LinksTest < Minitest::Test
     assert_equal '2-routing', l.fragment
   end
 
-  def test_skips_external_and_absolute_links
-    md = "[a](https://example.com) [b](mailto:x@y.z) [c](/root/abs.md)\n"
+  def test_skips_external_links
+    md = "[a](https://example.com) [b](mailto:x@y.z) [c](//cdn.example/abs.md)\n"
     assert_empty links(md)
+  end
+
+  # A root-relative link names the path from the repository root, wherever the linking page sits: GitHub resolves
+  # it there, and the relative-links plugin against the site source (adding the baseurl itself). `/` is the root.
+  def test_roots_a_root_relative_link_at_the_repository
+    each_reading("[x](/docs/x.md#top)\n") do |name, found|
+      assert_equal [%w[docs/x.md top]], found.map { |l| [l.path, l.fragment] }, name
+    end
+    each_reading("[x](/)\n") { |name, found| assert_equal ['.'], found.map(&:path), name }
+    each_reading("[x](/../x.md)\n") { |name, found| assert_equal ['../x.md'], found.map(&:path), name }
+    each_reading(%(<a href="/docs/x.md">x</a>\n)) { |name, found| assert_equal ['docs/x.md'], found.map(&:path), name }
   end
 
   def test_skips_links_inside_fenced_code
@@ -412,7 +423,9 @@ class LinksTest < Minitest::Test
       assert_equal [], rules(found, files, headings: { 'docs/lifecycle/x.md' => ['top'] }), name
       assert_equal [:fragment], rules(found, files, headings: { 'docs/lifecycle/x.md' => ['x'] }), name
     end
-    each_reading("[x](&sol;docs/ghost.md)\n") { |name, found| assert_empty found, "an absolute target via #{name}" }
+    each_reading("[x](&sol;docs/ghost.md)\n") do |name, found|
+      assert_equal [:missing], rules(found, Set.new), "a root-relative target via #{name}"
+    end
   end
 
   # Both renderers' copies of one link that names nothing are one broken link: they agree on the decoded target
@@ -518,7 +531,7 @@ class LinksCmarkTest < Minitest::Test
   # External and same-file-fragment links are handled the same as the kramdown
   # oracle, so the union does not double-count or misroute them.
   def test_skips_external_targets
-    assert_empty paths("[a](https://example.com) [b](mailto:x@y.z) [c](/abs.md)\n")
+    assert_empty paths("[a](https://example.com) [b](mailto:x@y.z) [c](//cdn.example/abs.md)\n")
   end
 
   def test_reports_the_source_line_of_the_link
@@ -1064,7 +1077,8 @@ class UnportableTest < Minitest::Test
      '[x](a(b).md)', '[x](a%20b.md)', '[x](a%23b.md)', '[x](a%27b.md)', '[x](a%25b.md)',
      '[x](a%2Bb.md)', '[x](%25.md)', '[x](e%CC%81x.md)', '<a href="e%CC%81x.md">x</a>', '<a href="a<b.md">x</a>',
      '<a href="a>b.md">x</a>', '[x](<a"b.md>)', '[x](plain.MD)', '[x](&sol;docs/x.md)', '[x](~missing.md#real)',
-     '[x](%2Fx.md#sub)', '[x](a..b.md#first)', '[x](sub/a..b.md)', '[x](_x.md)', '[x](.x.md)', '[x](.md)',
+     '[x](%2Fx.md#sub)', '[x](/%2Fx.md)', '[x](/docs/x.md?v=1)', '<img src="/docs/x.md">', '[x](/a..b.md)',
+     '[x](a..b.md#first)', '[x](sub/a..b.md)', '[x](_x.md)', '[x](.x.md)', '[x](.md)',
      '[x](_d/y.md)', '[x](v~/plain.md)', '[x](%7E/x.md)', '<a href="~x.md">x</a>', '[x](a./b.md)',
      '[x](v1./plain.md)', '[x](a%2E/b.md)'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
@@ -1078,7 +1092,7 @@ class UnportableTest < Minitest::Test
      '[x](x~.md)',
      '<a href="&eacute;.png">x</a>', '[x](./plain.md)', '[x](sub/../plain.md)', '[x](sub%2Fplain.md)',
      '[x](%C3%A9.md)', '<a href="%C3%A9.md#x">x</a>', '![x](a.png)', '[x](a%00.md)', '[x](x_/plain.md)',
-     '[x](ﬁ.md)', '[x](a//b.md)'].each do |link|
+     '[x](ﬁ.md)', '[x](a//b.md)', '<a href="/docs/x.md#x">x</a>', '[x](/x.md)'].each do |link|
       found = AnchorContract::Extract.unportable("# T\n\n#{link}\n", source: 'docs/p.md')
       assert_empty found.select { |r| r.message == message }, link
     end
@@ -1093,6 +1107,8 @@ class UnportableTest < Minitest::Test
     assert_equal [message], found.map(&:message)
     assert_includes message, 'rename the directory'
     assert_empty AnchorContract::Extract.unportable("# T\n\n[x](plain.md#real)\n", source: "docs/\u00e9/index.md")
+    # A root-relative link doesn't pass through the page's directory, so that directory's name doesn't matter.
+    assert_empty AnchorContract::Extract.unportable("# T\n\n[x](/docs/plain.md)\n", source: "docs/e\u0301/index.md")
   end
 
   # A decomposed directory written in the link itself: Jekyll leaves that href decomposed whatever the directory's
@@ -1581,6 +1597,31 @@ class DiscoveryTest < Minitest::Test
     end
   end
 
+  # Root-relative links through the real bin, with the site's baseurl set (#64).
+  def test_the_lint_checks_root_relative_links
+    with_repo do |dir|
+      File.write(File.join(dir, '_config.yml'), "baseurl: /site\nexclude:\n  - README.md\n")
+      write(dir, 'README.md', "# Read me\n\n[docs](/docs/) [b](/docs/b.md#b)\n")
+      write(dir, 'docs/a.md', "---\ntitle: A\n---\n# A\n\n[b](/docs/b.md#b) [up](../)\n")
+      write(dir, 'docs/b.md', "---\ntitle: B\n---\n# B\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 0, $?.exitstatus, out
+      assert_match(/4 relative links, 2 anchors/, out, 'root-relative links are counted and checked')
+
+      write(dir, 'docs/a.md', "---\ntitle: A\n---\n# A\n\n[b](/docs/b.md#nope) [g](/docs/ghost.md) " \
+                              "[base](/site/docs/b.md) [readme](/README.md) [dir](/docs/)\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(/fragment \(1\)/, out)
+      assert_match(/missing \(2\)/, out)
+      assert_match(/unbuilt \(1\)/, out)
+      assert_match(/root_relative \(1\)/, out)
+      assert_match(/link the page by name/, out)
+    end
+  end
+
   # A page whose front matter unpublishes it is read but not written, so a built page's link to it keeps its .md
   # href and 404s, and the extensionless form has no page either. With `unpublished: true` the site writes it.
   def test_a_link_to_an_unpublished_page_is_unbuilt
@@ -1641,6 +1682,65 @@ class DiscoveryTest < Minitest::Test
     got = AnchorContract.check(links: [link], headings: {}, files: files, dirs: Set['docs'],
                                excluded: Set['README.md'], rendered: Set.new)
     assert_equal [:extension], got.map(&:rule)
+  end
+
+  # A root-relative link from a built page gets every check a relative one gets (#64). The plugin roots it at the
+  # site source and adds the baseurl, so one that spells the baseurl is missing. Anything but a `.md` page (a
+  # directory, an extensionless page, another file) the plugin can leave without the baseurl, which breaks it on
+  # the site alone, so only a built page is held to that. A `%2F` doesn't root a link: GitHub keeps it relative.
+  def test_check_resolves_a_root_relative_link
+    files = Set['README.md', 'docs/a.md', 'docs/b.md', 'docs/draft.md', 'assets/x.png']
+    link = ->(href, source = 'docs/a.md') { AnchorContract::Extract.links("[x](#{href})\n", source: source).first }
+    rules = lambda do |l|
+      AnchorContract.check(links: l.is_a?(Array) ? l : [l], headings: { 'docs/b.md' => ['top'] }, files: files,
+                           dirs: Set['docs', 'assets'], excluded: Set['README.md'], rendered: Set['docs/a.md'],
+                           unpublished: Set['docs/draft.md']).map(&:rule)
+    end
+    assert_empty rules.call(link.call('/docs/b.md#top'))
+    assert_equal [:fragment], rules.call(link.call('/docs/b.md#nope'))
+    assert_equal [:missing], rules.call(link.call('/docs/ghost.md'))
+    assert_equal [:missing], rules.call(link.call('/steward-os/docs/b.md'))
+    assert_equal [:missing], rules.call(link.call('/b.md'))
+    assert_equal [:unbuilt], rules.call(link.call('/README.md'))
+    assert_equal [:unbuilt], rules.call(link.call('/docs/draft.md'))
+    %w[/docs/ /docs / /#top /docs/b /README /assets/x.png].each do |href|
+      assert_equal [:root_relative], rules.call(link.call(href)), href
+    end
+    %w[&sol;docs/ &sol;assets/x.png].each do |href|
+      assert_equal [:root_relative], rules.call(link.call(href)), href
+    end
+    ['<a href="/assets/x.png">x</a>', '<img src="/assets/x.png">', '[x](</assets/x.png>)'].each do |tag|
+      found = AnchorContract::Extract.merged_links("#{tag}\n", source: 'docs/a.md')
+      assert_equal [:root_relative], rules.call(found).uniq, tag
+    end
+    # A percent-encoded slash is relative on GitHub: these name docs/%2Fdocs/ and docs/%2Fassets/x.png there.
+    assert_equal [:missing], rules.call(link.call('%2Fdocs/'))
+    assert_equal [:missing], rules.call(link.call('%2Fassets/x.png'))
+    # The same links from a page only GitHub renders, and relatively from a built page, are fine.
+    assert_empty rules.call(link.call('/docs/', 'README.md'))
+    assert_empty rules.call(link.call('/', 'README.md'))
+    assert_empty rules.call(link.call('/assets/x.png', 'README.md'))
+    assert_empty rules.call(link.call('../docs/'))
+    assert_empty rules.call(link.call('../assets/x.png'))
+  end
+
+  # A relative and a root-relative link to one directory on one page are two links: only the root-relative one
+  # loses the baseurl on the site. Dedup keeps both, in either order.
+  def test_dedup_keeps_a_root_relative_link_beside_a_relative_one
+    ['[rel](../docs/) [root](/docs/)', '[root](/docs/) [rel](../docs/)', '[rel](../) [root](/)',
+     '[root](/) [rel](../)'].each do |text|
+      found = AnchorContract::Extract.merged_links("#{text}\n", source: 'docs/a.md')
+      got = AnchorContract.check(links: found, headings: {}, files: Set['docs/a.md'], dirs: Set['docs'],
+                                 rendered: Set['docs/a.md']).map(&:rule)
+      assert_equal [:root_relative], got, text
+    end
+  end
+
+  # A relative link that climbs to the repository root names the root directory, which both renderers show.
+  def test_a_relative_link_to_the_repository_root_resolves
+    found = AnchorContract::Extract.links("[x](../)\n", source: 'docs/a.md')
+    assert_equal ['.'], found.map(&:path)
+    assert_empty AnchorContract.check(links: found, headings: {}, files: Set['docs/a.md'], dirs: Set['docs'])
   end
 
   # The rule through `check` alone: only a link from a built page into the excluded set is reported, and a call

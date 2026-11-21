@@ -98,9 +98,29 @@ module AnchorContract
   UNPUBLISHED_EXTENSIONLESS_MESSAGE = '%s is a page the site does not build (its front matter unpublishes it), so ' \
                                       'the site has no page at this link; link it by its GitHub URL, or publish it'
 
+  ROOT_RELATIVE_MESSAGE = 'root-relative link to something other than a Markdown page — the site\'s relative-links ' \
+                          'plugin rewrites one only in some forms, so the built page can keep it without the ' \
+                          'site\'s baseurl and it 404s there; link the page by name (/docs/index.md), or make the ' \
+                          'link relative'
+
+  # A root-relative link from a built page to anything but a `.md` page: a directory (`/` itself is the root, `.`),
+  # an extensionless page, or another file. The plugin indexes pages and files only, so it leaves a directory's
+  # href as written; a file it rewrites only in the plain `[x](/path)` and `![x](/path)` forms, not in a raw
+  # <a>/<img> tag, an angle-bracketed `[x](</path>)` or an entity-spelled slash. Either way the site keeps the href
+  # without the baseurl. Rather than model which forms the plugin rewrites, every such link is reported; that is
+  # over-strict only for the plain forms, whose relative spelling works the same.
+  def self.root_relative_unrewritten?(link)
+    Extract.rooted?(link.href) && !link.path.nil? && !link.path.end_with?('.md')
+  end
+  private_class_method :root_relative_unrewritten?
+
   def self.check_link(link, headings, files, dirs, excluded, rendered, unpublished = Set.new)
-    doc = resolve(link, files, dirs)
     source_rendered = rendered ? rendered.include?(link.source) : !excluded.include?(link.source)
+    if source_rendered && root_relative_unrewritten?(link)
+      return Violation.new(rule: :root_relative, link: link, message: ROOT_RELATIVE_MESSAGE)
+    end
+
+    doc = resolve(link, files, dirs)
     # An extensionless link to a page the site doesn't build doesn't resolve on the site either, and adding `.md`
     # would only trade it for an unbuilt one, so it is reported as unbuilt.
     if doc.is_a?(Violation) && doc.rule == :extension && source_rendered
@@ -144,7 +164,7 @@ module AnchorContract
     # disagree about which document supplies the headings — the site serves
     # index.md, GitHub serves README.md, and a directory rarely holds both. The
     # target has to name the document, the same way an extensionless link does.
-    if dirs.include?(link.path)
+    if link.path == '.' || dirs.include?(link.path)
       return nil if link.fragment.nil?
 
       return Violation.new(rule: :fragment, link: link,
@@ -169,7 +189,16 @@ module AnchorContract
 
   # Repo readers. Each is small and testable against fixture strings.
   module Extract
-    EXTERNAL = %r{\A(?:[a-z][a-z0-9+.-]*:|//|/)}i.freeze
+    # A scheme or a protocol-relative `//host`. A root-relative `/docs/x.md` is not external: GitHub resolves it
+    # against the repository root and the relative-links plugin against the site source, so build_link roots it.
+    EXTERNAL = %r{\A(?:[a-z][a-z0-9+.-]*:|//)}i.freeze
+
+    # Whether a link is root-relative: its target as the page carries it (character references resolved, percent
+    # escapes not) starts with `/`. A `%2F` doesn't root a link: GitHub keeps it relative. Link building, dedup and
+    # the root-relative rule all ask this one question.
+    def self.rooted?(href)
+      href.to_s.start_with?('/')
+    end
     # Jekyll's own front-matter delimiters: a leading `---` line through the next
     # `---` or `...` line. Jekyll's regex ends `$\n?`, so the closing delimiter
     # may sit at EOF with no trailing newline — a file ending `# phantom\n---`
@@ -255,9 +284,10 @@ module AnchorContract
     MARKDOWN_LINK_PATH_MESSAGE = 'a link to a Markdown page that the site\'s relative-links plugin can\'t ' \
                                  'always rewrite — the built page then keeps a broken link; link a page, not an ' \
                                  'image, end the path in a literal .md with no query, and keep the path to ' \
-                                 'letters, digits and . _ - ~ / in NFC form, with no leading / and no .. inside a ' \
-                                 'name, and no name starting with . _ or ~ or ending with . or ~ (non-ASCII letters ' \
-                                 'may be percent-encoded); write a character reference as the character itself ' \
+                                 'letters, digits and . _ - ~ / in NFC form, with any leading / written ' \
+                                 'literally (not as %2F or &sol;), no .. inside a name, and no name starting ' \
+                                 'with . _ or ~ or ending with . or ~ (non-ASCII letters may be ' \
+                                 'percent-encoded); write a character reference as the character itself ' \
                                  'or percent-encoded (é or %C3%A9, not &eacute;), and rename a page whose name ' \
                                  'needs anything else'
     # The page paths the lint allows a link to: `/`-separated names of letters, marks and digits in any script and
@@ -399,8 +429,7 @@ module AnchorContract
       href = link_target(element)
       return nil if href.nil? || href.empty?
 
-      # external or root-relative as written: the lint leaves those to other checks, as it always has; one only a
-      # character reference makes root-relative (`&sol;docs/x.md`) is still judged here
+      # external as written: the lint leaves those to other checks, as it always has
       return nil if href.match?(EXTERNAL)
 
       rendered = site_href(href)
@@ -413,17 +442,23 @@ module AnchorContract
       return MARKDOWN_LINK_PATH_MESSAGE if image
 
       path, query = href.split('#', 2).first.to_s.split('?', 2)
+      # A literal leading `/` roots the link at the repository and the site source alike; the rest of the path
+      # is held to the same plain form as a relative link's.
+      rooted = Extract.rooted?(path)
+      path = path.delete_prefix('/')
       name = decode(path).scrub
       return MARKDOWN_LINK_PATH_MESSAGE if !query.nil? || !path.end_with?('.md') || !name.match?(PLAIN_PAGE_PATH)
 
-      # Where it points, too: a decoded leading `/` (the plugin roots it), `..` inside a name (`a..b.md` and
-      # `a/b.md` build to one page), and a target path, its directories included, not in NFC. PLAIN_PAGE_PATH has
-      # already refused a name starting with `~`, which Jekyll skips unless `include:` lists it.
+      # Where it points, too: a leading `/` only an escape or a character reference spells (the plugin decodes
+      # `%2F` and roots the link while GitHub keeps it relative, and `&sol;` reaches the built page undecoded),
+      # `..` inside a name (`a..b.md` and `a/b.md` build to one page), and a
+      # target path, its directories included, not in NFC. PLAIN_PAGE_PATH has already refused a name starting
+      # with `~`, which Jekyll skips unless `include:` lists it.
       if name.start_with?('/') || name.split('/').any? { |seg| seg != '..' && seg.include?('..') }
         return MARKDOWN_LINK_PATH_MESSAGE
       end
 
-      full = Pathname.new(File.join(File.dirname(source), name)).cleanpath.to_s
+      full = Pathname.new(rooted ? name : File.join(File.dirname(source), name)).cleanpath.to_s
       return nil if full.unicode_normalized?(:nfc)
       # A decomposed name in the link itself (the page's or a directory's): only the link text can fix it.
       return MARKDOWN_LINK_PATH_MESSAGE unless name.unicode_normalized?(:nfc)
@@ -554,7 +589,11 @@ module AnchorContract
       # A nil path names nothing, so two such links don't resolve alike: they are kept apart by href. Every
       # extractor stores the href as its page carries it, so the two renderers' copies of one link merge when
       # both pages carry it alike.
-      links.each { |link| seen[[link.source, link.path || [:unnamed, link.href], link.fragment]] ||= link }
+      # A root-relative link and a relative one to the same path stay apart: only the root-relative one can lose
+      # the baseurl on the site.
+      links.each do |link|
+        seen[[link.source, link.path || [:unnamed, link.href], link.fragment, rooted?(link.href)]] ||= link
+      end
       seen.values
     end
 
@@ -686,13 +725,17 @@ module AnchorContract
       # file `foo bar.md`.
       # An escape can decode to invalid UTF-8 or a NUL, which no file name holds: the path is nil,
       # and `resolve` reports the link as a missing target.
+      # A leading `/` roots the path at the repository: GitHub resolves it against the repository root, and the
+      # relative-links plugin against the site source, adding the baseurl itself. So `/docs/x.md` is the tracked
+      # docs/x.md, a link that spells the baseurl (`/steward-os/docs/x.md`) is missing on both, and `/` is the
+      # root directory (`.`).
       rel = decode(target.to_s.split('?', 2).first.to_s)
       path = if !rel.valid_encoding? || rel.include?("\0")
                nil
              elsif rel.empty?
                ''
              else
-               Pathname.new(File.join(dir, rel)).cleanpath.to_s
+               Pathname.new(File.join(rooted?(target) ? '.' : dir, rel)).cleanpath.to_s
              end
       Link.new(source: source, line: line, href: href, path: path,
                fragment: fragment.nil? || fragment.empty? ? nil : decode(fragment).scrub)
