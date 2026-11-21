@@ -83,27 +83,41 @@ module AnchorContract
   #            pages is fine, since only GitHub renders either one.
   # rendered — the pages the site renders as HTML (Extract.site_rendered_markdown); only a link from one of them is
   #            reported as unbuilt. nil means every page outside `excluded`.
-  def self.check(links:, headings:, files:, dirs:, excluded: Set.new, rendered: nil)
-    links.filter_map { |link| check_link(link, headings, files, dirs, excluded, rendered) }
+  # unpublished — the tracked pages Jekyll reads but writes nothing for, because their front matter unpublishes
+  #            them (Extract.site_unpublished_markdown). A link to one from a built page is broken on the site too.
+  def self.check(links:, headings:, files:, dirs:, excluded: Set.new, rendered: nil, unpublished: Set.new)
+    links.filter_map { |link| check_link(link, headings, files, dirs, excluded, rendered, unpublished) }
   end
 
   UNBUILT_MESSAGE = '%s is a page the site does not build (_config.yml excludes it), so the site keeps this ' \
                     'link as a broken .md link; link it by its GitHub URL, or stop excluding it'
   UNBUILT_EXTENSIONLESS_MESSAGE = '%s is a page the site does not build (_config.yml excludes it), so the site ' \
                                   'has no page at this link; link it by its GitHub URL, or stop excluding it'
+  UNPUBLISHED_MESSAGE = '%s is a page the site does not build (its front matter unpublishes it), so the site keeps ' \
+                        'this link as a broken .md link; link it by its GitHub URL, or publish it'
+  UNPUBLISHED_EXTENSIONLESS_MESSAGE = '%s is a page the site does not build (its front matter unpublishes it), so ' \
+                                      'the site has no page at this link; link it by its GitHub URL, or publish it'
 
-  def self.check_link(link, headings, files, dirs, excluded, rendered)
+  def self.check_link(link, headings, files, dirs, excluded, rendered, unpublished = Set.new)
     doc = resolve(link, files, dirs)
     source_rendered = rendered ? rendered.include?(link.source) : !excluded.include?(link.source)
-    # An extensionless link to an excluded page doesn't resolve on the site either, and adding `.md` would only
-    # trade it for an unbuilt one, so it is reported as unbuilt.
-    if doc.is_a?(Violation) && doc.rule == :extension && source_rendered && excluded.include?("#{link.path}.md")
-      return Violation.new(rule: :unbuilt, link: link,
-                           message: format(UNBUILT_EXTENSIONLESS_MESSAGE, "#{link.path}.md"))
+    # An extensionless link to a page the site doesn't build doesn't resolve on the site either, and adding `.md`
+    # would only trade it for an unbuilt one, so it is reported as unbuilt.
+    if doc.is_a?(Violation) && doc.rule == :extension && source_rendered
+      target = "#{link.path}.md"
+      if excluded.include?(target)
+        return Violation.new(rule: :unbuilt, link: link, message: format(UNBUILT_EXTENSIONLESS_MESSAGE, target))
+      end
+      if unpublished.include?(target)
+        return Violation.new(rule: :unbuilt, link: link, message: format(UNPUBLISHED_EXTENSIONLESS_MESSAGE, target))
+      end
     end
     return doc if doc.is_a?(Violation)
-    if doc && excluded.include?(doc) && source_rendered
-      return Violation.new(rule: :unbuilt, link: link, message: format(UNBUILT_MESSAGE, doc))
+    if doc && source_rendered
+      return Violation.new(rule: :unbuilt, link: link, message: format(UNBUILT_MESSAGE, doc)) if excluded.include?(doc)
+      if unpublished.include?(doc)
+        return Violation.new(rule: :unbuilt, link: link, message: format(UNPUBLISHED_MESSAGE, doc))
+      end
     end
     return nil if doc.nil? || link.fragment.nil?
     return nil unless doc.end_with?('.md')
@@ -772,16 +786,32 @@ module AnchorContract
     # collection documents (`_posts/`, `_<collection>/`) are rendered too but not modelled here: with
     # `relative_links: collections: false` none of their .md links are rewritten, which is a wider gap than this rule.
     def site_rendered_markdown(root, docs, excluded, config_path)
-      skipped = Jekyll::EntryFilter::SPECIAL_LEADING_CHAR_REGEX
-      raw = YAML.safe_load(File.read(config_path, encoding: 'UTF-8')) || {}
-      show_unpublished = Jekyll::Configuration.from(raw)['unpublished']
-      Set.new(docs.reject do |rel|
-        path = File.join(root, rel)
-        excluded.include?(rel) ||
-          rel.split('/').any? { |name| name.match?(skipped) || name.end_with?('~', '.') } ||
-          !Jekyll::Utils.has_yaml_header?(path) ||
-          (!show_unpublished && unpublished_page?(path))
+      show_unpublished = show_unpublished?(config_path)
+      Set.new(docs.select do |rel|
+        read_as_page?(root, rel, excluded) && (show_unpublished || !unpublished_page?(File.join(root, rel)))
       end)
+    end
+
+    # The tracked pages Jekyll reads as pages but writes nothing for: their front matter unpublishes them and
+    # _config.yml doesn't set `unpublished: true`. A link to one keeps its .md href on the site and is broken there.
+    def site_unpublished_markdown(root, docs, excluded, config_path)
+      return Set.new if show_unpublished?(config_path)
+
+      Set.new(docs.select { |rel| read_as_page?(root, rel, excluded) && unpublished_page?(File.join(root, rel)) })
+    end
+
+    # Jekyll reads the page (not in `excluded`, no skipped name on its path) and renders it rather than copying it
+    # (it starts with front matter).
+    def read_as_page?(root, rel, excluded)
+      skipped = Jekyll::EntryFilter::SPECIAL_LEADING_CHAR_REGEX
+      !excluded.include?(rel) &&
+        rel.split('/').none? { |name| name.match?(skipped) || name.end_with?('~', '.') } &&
+        Jekyll::Utils.has_yaml_header?(File.join(root, rel))
+    end
+
+    def show_unpublished?(config_path)
+      raw = YAML.safe_load(File.read(config_path, encoding: 'UTF-8')) || {}
+      Jekyll::Configuration.from(raw)['unpublished']
     end
 
     # Jekyll writes nothing for a page whose front matter sets `published` to false or leaves it empty

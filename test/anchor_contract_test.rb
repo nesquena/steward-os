@@ -1554,8 +1554,12 @@ class DiscoveryTest < Minitest::Test
       write(dir, '.hidden/n.md', "---\ntitle: N\n---\n# N\n\n[readme](../README.md)\n")
       write(dir, 'docs/raw.md', "# Raw\n\n[readme](../README.md)\n")
       write(dir, 'x~/n.md', "---\ntitle: N\n---\n# N\n\n[readme](../README.md)\n")
+      write(dir, 'a./n.md', "---\ntitle: N\n---\n# N\n\n[readme](../README.md)\n")
       write(dir, 'docs/draft.md', "---\ntitle: Draft\npublished: false\n---\n# Draft\n\n[readme](../README.md)\n")
       write(dir, 'docs/empty.md', "---\ntitle: Empty\npublished:\n---\n# Empty\n\n[readme](../README.md)\n")
+      # SafeYAML reads a date where YAML.safe_load refuses it; a CRLF front matter is still front matter.
+      write(dir, 'docs/dated.md', "---\ndate: 2020-01-01\npublished: false\n---\n# Dated\n\n[readme](../README.md)\n")
+      write(dir, 'docs/crlf.md', "---\r\ntitle: C\r\npublished: false\r\n---\r\n# C\r\n\r\n[readme](../README.md)\r\n")
       add_all(dir)
       out = lint(dir)
       assert_equal 0, $?.exitstatus, out
@@ -1567,14 +1571,39 @@ class DiscoveryTest < Minitest::Test
       assert_match(%r{unbuilt \(1\)}, out)
       assert_includes out, 'docs/page.md'
 
-      # With `unpublished: true` the site renders both unpublished pages too.
+      # With `unpublished: true` the site renders the unpublished pages too.
       File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\nunpublished: true\n")
       add_all(dir)
       out = lint(dir)
       assert_equal 1, $?.exitstatus, out
-      assert_match(%r{unbuilt \(3\)}, out)
-      assert_includes out, 'docs/draft.md'
-      assert_includes out, 'docs/empty.md'
+      assert_match(%r{unbuilt \(5\)}, out)
+      %w[docs/draft.md docs/empty.md docs/dated.md docs/crlf.md].each { |page| assert_includes out, page }
+    end
+  end
+
+  # A page whose front matter unpublishes it is read but not written, so a built page's link to it keeps its .md
+  # href and 404s, and the extensionless form has no page either. With `unpublished: true` the site writes it.
+  def test_a_link_to_an_unpublished_page_is_unbuilt
+    with_repo do |dir|
+      File.write(File.join(dir, '_config.yml'), "exclude: []\n")
+      write(dir, 'docs/a.md', "---\ntitle: A\n---\n# A\n\n[draft](draft.md) and [bare](draft)\n")
+      write(dir, 'docs/draft.md', "---\ntitle: Draft\npublished: false\n---\n# Draft\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      assert_match(%r{unbuilt \(2\)}, out)
+      refute_match(%r{extension \(}, out)
+      assert_includes out, 'docs/draft.md is a page the site does not build (its front matter unpublishes it), ' \
+                           'so the site keeps this link as a broken .md link'
+      assert_includes out, 'docs/draft.md is a page the site does not build (its front matter unpublishes it), ' \
+                           'so the site has no page at this link'
+
+      File.write(File.join(dir, '_config.yml'), "exclude: []\nunpublished: true\n")
+      add_all(dir)
+      out = lint(dir)
+      assert_equal 1, $?.exitstatus, out
+      refute_match(%r{unbuilt \(}, out)
+      assert_match(%r{extension \(1\)}, out)
     end
   end
 
@@ -1585,11 +1614,14 @@ class DiscoveryTest < Minitest::Test
       File.write(File.join(dir, '_config.yml'), "exclude:\n  - README.md\n")
       write(dir, 'README.md', "# Read me\n")
       write(dir, 'docs/merge.md', "---\ntitle: M\n<<: *missing\n---\n# M\n\n[readme](../README.md)\n")
+      # A syntax error: Jekyll builds the page with no data, so its `published: false` doesn't count.
+      write(dir, 'docs/bad.md', "---\npublished: false\ntitle: [oops\n---\n# B\n\n[readme](../README.md)\n")
       add_all(dir)
       out = lint(dir)
       assert_equal 1, $?.exitstatus, out
-      assert_match(%r{unbuilt \(1\)}, out)
+      assert_match(%r{unbuilt \(2\)}, out)
       assert_includes out, 'docs/merge.md'
+      assert_includes out, 'docs/bad.md'
     end
   end
 

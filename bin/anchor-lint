@@ -103,8 +103,9 @@ unless rejections.empty?
 end
 
 rendered = AnchorContract::Extract.site_rendered_markdown(ROOT, docs, excluded, config_path)
+unpublished = AnchorContract::Extract.site_unpublished_markdown(ROOT, docs, excluded, config_path)
 violations = AnchorContract.check(links: links, headings: headings, files: files, dirs: dirs, excluded: excluded,
-                                  rendered: rendered)
+                                  rendered: rendered, unpublished: unpublished)
 
 puts "Anchor lint — #{docs.size} documents, #{links.size} relative links, " \
      "#{links.count(&:fragment)} anchors"
