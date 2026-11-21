@@ -86,7 +86,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      4, 7 or 8 makes you a writer of the new head: its legs come from a fresh reader, given the
      PR as the host shows it (diff, commits and their messages, description), the trunk and the
      gate's configured rubric, and nothing of your own reasoning, findings or earlier verdicts for
-     this PR. A tool's findings count
+     this PR. Tell it to keep notes on this PR, yours or an earlier reviewer's, out of its reading
+     and searches, and to say if it saw any: then its leg is missing too. A tool's findings count
      verbatim, never your summary of them. Your own read of your fix is not a leg; with no
      independent reader, the leg is missing, not passed. Independence is on top of the second
      pass being differently tuned, not instead of it.
