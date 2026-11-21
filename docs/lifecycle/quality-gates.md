@@ -100,13 +100,14 @@ those runs exist for that exact head; a missing or partial one leaves gate 5 not
 Gates 2 and 3 count only when their reader didn't write the change. A reader wrote it if it made
 any commit in the PR's range, trunk to head: authoring, fixing, rebasing, absorbing or
 cherry-picking it all count. Being the same model or the same account doesn't decide it; what the
-reader was given, and what it read, does. A fresh session given the PR as the host shows it (diff, commits and their
-messages, description), the trunk and the gate's configured rubric, and nothing of the writer's own
-reasoning, findings or earlier verdicts for this PR, is independent. That holds only if it doesn't
-go looking: a reader that can reach notes on this PR, the writer's or an earlier reviewer's (in a
-memory or handoff file, say), keeps them out of its reading and its searches, and a reader that saw
-any says so, since its pass is then not independent. A subagent that inherits the writer's context,
-a resumed session and an inherited transcript are not. A review tool
+reader was given, and what it read, does. A fresh session given the PR as the host shows it (diff,
+commits and their messages, description), the trunk and the gate's configured rubric, and nothing
+of the writer's own reasoning, findings or earlier verdicts for this PR, is independent. That holds
+only if it doesn't read notes on this PR either: the writer's or an earlier reviewer's, in a memory
+or handoff file or on the PR's thread. A note carries reasoning, findings or a verdict; a record
+that only points to the PR isn't one. A reader that can reach notes keeps them out of its reading
+and its searches, and one that saw any says so: its pass is then not independent. A subagent that
+inherits the writer's context, a resumed session and an inherited transcript are not. A review tool
 counts when it is the one configured for the gate, runs on the pinned head with nothing from
 the writer beyond that head and the configured rubric, and its findings are taken verbatim.
 
