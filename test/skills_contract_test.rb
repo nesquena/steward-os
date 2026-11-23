@@ -1503,7 +1503,7 @@ class ProposalRefsContractTest < Minitest::Test
 end
 
 class QualityGateContractTest < Minitest::Test
-  # Gate 1 breaks each guard a fix adds or changes, not only the whole fix. Whitespace-folded.
+  # Gate 1 breaks each guard a change adds, changes or removes on both sides. Whitespace-folded.
   def read(*path)
     File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
   end
@@ -1517,17 +1517,19 @@ class QualityGateContractTest < Minitest::Test
   def test_gate_one_breaks_each_added_or_changed_guard
     gates = read('docs', 'lifecycle', 'quality-gates.md')
     gate1 = gates[/### 1\. The test suite .*?(?= ### 2\. )/m] or flunk('gate 1 section missing')
-    assert_includes gate1, '**Break each guard you add or change.** For every guard, refusal rule or branch a ' \
-                           'change adds or changes, confirm a test fails when that guard alone is broken (deleted, ' \
-                           'inverted, widened or narrowed by one case, or a changed one put back as it was) — not ' \
-                           'only when the whole change is reverted — then restore the file. One that stays green ' \
-                           'is a missing test.'
-    assert_includes gate1, 'Re-run only the test files that cover the mutated code, not the full suite per mutant.'
+    assert_includes gate1, '**Break each guard you add or change, on both sides.** For every guard, refusal rule ' \
+                           'or branch a change adds, changes or removes, break it alone so it lets through a case it ' \
+                           'must refuse, and again so it refuses a case it must let through. Cover every case the ' \
+                           'change moved (newly refused or newly allowed) and each condition of a combined guard on ' \
+                           'its own. A test must fail for every break, not only when the whole change is reverted; ' \
+                           'a break that stays green is a missing test.'
+    assert_includes gate1, 're-run only the test files that cover the mutated code, not the full suite per mutant.'
     assert_includes skill_step('pr-deep-review', 5),
-                    'confirm each guard, refusal rule or branch the change adds or changes fails a test when ' \
-                    'broken on its own (not only when the whole change is reverted)'
+                    'break each guard, refusal rule or branch the change adds, changes or removes on both ' \
+                    'sides as gate 1 says (a test fails for every break, not only when the whole change is ' \
+                    'reverted)'
     verification = read('skills', 'pr-deep-review', 'SKILL.md').split('## Verification').last
-    assert_includes verification, '- Each guard, refusal rule or branch the change adds or changes failed a test when ' \
-                                  'broken on its own.'
+    assert_includes verification, '- Each guard, refusal rule or branch the change adds, changes or removes failed a ' \
+                                  'test when broken alone on either side, for every case the change moved.'
   end
 end
