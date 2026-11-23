@@ -860,13 +860,26 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes q, 'The examples use a GitHub repository and the `gh` CLI. Your tracker and host can differ.'
   end
 
+  def test_quickstart_copies_only_skill_directories
+    q = read('quickstart.md')
+    refute_includes q, 'cp -R /path/to/steward-os/skills/* .claude/skills/'
+    assert_includes q, 'for d in /path/to/steward-os/skills/*/; do cp -R "${d%/}" .claude/skills/; done'
+  end
+
+  def test_quickstart_maps_github_urls_to_checkout_for_all_runtimes
+    q = read('quickstart.md')
+    before_no_loader = q.split('**No skill loader?**').first
+    assert_includes before_no_loader,
+                    'and pages they lead to use `github.com/nesquena/steward-os/blob/main/<path>` or ' \
+                    '`.../tree/main/<path>` links: resolve both against the checkout (`<checkout>/<path>`).'
+  end
+
   def test_quickstart_covers_a_runtime_without_a_skill_loader
     q = read('quickstart.md')
     assert_includes q, '**No skill loader?** If your runtime reads only one rules file'
-    assert_includes q, 'where the steward-os checkout is, and how links resolve: read a skill\'s relative links as if ' \
-                       'the skill sat at `<checkout>/skills/<name>/SKILL.md` (so `../../<path>` is `<checkout>/<path>`), and ' \
-                       'on the pages they lead to, a `github.com/nesquena/steward-os/blob/main/<path>` or ' \
-                       '`.../tree/main/<path>` link is `<checkout>/<path>` too;'
+    assert_includes q, 'where the steward-os checkout is, and how links resolve (as above: read a skill\'s relative ' \
+                       'links as if it sat at `<checkout>/skills/<name>/SKILL.md`, and resolve the GitHub ' \
+                       '`blob/main/` and `tree/main/` links to `<checkout>/<path>`);'
     assert_includes q, 'a routing table built from each `SKILL.md`\'s `description` line; the agent reads that ' \
                        '`SKILL.md` whole, injection guard first where it has one;'
     assert_includes q, 'your config\'s path, on trunk or outside the repo, never read from a pull request\'s checkout;'
@@ -877,6 +890,15 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes q, 'at every level: code from a pull request you can\'t confirm as trusted doesn\'t run unless ' \
                        '`config.yaml` turns that on, and then only in a sandbox ' \
                        '([the sandbox](docs/reference/security-spine.md#4-the-sandbox-untrusted-code-execution)).'
+  end
+
+  def test_setup_interview_covers_kept_labels_and_trust_blocks
+    setup = read('setup', 'setup-interview.md')
+    assert_includes setup, '23. **Which labels should the taxonomy cover?**'
+    assert_includes setup, 'Replace the template\'s `area` path globs and `type` title prefixes with your own, or ' \
+                           'use `map: {}` and keep the default `size` buckets (`S`/`M`/`L`/`XL`) when skipping for now.'
+    assert_includes setup, '24. **Do you want contributor trust scoring?**'
+    assert_includes setup, 'leave `trust.ledger_path` blank (`""`) to keep trust scoring disabled for now'
   end
 
   def test_quickstart_keeps_steward_files_out_of_a_package

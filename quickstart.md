@@ -47,7 +47,7 @@ Put Steward's loadable procedures where your agent discovers skills. In Claude C
 ```bash
 # from your project root, with steward-os checked out alongside it
 mkdir -p .claude/skills
-cp -R /path/to/steward-os/skills/* .claude/skills/
+for d in /path/to/steward-os/skills/*/; do cp -R "${d%/}" .claude/skills/; done
 ```
 
 Your agent picks these up on next launch. (Using a different runtime? Drop them wherever it loads
@@ -55,16 +55,16 @@ skills, or point its rules file at them — the `SKILL.md` bodies are the same.)
 procedures the setup interview and the lifecycle playbooks tell the agent to load.
 
 Keep the steward-os checkout in place and tell your agent where it is (for example in your rules
-file). The skills link to its
-`setup/` and `docs/` with paths written for the checkout's layout (like
-`../../setup/setup-interview.md`), so from `.claude/skills/` the agent reads them in the checkout.
+file). The skills link to its `setup/` and `docs/` with paths written for the checkout's layout
+(like `../../setup/setup-interview.md`), and pages they lead to use
+`github.com/nesquena/steward-os/blob/main/<path>` or `.../tree/main/<path>` links: resolve both
+against the checkout (`<checkout>/<path>`).
 
 **No skill loader?** If your runtime reads only one rules file (such as `AGENTS.md`) at the start of
 each session, that file does the loader's job and carries the session's standing facts. Put in it:
-1. where the steward-os checkout is, and how links resolve: read a skill's relative links as if the
-   skill sat at `<checkout>/skills/<name>/SKILL.md` (so `../../<path>` is `<checkout>/<path>`), and
-   on the pages they lead to, a `github.com/nesquena/steward-os/blob/main/<path>` or `.../tree/main/<path>`
-   link is `<checkout>/<path>` too;
+1. where the steward-os checkout is, and how links resolve (as above: read a skill's relative links
+   as if it sat at `<checkout>/skills/<name>/SKILL.md`, and resolve the GitHub `blob/main/` and
+   `tree/main/` links to `<checkout>/<path>`);
 2. which skill to read for which request: a routing table built from each `SKILL.md`'s
    `description` line; the agent reads that `SKILL.md` whole, injection guard first where it has one;
 3. your config's path, on trunk or outside the repo, never read from a pull request's checkout;
