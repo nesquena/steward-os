@@ -42,7 +42,8 @@ displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job
    size bucket, contributor trust score (computed by [`contributor-trust`](../contributor-trust/SKILL.md)
    from the [trust ledger](../../docs/lifecycle/contributor-recognition.md)). PRs and issues have
    different sets ([the playbook](../../docs/playbooks/triage-scoreboard.md#two-kinds-of-dimension)).
-   A dimension with one value for every item of its kind is
+   When the board holds at least two items of a kind, a dimension with one value for every item of
+   that kind is
    [inert](../../docs/playbooks/triage-scoreboard.md#a-dimension-that-carries-no-signal): drop it
    from that kind's composite and record it for the header.
 3. **Merge in persisted judgment** (scope_fit, criticality, risk, the severity flag, each with
@@ -100,18 +101,18 @@ displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job
 4. **Compute the composite** = weighted sum of dimensions (weights the project sets; tune to match "what
    I'd pick up next"). Read the bypass marker (`bypass`) as the plain in-scope level of the rubric
    your project uses ([the default](../../docs/playbooks/triage-scoreboard.md#the-default-rubric),
-   or its replacement). With no weights set by the project, weight an issue's judgment dimensions
-   equally (the default rubric's `scope_fit`, `criticality` and `risk`, or a replacement's own) and
-   use the mechanical dimensions only to break ties.
-   Weights the project sets replace the equal weights. The default covers issues only.
-   Rank PRs and issues separately; sort issues on the judgment dimensions' weighted sum first, and
-   on the mechanical dimensions only between equal sums. An item with no judgment at all leaves the
-   ranking for the [not yet judged](../../docs/playbooks/triage-scoreboard.md#not-yet-judged)
-   section; an item with some judgment ranks, and an empty dimension counts as unjudged for that
-   dimension. Promote items carrying the
-   severity flag to a spotlight at the top; the flag counts as judgment, and a flagged item is
-   listed nowhere else, except under released but open. A stale value counts like a fresh one,
-   and a stale flag still promotes.
+   or its replacement). With no weights set by the project, weight judgment dimensions equally for
+   both issues and PRs (the default rubric's `scope_fit`, `criticality` and `risk`, or a
+   replacement's own) and use each kind's mechanical dimensions only to break ties.
+   Weights the project sets replace the equal weights.
+   Rank PRs and issues separately; under the default, sort each kind on its judgment dimensions'
+   weighted sum first, and on its mechanical dimensions only between equal sums. An item with no
+   judgment at all leaves the ranking for the
+   [not yet judged](../../docs/playbooks/triage-scoreboard.md#not-yet-judged) section; an item with
+   some judgment ranks, and an empty dimension counts as unjudged for that dimension. Promote items
+   carrying the severity flag to a spotlight at the top; the flag counts as judgment, and a flagged
+   item is listed nowhere else, except under released but open. A stale value counts like a fresh
+   one, and a stale flag still promotes.
 5. **Tag evidence-readiness** per item: which review streams have landed (automated review present?
    visual preview? deep-review dossier?). Compact ✓/· marker. Presence ≠ clean.
 6. **Render** the living board: the spotlight, then the released but open issues (each with

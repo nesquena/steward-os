@@ -282,9 +282,10 @@ your code, so it decides on three signal classes — **any one** trips the diver
    another account's email" or "one crafted request takes the whole service down"). Note the line
    against ordinary bugs: a plain crash on bad input is *not* a vuln by shape — availability trips
    only when the loss is **attacker-triggerable** (a crafted or amplified request, not any exception).
-3. **Configured sensitive surfaces** — a report naming a surface in the adopter's
-   `security_sensitive_surfaces` list (e.g. `auth`, `payments`, `crypto`) is suspected until a human
-   clears it.
+3. **Configured sensitive surfaces** — a bug or flaw report (or a fix PR) naming a surface in the
+   adopter's `security_sensitive_surfaces` list (e.g. `auth`, `payments`, `crypto`) is suspected
+   until a human clears it. A feature PR that only touches a listed subsystem routes to the deep
+   lane rather than diverting, unless signal 1 or 2 fires.
 
 The detector **routes, it never confirms** — confirmation and disclosure are human decisions on the
 private path. Detection is high-recall by design (over-divert): the cost of a false positive is a
@@ -336,6 +337,7 @@ reportable.
 | "typo in the README" | LOW (normal tiering) | no security signal |
 | a vuln opened *directly* as a public issue | **divert at triage** | no code-grounded public reply; route private, human decides lock/edit/advisory |
 | a vuln arriving as a public PR ("fix" whose diff/description shows the exploit) | **divert at PR intake** | no public review that confirms the exploit; human coordinates a private fix + advisory |
+| a feature PR touching a listed sensitive surface, with no signal 1 or 2 | **deep lane** | sensitive subsystem gets deep review without diverting a non-flaw feature |
 | divert hit, `security_contact` unset | **suppress + alarms channel** | fail-closed invariant (never public, never a silent no-op) |
 | divert hit, contact and alarms both unset | **hold in confirmed-private index + raise setup** | emergency terminal fallback; never public, never silently dropped |
 

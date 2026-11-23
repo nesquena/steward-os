@@ -125,15 +125,15 @@ the grade:
 ## The composite
 A weighted sum of the dimensions, tuned so the ranking matches "what a maintainer would actually
 pick up next." Weights are a knob you adjust as you learn what your project values (e.g. how much to
-weight contributor trust vs. raw criticality). With no weights set by the project, an issue's
-judgment dimensions weigh equally and the mechanical dimensions only break ties. Weights the project
-sets replace the equal weights. The default covers issues only. Promote items carrying the
+weight contributor trust vs. raw criticality). With no weights set by the project, both issues and
+PRs weigh their judgment dimensions equally and use mechanical dimensions only to break ties.
+Weights the project sets replace the equal weights. Promote items carrying the
 [severity flag](#severity-is-a-flag) to the top regardless of their composite (the severity
 spotlight). A stale flag still promotes, marked stale. Judgment dimensions should outweigh
 mechanical ones: the mechanical dimensions say how an item stands, the judgment says whether it
-matters. For issues, sort on the judgment dimensions' weighted sum first, and on the mechanical
-dimensions only between equal sums: age and cross-references break ties between equal judgments
-and never reverse unequal ones.
+matters. Under the default, sort each kind on its judgment dimensions' weighted sum first, and on
+its mechanical dimensions only between equal sums: mechanical signals break ties between equal
+judgments and never reverse unequal ones.
 
 ### Not yet judged
 An item with no judgment at all can't be ranked against judged ones: its composite rests on
@@ -163,13 +163,14 @@ it open on purpose.
 
 ### A dimension that carries no signal
 A mechanical dimension that takes the same value for every item of a kind on the board is
-**inert**: it adds nothing to that kind's ranking. Check each run, per kind. Drop an inert
-dimension from that kind's composite and name it in the board's header. The usual case is a
-dimension that reads labels on a backlog that carries none: unchecked, it scores the same for
-everyone and nobody notices. A board that spans several repos counts a dimension only when it's
-live in every repo on the board; otherwise one repo's missing labels shift its items against
-every other repo's. A dimension is live in a repo when the source it reads exists there (for a
-label dimension, its labels are declared or in use); a repo with fewer than two items of a kind
+**inert**: it adds nothing to that kind's ranking. Check each run, per kind, when the board holds at
+least two items of that kind — fewer than two items can't vary, so no dimension is marked inert on
+count alone. Drop an inert dimension from that kind's composite and name it in the board's header.
+The usual case is a dimension that reads labels on a backlog that carries none: unchecked, it scores
+the same for everyone and nobody notices. A board that spans several repos counts a dimension only
+when it's live in every repo on the board; otherwise one repo's missing labels shift its items
+against every other repo's. A dimension is live in a repo when the source it reads exists there (for
+a label dimension, its labels are declared or in use); a repo with fewer than two items of a kind
 doesn't decide.
 
 ## When a judgment goes stale
