@@ -896,7 +896,7 @@ class ProjectShapeContractTest < Minitest::Test
     setup = read('setup', 'setup-interview.md')
     assert_includes setup, '23. **Which labels should the taxonomy cover?**'
     assert_includes setup, 'Replace the template\'s `area` path globs and `type` title prefixes with your own. To skip for'
-    assert_includes setup, 'set `map: {}`: the `size` buckets (`S`/`M`/`L`/`XL`) stay as the template ships them'
+    assert_includes setup, 'set `area.map: {}` and `type.map: {}`: the `size` buckets (`S`/`M`/`L`/`XL`) stay as the'
     assert_includes setup, '24. **Do you want contributor trust scoring?**'
     assert_includes setup, 'leave `trust.ledger_path` blank (`""`) to keep trust scoring disabled for now'
   end

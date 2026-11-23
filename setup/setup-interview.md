@@ -200,8 +200,8 @@ The system can't screen PRs/issues for fit without knowing what "fits."
 ## Section 8 — Labels & contributor trust *(optional — skip any block marked `not_applicable`)*
 23. **Which labels should the taxonomy cover?** (If `labels` wasn't marked `not_applicable`.)
     Replace the template's `area` path globs and `type` title prefixes with your own. To skip for
-    now, set `map: {}`: the `size` buckets (`S`/`M`/`L`/`XL`) stay as the template ships them, and
-    the TODO list names the skipped taxonomy.
+    now, set `area.map: {}` and `type.map: {}`: the `size` buckets (`S`/`M`/`L`/`XL`) stay as the
+    template ships them, and the TODO list names the skipped taxonomy.
     → `labels` (`add_only: true`).
 24. **Do you want contributor trust scoring?** (If `trust` wasn't marked `not_applicable`.)
     Name a private `trust.ledger_path` for append-only outcome events, or leave `trust.ledger_path`
