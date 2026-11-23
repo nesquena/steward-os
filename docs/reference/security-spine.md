@@ -282,12 +282,12 @@ your code, so it decides on three signal classes — **any one** trips the diver
    another account's email" or "one crafted request takes the whole service down"). Note the line
    against ordinary bugs: a plain crash on bad input is *not* a vuln by shape — availability trips
    only when the loss is **attacker-triggerable** (a crafted or amplified request, not any exception).
-3. **Configured sensitive surfaces** — a report (or a fix PR) naming a surface in the adopter's
-   `security_sensitive_surfaces` list (e.g. `auth`, `payments`, `crypto`) is suspected until a
-   human clears it. The one exception is a PR that only adds a feature there: it routes to the deep
-   lane rather than diverting, unless signal 1 or 2 fires. Judge the kind from the diff, not the
-   PR's title or label: a PR that changes a check, validation, permission or secret handling on
-   the surface counts as a fix, and one that isn't plainly a feature diverts.
+3. **Configured sensitive surfaces** — a report or PR naming or touching a surface in the
+   adopter's `security_sensitive_surfaces` list (e.g. `auth`, `payments`, `crypto`) is suspected
+   until a human clears it. The one exception is a PR that only adds a feature there and adds or
+   changes no check, validation, permission or secret handling (an opt-in one included): it routes
+   to the deep lane rather than diverting, unless signal 1 or 2 fires. Judge this from the diff,
+   not the PR's title or label; a PR that isn't plainly such a feature diverts.
 
 The detector **routes, it never confirms** — confirmation and disclosure are human decisions on the
 private path. Detection is high-recall by design (over-divert): the cost of a false positive is a
@@ -339,7 +339,7 @@ reportable.
 | "typo in the README" | LOW (normal tiering) | no security signal |
 | a vuln opened *directly* as a public issue | **divert at triage** | no code-grounded public reply; route private, human decides lock/edit/advisory |
 | a vuln arriving as a public PR ("fix" whose diff/description shows the exploit) | **divert at PR intake** | no public review that confirms the exploit; human coordinates a private fix + advisory |
-| a feature PR touching a listed sensitive surface, with no signal 1 or 2 | **deep lane** | sensitive subsystem gets deep review without diverting a non-flaw feature |
+| a feature PR touching a listed sensitive surface that adds or changes no check, validation, permission or secret handling, with no signal 1 or 2 | **deep lane** | sensitive subsystem gets deep review without diverting a non-flaw feature |
 | a feature request (an issue) naming a listed sensitive surface | **divert** | over-divert; only a feature PR takes the deep lane |
 | divert hit, `security_contact` unset | **suppress + alarms channel** | fail-closed invariant (never public, never a silent no-op) |
 | divert hit, contact and alarms both unset | **hold in confirmed-private index + raise setup** | emergency terminal fallback; never public, never silently dropped |

@@ -700,16 +700,17 @@ class ProjectShapeContractTest < Minitest::Test
                           'own) and use each kind\'s mechanical dimensions only to break ties. ' \
                           'Weights the project sets replace the equal weights.'
     refute_includes step, 'The default covers issues only.'
-    assert_includes step, 'Rank PRs and issues separately; under the default, sort each kind on its judgment ' \
-                          'dimensions\' weighted sum first, and on its mechanical dimensions only between equal sums.'
+    assert_includes step, 'Rank PRs and issues separately; sort issues, and under the default PRs too, on their ' \
+                          'judgment dimensions\' weighted sum first, and on their mechanical dimensions only between ' \
+                          'equal sums.'
     playbook = read('docs', 'playbooks', 'triage-scoreboard.md')
     assert_includes playbook, 'With no weights set by the project, both issues and PRs weigh their judgment ' \
                               'dimensions equally and use mechanical dimensions only to break ties. Weights the ' \
                               'project sets replace the equal weights.'
     refute_includes playbook, 'The default covers issues only.'
     assert_includes playbook, 'Judgment dimensions should outweigh mechanical ones'
-    assert_includes playbook, 'Under the default, sort each kind on its judgment dimensions\' weighted sum first, ' \
-                              'and on its mechanical dimensions only between equal sums'
+    assert_includes playbook, 'Sort issues, and under the default PRs too, on their judgment dimensions\' weighted ' \
+                              'sum first, and on their mechanical dimensions only between equal sums'
   end
 
   def test_inert_dimensions_require_at_least_two_items
@@ -723,19 +724,22 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_sensitive_surfaces_divert_flaws_and_deep_lane_feature_prs
     spine = read('docs', 'reference', 'security-spine.md')
-    assert_includes spine, 'a report (or a fix PR) naming a surface in the adopter\'s `security_sensitive_surfaces` ' \
-                           'list (e.g. `auth`, `payments`, `crypto`) is suspected until a human clears it. The one ' \
-                           'exception is a PR that only adds a feature there: it routes to the deep lane rather than ' \
-                           'diverting, unless signal 1 or 2 fires. Judge the kind from the diff, not the PR\'s title ' \
-                           'or label: a PR that changes a check, validation, permission or secret handling on the ' \
-                           'surface counts as a fix, and one that isn\'t plainly a feature diverts.'
+    assert_includes spine, 'a report or PR naming or touching a surface in the adopter\'s ' \
+                           '`security_sensitive_surfaces` list (e.g. `auth`, `payments`, `crypto`) is suspected until ' \
+                           'a human clears it. The one exception is a PR that only adds a feature there and adds or ' \
+                           'changes no check, validation, permission or secret handling (an opt-in one included): it ' \
+                           'routes to the deep lane rather than diverting, unless signal 1 or 2 fires. Judge this from ' \
+                           'the diff, not the PR\'s title or label; a PR that isn\'t plainly such a feature diverts.'
     assert_includes spine, '| a feature request (an issue) naming a listed sensitive surface | **divert** |'
-    assert_includes spine, '| a feature PR touching a listed sensitive surface, with no signal 1 or 2 | **deep lane** |'
+    assert_includes spine, '| a feature PR touching a listed sensitive surface that adds or changes no check, ' \
+                           'validation, permission or secret handling, with no signal 1 or 2 | **deep lane** |'
     assert_includes skill_step('pr-triage', 2),
                     'A PR on a `security_sensitive_surfaces` subsystem diverts, unless it only adds a feature ' \
-                    'there, judged from the diff rather than its title or label, and signal 1 or 2 doesn\'t ' \
-                    'fire: that one isn\'t a step-2 hit, and step 5 routes it to the deep lane if it passes ' \
-                    'steps 3 and 4.'
+                    'there and adds or changes no check, validation, permission or secret handling (an opt-in ' \
+                    'one included), judged from the diff rather than its title or label, and signal 1 or 2 ' \
+                    'doesn\'t fire'
+    assert_includes read('setup', 'setup-interview.md'),
+                    '(a PR that only adds a feature there, adding or changing no check, goes to the deep lane instead)'
   end
 
   def test_board_rule_covers_every_output
@@ -880,7 +884,8 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_a_fact_missing_on_some_items_is_no_zero
     pitfalls = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Pitfalls').last.split('## Verification').first
-    assert_includes pitfalls, '**A missing fact is not a zero.** A fact missing on some items, not all, is reported ' \
+    assert_includes pitfalls, '**A missing fact is not a zero.** A fact missing on some items, not all, or on a ' \
+                              'kind\'s only item, is reported ' \
                               'and never treated as zero. ' \
                               'The inert-dimension rule covers a fact missing on every item of a kind that has at least two items.'
   end
