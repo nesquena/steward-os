@@ -693,18 +693,33 @@ class ProjectShapeContractTest < Minitest::Test
                     'infer no chat default.'
   end
 
-  def test_default_weights_are_for_issues
+  def test_default_weights_cover_issues_and_prs
     step = skill_step('triage-scoreboard', 4)
-    assert_includes step, 'With no weights set by the project, weight an issue\'s judgment dimensions equally (the ' \
-                          'default rubric\'s `scope_fit`, `criticality` and `risk`, or a replacement\'s own) and use ' \
-                          'the mechanical dimensions only to break ties. ' \
-                          'Weights the project sets replace the equal weights. The default covers issues only.'
-    assert_includes step, 'Rank PRs and issues separately; sort issues on the judgment dimensions\' weighted sum first'
+    assert_includes step, 'With no weights set by the project, weight judgment dimensions equally for both issues ' \
+                          'and PRs (the default rubric\'s `scope_fit`, `criticality` and `risk`, or a replacement\'s ' \
+                          'own) and use each kind\'s mechanical dimensions only to break ties. ' \
+                          'Weights the project sets replace the equal weights.'
+    refute_includes step, 'The default covers issues only.'
+    assert_includes step, 'Rank PRs and issues separately; sort issues, and with no project weights PRs too, on ' \
+                          'their judgment dimensions\' weighted sum first, and on their mechanical dimensions only between ' \
+                          'equal sums.'
     playbook = read('docs', 'playbooks', 'triage-scoreboard.md')
-    assert_includes playbook, 'With no weights set by the project, an issue\'s judgment dimensions weigh equally and ' \
-                              'the mechanical dimensions only break ties. Weights the project sets replace the equal ' \
-                              'weights. The default covers issues only.'
+    assert_includes playbook, 'With no weights set by the project, both issues and PRs weigh their judgment ' \
+                              'dimensions equally and use mechanical dimensions only to break ties. Weights the ' \
+                              'project sets replace the equal weights.'
+    refute_includes playbook, 'The default covers issues only.'
     assert_includes playbook, 'Judgment dimensions should outweigh mechanical ones'
+    assert_includes playbook, 'Sort issues, and with no project weights PRs too, on their judgment dimensions\' ' \
+                              'weighted sum first, and on their mechanical dimensions only between equal sums'
+  end
+
+  def test_inert_dimensions_require_at_least_two_items
+    playbook = read('docs', 'playbooks', 'triage-scoreboard.md')
+    assert_includes playbook, 'Check each run, per kind, when the board holds at least two items of that kind — ' \
+                              'fewer than two items can\'t vary, so no dimension is marked inert on count alone.'
+    assert_includes skill_step('triage-scoreboard', 2),
+                    'When the board holds at least two items of a kind, a dimension with one value for every item ' \
+                    'of that kind is [inert]'
   end
 
   def test_board_rule_covers_every_output
@@ -849,9 +864,10 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_a_fact_missing_on_some_items_is_no_zero
     pitfalls = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Pitfalls').last.split('## Verification').first
-    assert_includes pitfalls, '**A missing fact is not a zero.** A fact missing on some items, not all, is reported ' \
+    assert_includes pitfalls, '**A missing fact is not a zero.** A fact missing on some items, not all, or on a ' \
+                              'kind\'s only item, is reported ' \
                               'and never treated as zero. ' \
-                              'The inert-dimension rule covers a fact missing on every item.'
+                              'The inert-dimension rule covers a fact missing on every item of a kind that has at least two items.'
   end
 
   def test_quickstart_does_not_require_github
@@ -1423,6 +1439,9 @@ class BoardFormatContractTest < Minitest::Test
   def test_maintainers_feed_the_dropped_ball_check
     skill = read('skills', 'issue-triage', 'SKILL.md')
     assert_includes skill, 'each repository\'s `maintainers` (for the dropped-ball check)'
+    assert_includes skill, 'the reporter answered *after* that with no later maintainer reply, and no PR exists'
+    assert_includes read('docs', 'lifecycle', 'issue-lifecycle.md'),
+                    'the reporter answered after with no later maintainer reply, and no PR exists'
     assert_includes skill, 'Skip an issue whose reporter is one.'
     assert_includes skill, 'When the list is empty, don\'t guess maintainers from the host\'s permissions: skip ' \
                            'this step and say in your output that it didn\'t run for that repository, and why.'

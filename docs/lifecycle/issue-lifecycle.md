@@ -121,8 +121,9 @@ never becomes the unattended path.
 ## The dropped-ball guard
 The most common trust leak is an issue where *you* asked the reporter a question, they answered, and
 then you went silent. Surface these explicitly: an open issue where a maintainer replied, the
-reporter answered after, and no PR exists — sorted by how long they've been waiting. This is a
-pure-detection Band-A signal (never an auto-reply); it just tells the maintainer who to get back to.
+reporter answered after with no later maintainer reply, and no PR exists — sorted by how long
+they've been waiting. This is a pure-detection Band-A signal (never an auto-reply); it just tells
+the maintainer who to get back to.
 
 ---
 

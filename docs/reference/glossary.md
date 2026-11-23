@@ -83,8 +83,8 @@ meaning sooner. A default an adopter may replace.
 
 **Inert dimension** — a scoreboard
 [mechanical dimension](../playbooks/triage-scoreboard.md#a-dimension-that-carries-no-signal) that
-takes one value across every item of a kind on the board. The board drops it from that kind's
-composite and names it in the header.
+takes one value across every item of a kind on the board, checked once the board holds at least
+two items of that kind. The board drops it from that kind's composite and names it in the header.
 
 **Stale judgment** — a scoreboard judgment value whose
 [judgment stamp](../playbooks/triage-scoreboard.md#when-a-judgment-goes-stale) no longer
