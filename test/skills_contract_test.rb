@@ -1525,5 +1525,8 @@ class QualityGateContractTest < Minitest::Test
     assert_includes skill_step('pr-deep-review', 5),
                     'confirm each guard, refusal rule or branch a fix adds or changes fails a test when broken ' \
                     'on its own (not only when the whole fix is reverted)'
+    verification = read('skills', 'pr-deep-review', 'SKILL.md').split('## Verification').last
+    assert_includes verification, '- Each guard, refusal rule or branch a fix adds or changes failed a test when ' \
+                                  'broken on its own.'
   end
 end

@@ -48,7 +48,7 @@ Quality starts before the fix, not after:
   changes, confirm a test fails when that guard alone is broken (deleted, inverted, or widened by
   one case) — not only when the whole fix is reverted — then restore the file. One that stays green
   is a missing test. Re-run only the test files that cover the mutated code, not the full suite per
-  mutant. (For a single-guard fix, reverting the whole fix already removes that guard.)
+  mutant.
 - A green suite is necessary but **not sufficient** — it only covers what's been written. That's why
   the other gates exist.
 - **Coverage-delta check** (worth building as the system matures): confirm the new regression test

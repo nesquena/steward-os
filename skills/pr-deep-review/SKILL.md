@@ -101,10 +101,10 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      gates](../../docs/lifecycle/quality-gates.md#1-the-test-suite--the-primary-line) gate 1. Judge
      the run by exit status and its summary (a run that found no tests is not a pass), confirm each
      guard, refusal rule or branch a fix adds or changes fails a test when broken on its own (not
-     only when the whole fix is reverted), and run the old-against-new differential for changes with a runtime effect whose
-     inputs can be replayed (a claim of no behaviour change doesn't exempt a change, and every
-     difference it shows is a finding). One that applies but wasn't run leaves the gate not
-     all-clear; when none applies, the verdict says so and why.
+     only when the whole fix is reverted), and run the old-against-new differential for changes
+     with a runtime effect whose inputs can be replayed (a claim of no behaviour change doesn't
+     exempt a change, and every difference it shows is a finding). A differential that applies but
+     wasn't run leaves the gate not all-clear; when none applies, the verdict says so and why.
    - Always, where trunk's accepted configuration has CI: gate 5's check that the runs trunk's
      workflows would start for this PR exist and ran in full for this exact head.
 6. **If the outcome is no run, stop without an all-clear unless verified human evidence supplies
@@ -175,6 +175,7 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
 - Both independent review passes completed on the same current head; no required finding unresolved.
 - Neither reading leg was produced by a reader that wrote a commit in the PR's range or reported
   seeing notes on this PR.
+- Each guard, refusal rule or branch a fix adds or changes failed a test when broken on its own.
 - The differential ran, or the verdict says why none applied; where trunk's accepted configuration
   has CI, the runs it would start for this PR exist and ran in full for this head.
 - Required visible surfaces inspected/driven; regression coverage for fixes present; authorship preserved.
