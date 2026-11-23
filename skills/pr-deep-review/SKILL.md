@@ -101,12 +101,12 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      gates](../../docs/lifecycle/quality-gates.md#1-the-test-suite--the-primary-line) gate 1. Judge
      the run by exit status and its summary (a run that found no tests is not a pass), break each
      guard, refusal rule or branch the change adds, changes or removes on both sides as gate 1 says
-     (a removed guard is put back, and an outcome branch sends a case down the other path; a test
-     fails for every break, not only when the whole change is reverted), and run the
-     old-against-new differential for changes with a runtime effect whose inputs can be replayed
-     (a claim of no behaviour change doesn't exempt a change, and every difference it shows is a
-     finding). A differential or guard check that applies but wasn't run, or a break that stayed
-     green, leaves the gate not all-clear; when none applies, the verdict says so and why.
+     (a removed guard is put back, and what now refuses its cases is broken; an outcome branch sends
+     a case down the other path; a test fails for every break, not only when the whole change is
+     reverted), and run the old-against-new differential for changes with a runtime effect whose
+     inputs can be replayed (a claim of no behaviour change doesn't exempt a change, and every
+     difference it shows is a finding). A differential or guard check that applies but wasn't run,
+     or a break that stayed green, leaves the gate not all-clear; when none applies, the verdict says so and why.
    - Always, where trunk's accepted configuration has CI: gate 5's check that the runs trunk's
      workflows would start for this PR exist and ran in full for this exact head.
 6. **If the outcome is no run, stop without an all-clear unless verified human evidence supplies
@@ -178,8 +178,9 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
 - Neither reading leg was produced by a reader that wrote a commit in the PR's range or reported
   seeing notes on this PR.
 - Each guard, refusal rule or branch the change adds, changes or removes failed a test when broken
-  alone on each side (put back, for a removed guard), for every case the change moved and each
-  condition of a combined guard; a direction that can't be produced is named, with the reason.
+  alone on each side (for a removed guard: put back, and what now refuses its cases broken), for
+  every case the change moved and each condition of a combined guard; a direction that can't be
+  produced is named, with the reason.
 - The differential ran, or the verdict says why none applied; where trunk's accepted configuration
   has CI, the runs it would start for this PR exist and ran in full for this head.
 - Required visible surfaces inspected/driven; regression coverage for fixes present; authorship preserved.

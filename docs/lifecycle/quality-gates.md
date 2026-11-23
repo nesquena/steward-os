@@ -49,7 +49,9 @@ Quality starts before the fix, not after:
   must refuse, and again so it refuses a case it must let through. For a branch that picks between
   outcomes rather than refusing, send a case from each side down the other path. For a guard the
   change removes, the break is putting it back: a test must fail because a case that must now pass
-  is refused. Where a direction can't be produced, say which and why. Cover every case the change
+  is refused. For each case it refused that must still be refused, name what refuses it now and
+  break that alone: a test must fail. Where a direction can't be produced in the tree, say which
+  and why; being hard to test, or a removal called redundant, doesn't count. Cover every case the change
   moved (newly refused or newly allowed) and each condition of a combined guard on its own. A test
   must fail for every break, not only when the whole change is reverted; a break that stays green
   is a missing test. Restore the files after each break, and re-run only the test files that cover

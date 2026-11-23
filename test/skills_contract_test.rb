@@ -1522,8 +1522,10 @@ class QualityGateContractTest < Minitest::Test
                            'lets through a case it must refuse, and again so it refuses a case it must let through. ' \
                            'For a branch that picks between outcomes rather than refusing, send a case from each ' \
                            'side down the other path. For a guard the change removes, the break is putting it back: ' \
-                           'a test must fail because a case that must now pass is refused. Where a direction can\'t ' \
-                           'be produced, say which and why. Cover every case the change moved (newly refused or ' \
+                           'a test must fail because a case that must now pass is refused. For each case it refused ' \
+                           'that must still be refused, name what refuses it now and break that alone: a test must ' \
+                           'fail. Where a direction can\'t be produced in the tree, say which and why; being hard to ' \
+                           'test, or a removal called redundant, doesn\'t count. Cover every case the change moved (newly refused or ' \
                            'newly allowed) and each condition of a combined guard on its own. A test must fail for ' \
                            'every break, not only when the whole change is reverted; a break that stays green is a ' \
                            'missing test.'
@@ -1532,8 +1534,8 @@ class QualityGateContractTest < Minitest::Test
     assert_includes gates, 'the suite (with any differential and the guard check)'
     assert_includes skill_step('pr-deep-review', 5),
                     'break each guard, refusal rule or branch the change adds, changes or removes on both ' \
-                    'sides as gate 1 says (a removed guard is put back, and an outcome branch sends a case down ' \
-                    'the other path; a test fails for every break, not only when the whole change is reverted)'
+                    'sides as gate 1 says (a removed guard is put back, and what now refuses its cases is broken; ' \
+                    'an outcome branch sends a case down the other path; a test fails for every break, not only when the whole change is reverted)'
     assert_includes skill_step('pr-deep-review', 5),
                     'A differential or guard check that applies but wasn\'t run, or a break that stayed green, ' \
                     'leaves the gate not all-clear'
@@ -1541,7 +1543,8 @@ class QualityGateContractTest < Minitest::Test
     flunk('Verification section missing') unless skill.include?(' ## Verification ')
     verification = skill.split(' ## Verification ').last
     assert_includes verification, '- Each guard, refusal rule or branch the change adds, changes or removes failed a ' \
-                                  'test when broken alone on each side (put back, for a removed guard), for every case ' \
+                                  'test when broken alone on each side (for a removed guard: put back, and what now refuses its ' \
+                                  'cases broken), for every case ' \
                                   'the change moved and each condition of a combined guard; a direction that can\'t be ' \
                                   'produced is named, with the reason.'
     assert_includes skill_step('pr-deep-review', 6),
