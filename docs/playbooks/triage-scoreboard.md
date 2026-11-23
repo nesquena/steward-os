@@ -131,8 +131,8 @@ Weights the project sets replace the equal weights. Promote items carrying the
 [severity flag](#severity-is-a-flag) to the top regardless of their composite (the severity
 spotlight). A stale flag still promotes, marked stale. Judgment dimensions should outweigh
 mechanical ones: the mechanical dimensions say how an item stands, the judgment says whether it
-matters. Sort issues, and under the default PRs too, on their judgment dimensions' weighted sum
-first, and on their mechanical dimensions only between equal sums: mechanical signals break ties
+matters. Sort issues, and with no project weights PRs too, on their judgment dimensions' weighted
+sum first, and on their mechanical dimensions only between equal sums: mechanical signals break ties
 between equal judgments and never reverse unequal ones.
 
 ### Not yet judged

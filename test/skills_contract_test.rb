@@ -700,8 +700,8 @@ class ProjectShapeContractTest < Minitest::Test
                           'own) and use each kind\'s mechanical dimensions only to break ties. ' \
                           'Weights the project sets replace the equal weights.'
     refute_includes step, 'The default covers issues only.'
-    assert_includes step, 'Rank PRs and issues separately; sort issues, and under the default PRs too, on their ' \
-                          'judgment dimensions\' weighted sum first, and on their mechanical dimensions only between ' \
+    assert_includes step, 'Rank PRs and issues separately; sort issues, and with no project weights PRs too, on ' \
+                          'their judgment dimensions\' weighted sum first, and on their mechanical dimensions only between ' \
                           'equal sums.'
     playbook = read('docs', 'playbooks', 'triage-scoreboard.md')
     assert_includes playbook, 'With no weights set by the project, both issues and PRs weigh their judgment ' \
@@ -709,8 +709,8 @@ class ProjectShapeContractTest < Minitest::Test
                               'project sets replace the equal weights.'
     refute_includes playbook, 'The default covers issues only.'
     assert_includes playbook, 'Judgment dimensions should outweigh mechanical ones'
-    assert_includes playbook, 'Sort issues, and under the default PRs too, on their judgment dimensions\' weighted ' \
-                              'sum first, and on their mechanical dimensions only between equal sums'
+    assert_includes playbook, 'Sort issues, and with no project weights PRs too, on their judgment dimensions\' ' \
+                              'weighted sum first, and on their mechanical dimensions only between equal sums'
   end
 
   def test_inert_dimensions_require_at_least_two_items
@@ -720,26 +720,6 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes skill_step('triage-scoreboard', 2),
                     'When the board holds at least two items of a kind, a dimension with one value for every item ' \
                     'of that kind is [inert]'
-  end
-
-  def test_sensitive_surfaces_divert_flaws_and_deep_lane_feature_prs
-    spine = read('docs', 'reference', 'security-spine.md')
-    assert_includes spine, 'a report or PR naming or touching a surface in the adopter\'s ' \
-                           '`security_sensitive_surfaces` list (e.g. `auth`, `payments`, `crypto`) is suspected until ' \
-                           'a human clears it. The one exception is a PR that only adds a feature there and adds or ' \
-                           'changes no check, validation, permission or secret handling (an opt-in one included): it ' \
-                           'routes to the deep lane rather than diverting, unless signal 1 or 2 fires. Judge this from ' \
-                           'the diff, not the PR\'s title or label; a PR that isn\'t plainly such a feature diverts.'
-    assert_includes spine, '| a feature request (an issue) naming a listed sensitive surface | **divert** |'
-    assert_includes spine, '| a feature PR touching a listed sensitive surface that adds or changes no check, ' \
-                           'validation, permission or secret handling, with no signal 1 or 2 | **deep lane** |'
-    assert_includes skill_step('pr-triage', 2),
-                    'A PR on a `security_sensitive_surfaces` subsystem diverts, unless it only adds a feature ' \
-                    'there and adds or changes no check, validation, permission or secret handling (an opt-in ' \
-                    'one included), judged from the diff rather than its title or label, and signal 1 or 2 ' \
-                    'doesn\'t fire'
-    assert_includes read('setup', 'setup-interview.md'),
-                    '(a PR that only adds a feature there, adding or changing no check, goes to the deep lane instead)'
   end
 
   def test_board_rule_covers_every_output

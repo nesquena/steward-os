@@ -105,8 +105,9 @@ displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job
    both issues and PRs (the default rubric's `scope_fit`, `criticality` and `risk`, or a
    replacement's own) and use each kind's mechanical dimensions only to break ties.
    Weights the project sets replace the equal weights.
-   Rank PRs and issues separately; sort issues, and under the default PRs too, on their judgment
-   dimensions' weighted sum first, and on their mechanical dimensions only between equal sums. An item with no
+   Rank PRs and issues separately; sort issues, and with no project weights PRs too, on their
+   judgment dimensions' weighted sum first, and on their mechanical dimensions only between equal
+   sums. An item with no
    judgment at all leaves the ranking for the
    [not yet judged](../../docs/playbooks/triage-scoreboard.md#not-yet-judged) section; an item with
    some judgment ranks, and an empty dimension counts as unjudged for that dimension. Promote items
