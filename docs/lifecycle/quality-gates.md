@@ -47,7 +47,7 @@ Quality starts before the fix, not after:
 - **Break each guard you add or change.** For every guard, refusal rule or branch a fix adds or
   changes, confirm a test fails when that guard alone is broken (deleted, inverted, or widened by
   one case) — not only when the whole fix is reverted — then restore the file. One that stays green
-  is a missing test. Re-run only the test file covering the mutated code, not the full suite per
+  is a missing test. Re-run only the test files that cover the mutated code, not the full suite per
   mutant. (For a single-guard fix, reverting the whole fix already removes that guard.)
 - A green suite is necessary but **not sufficient** — it only covers what's been written. That's why
   the other gates exist.

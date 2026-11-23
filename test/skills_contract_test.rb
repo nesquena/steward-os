@@ -1521,9 +1521,9 @@ class QualityGateContractTest < Minitest::Test
                            'adds or changes, confirm a test fails when that guard alone is broken (deleted, ' \
                            'inverted, or widened by one case) — not only when the whole fix is reverted — then ' \
                            'restore the file. One that stays green is a missing test.'
-    assert_includes gate1, 'Re-run only the test file covering the mutated code, not the full suite per mutant.'
+    assert_includes gate1, 'Re-run only the test files that cover the mutated code, not the full suite per mutant.'
     assert_includes skill_step('pr-deep-review', 5),
-                    'confirm each guard or branch a fix adds fails a test when broken on its own (not only when ' \
-                    'the whole fix is reverted)'
+                    'confirm each guard, refusal rule or branch a fix adds or changes fails a test when broken ' \
+                    'on its own (not only when the whole fix is reverted)'
   end
 end
