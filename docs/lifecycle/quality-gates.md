@@ -55,7 +55,7 @@ Quality starts before the fix, not after:
   moved (newly refused or newly allowed) and each condition of a combined guard on its own. A test
   must fail for every break, not only when the whole change is reverted; a break that stays green
   is a missing test. Restore the files after each break, and re-run only the test files that cover
-  the mutated code, not the full suite per mutant.
+  the mutated code, not the full suite per mutant. This is the guard check.
 - A green suite is necessary but **not sufficient** — it only covers what's been written. That's why
   the other gates exist.
 - **Coverage-delta check** (worth building as the system matures): confirm the new regression test

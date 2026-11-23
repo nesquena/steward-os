@@ -1530,7 +1530,7 @@ class QualityGateContractTest < Minitest::Test
                            'every break, not only when the whole change is reverted; a break that stays green is a ' \
                            'missing test.'
     assert_includes gate1, 'Restore the files after each break, and re-run only the test files that cover the ' \
-                           'mutated code, not the full suite per mutant.'
+                           'mutated code, not the full suite per mutant. This is the guard check.'
     assert_includes gates, 'the suite (with any differential and the guard check)'
     assert_includes skill_step('pr-deep-review', 5),
                     'break each guard, refusal rule or branch the change adds, changes or removes on both ' \
@@ -1540,8 +1540,8 @@ class QualityGateContractTest < Minitest::Test
                     'A differential or guard check that applies but wasn\'t run, or a break that stayed green, ' \
                     'leaves the gate not all-clear'
     skill = read('skills', 'pr-deep-review', 'SKILL.md')
-    flunk('Verification section missing') unless skill.include?(' ## Verification ')
-    verification = skill.split(' ## Verification ').last
+    verification = skill[/ ## Verification (.*?)(?= ## |\z)/m, 1] or
+      flunk('Verification section missing')
     assert_includes verification, '- Each guard, refusal rule or branch the change adds, changes or removes failed a ' \
                                   'test when broken alone on each side (for a removed guard: put back, and what now refuses its ' \
                                   'cases broken), for every case ' \
