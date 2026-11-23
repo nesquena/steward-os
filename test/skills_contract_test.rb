@@ -1517,8 +1517,8 @@ class QualityGateContractTest < Minitest::Test
   def test_gate_one_breaks_each_added_or_changed_guard
     gates = read('docs', 'lifecycle', 'quality-gates.md')
     gate1 = gates[/### 1\. The test suite .*?(?= ### 2\. )/m] or flunk('gate 1 section missing')
-    assert_includes gate1, '**Break each guard you add or change, on both sides.** For every guard, refusal rule ' \
-                           'or branch a change adds, changes or removes, break it alone so it lets through a case it ' \
+    assert_includes gate1, '**Break each guard a change adds, changes or removes, on both sides.** For every guard, ' \
+                           'refusal rule or branch a change adds, changes or removes, break it alone so it lets through a case it ' \
                            'must refuse, and again so it refuses a case it must let through. Cover every case the ' \
                            'change moved (newly refused or newly allowed) and each condition of a combined guard on ' \
                            'its own. A test must fail for every break, not only when the whole change is reverted; ' \
@@ -1530,6 +1530,11 @@ class QualityGateContractTest < Minitest::Test
                     'reverted)'
     verification = read('skills', 'pr-deep-review', 'SKILL.md').split('## Verification').last
     assert_includes verification, '- Each guard, refusal rule or branch the change adds, changes or removes failed a ' \
-                                  'test when broken alone on either side, for every case the change moved.'
+                                  'test when broken alone on each side, for every case the change moved and each ' \
+                                  'condition of a combined guard.'
+    assert_includes skill_step('pr-deep-review', 6),
+                    '(the suite with any differential and the guard check, visual verification)'
+    assert_includes read('docs', 'reference', 'security-spine.md'),
+                    'skipped gates (the suite with any differential and the guard check, and visual verification'
   end
 end

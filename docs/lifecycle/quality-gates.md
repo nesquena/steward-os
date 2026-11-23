@@ -44,8 +44,8 @@ Quality starts before the fix, not after:
   nothing for a failed run, and it can match a server's log lines in a passing one. A run that found
   no tests is not a pass.
 - Every fix adds a regression test. The suite only grows; coverage is a ratchet.
-- **Break each guard you add or change, on both sides.** For every guard, refusal rule or branch a
-  change adds, changes or removes, break it alone so it lets through a case it must refuse, and
+- **Break each guard a change adds, changes or removes, on both sides.** For every guard, refusal
+  rule or branch a change adds, changes or removes, break it alone so it lets through a case it must refuse, and
   again so it refuses a case it must let through. Cover every case the change moved (newly refused
   or newly allowed) and each condition of a combined guard on its own. A test must fail for every
   break, not only when the whole change is reverted; a break that stays green is a missing test.

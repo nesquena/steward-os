@@ -119,8 +119,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
    - *sandbox build failed* → fix the sandbox.
 
    A human run counts only under the sandbox rule's receipt contract: successful complete skipped
-   scopes (the suite with any differential, visual verification) against step 2's accepted gate
-   configuration on the exact head/trunk, fresh immediately
+   scopes (the suite with any differential and the guard check, visual verification) against
+   step 2's accepted gate configuration on the exact head/trunk, fresh immediately
    before merge, from the authenticated direct
    channel. Keep its origin/time/scope/results and review evidence in an operator/reviewer-owned
    location outside the contributor-writable tree/thread; the PR's
@@ -177,7 +177,7 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
 - Neither reading leg was produced by a reader that wrote a commit in the PR's range or reported
   seeing notes on this PR.
 - Each guard, refusal rule or branch the change adds, changes or removes failed a test when broken
-  alone on either side, for every case the change moved.
+  alone on each side, for every case the change moved and each condition of a combined guard.
 - The differential ran, or the verdict says why none applied; where trunk's accepted configuration
   has CI, the runs it would start for this PR exist and ran in full for this head.
 - Required visible surfaces inspected/driven; regression coverage for fixes present; authorship preserved.
