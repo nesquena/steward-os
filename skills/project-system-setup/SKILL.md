@@ -20,7 +20,7 @@ and produces the project's `config.yaml` from the
    matters (cite the playbook it feeds). Accept "skip / not yet" for any optional section.
    - Required: project shape (Section 0), identity & repos, scope anchors, CI/tests, autonomy
      posture, secrets & safety (questions 19 and 20 always; 18 if any autonomous public write).
-   - Optional: chat/community, mentions, scheduled jobs.
+   - Optional: chat/community, mentions, scheduled jobs, labels & contributor trust (Section 8).
 3. **Confirm each answer** before writing it. Never guess — an unanswered question becomes a
    documented TODO in the output, not an assumption.
 4. **Write `config.yaml`** from the template with the collected answers. Validate it parses, then run
