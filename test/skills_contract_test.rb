@@ -1517,16 +1517,17 @@ class QualityGateContractTest < Minitest::Test
   def test_gate_one_breaks_each_added_or_changed_guard
     gates = read('docs', 'lifecycle', 'quality-gates.md')
     gate1 = gates[/### 1\. The test suite .*?(?= ### 2\. )/m] or flunk('gate 1 section missing')
-    assert_includes gate1, '**Break each guard you add or change.** For every guard, refusal rule or branch a fix ' \
-                           'adds or changes, confirm a test fails when that guard alone is broken (deleted, ' \
-                           'inverted, or widened by one case) — not only when the whole fix is reverted — then ' \
-                           'restore the file. One that stays green is a missing test.'
+    assert_includes gate1, '**Break each guard you add or change.** For every guard, refusal rule or branch a ' \
+                           'change adds or changes, confirm a test fails when that guard alone is broken (deleted, ' \
+                           'inverted, widened or narrowed by one case, or a changed one put back as it was) — not ' \
+                           'only when the whole change is reverted — then restore the file. One that stays green ' \
+                           'is a missing test.'
     assert_includes gate1, 'Re-run only the test files that cover the mutated code, not the full suite per mutant.'
     assert_includes skill_step('pr-deep-review', 5),
-                    'confirm each guard, refusal rule or branch a fix adds or changes fails a test when broken ' \
-                    'on its own (not only when the whole fix is reverted)'
+                    'confirm each guard, refusal rule or branch the change adds or changes fails a test when ' \
+                    'broken on its own (not only when the whole change is reverted)'
     verification = read('skills', 'pr-deep-review', 'SKILL.md').split('## Verification').last
-    assert_includes verification, '- Each guard, refusal rule or branch a fix adds or changes failed a test when ' \
+    assert_includes verification, '- Each guard, refusal rule or branch the change adds or changes failed a test when ' \
                                   'broken on its own.'
   end
 end

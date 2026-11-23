@@ -100,8 +100,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
    - Unless the outcome is **no run**: the suite's checks from [quality
      gates](../../docs/lifecycle/quality-gates.md#1-the-test-suite--the-primary-line) gate 1. Judge
      the run by exit status and its summary (a run that found no tests is not a pass), confirm each
-     guard, refusal rule or branch a fix adds or changes fails a test when broken on its own (not
-     only when the whole fix is reverted), and run the old-against-new differential for changes
+     guard, refusal rule or branch the change adds or changes fails a test when broken on its own
+     (not only when the whole change is reverted), and run the old-against-new differential for changes
      with a runtime effect whose inputs can be replayed (a claim of no behaviour change doesn't
      exempt a change, and every difference it shows is a finding). A differential that applies but
      wasn't run leaves the gate not all-clear; when none applies, the verdict says so and why.
@@ -118,8 +118,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
    - *sandbox build failed* → fix the sandbox.
 
    A human run counts only under the sandbox rule's receipt contract: successful complete skipped
-   scopes (the suite with any differential, visual verification) against step 2's accepted gate
-   configuration on the exact head/trunk, fresh immediately
+   scopes (the suite with any differential and the guard check, visual verification) against
+   step 2's accepted gate configuration on the exact head/trunk, fresh immediately
    before merge, from the authenticated direct
    channel. Keep its origin/time/scope/results and review evidence in an operator/reviewer-owned
    location outside the contributor-writable tree/thread; the PR's
@@ -175,7 +175,7 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
 - Both independent review passes completed on the same current head; no required finding unresolved.
 - Neither reading leg was produced by a reader that wrote a commit in the PR's range or reported
   seeing notes on this PR.
-- Each guard, refusal rule or branch a fix adds or changes failed a test when broken on its own.
+- Each guard, refusal rule or branch the change adds or changes failed a test when broken on its own.
 - The differential ran, or the verdict says why none applied; where trunk's accepted configuration
   has CI, the runs it would start for this PR exist and ran in full for this head.
 - Required visible surfaces inspected/driven; regression coverage for fixes present; authorship preserved.

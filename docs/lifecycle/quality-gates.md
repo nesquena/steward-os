@@ -44,9 +44,10 @@ Quality starts before the fix, not after:
   nothing for a failed run, and it can match a server's log lines in a passing one. A run that found
   no tests is not a pass.
 - Every fix adds a regression test. The suite only grows; coverage is a ratchet.
-- **Break each guard you add or change.** For every guard, refusal rule or branch a fix adds or
-  changes, confirm a test fails when that guard alone is broken (deleted, inverted, or widened by
-  one case) — not only when the whole fix is reverted — then restore the file. One that stays green
+- **Break each guard you add or change.** For every guard, refusal rule or branch a change adds or
+  changes, confirm a test fails when that guard alone is broken (deleted, inverted, widened or
+  narrowed by one case, or a changed one put back as it was) — not only when the whole change is
+  reverted — then restore the file. One that stays green
   is a missing test. Re-run only the test files that cover the mutated code, not the full suite per
   mutant.
 - A green suite is necessary but **not sufficient** — it only covers what's been written. That's why
