@@ -1501,3 +1501,29 @@ class ProposalRefsContractTest < Minitest::Test
                     'the gate.'
   end
 end
+
+class QualityGateContractTest < Minitest::Test
+  # Gate 1 breaks each guard a fix adds or changes, not only the whole fix. Whitespace-folded.
+  def read(*path)
+    File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
+  end
+
+  def skill_step(skill, num)
+    text = read('skills', skill, 'SKILL.md')
+    step = text[/ #{num}\. \*\*.*?(?= #{num + 1}\. \*\*|\z)/m] or flunk("#{skill} step #{num} missing")
+    step.split(/ ## /).first
+  end
+
+  def test_gate_one_breaks_each_added_or_changed_guard
+    gates = read('docs', 'lifecycle', 'quality-gates.md')
+    gate1 = gates[/### 1\. The test suite .*?(?= ### 2\. )/m] or flunk('gate 1 section missing')
+    assert_includes gate1, '**Break each guard you add or change.** For every guard, refusal rule or branch a fix ' \
+                           'adds or changes, confirm a test fails when that guard alone is broken (deleted, ' \
+                           'inverted, or widened by one case) — not only when the whole fix is reverted — then ' \
+                           'restore the file. One that stays green is a missing test.'
+    assert_includes gate1, 'Re-run only the test file covering the mutated code, not the full suite per mutant.'
+    assert_includes skill_step('pr-deep-review', 5),
+                    'confirm each guard or branch a fix adds fails a test when broken on its own (not only when ' \
+                    'the whole fix is reverted)'
+  end
+end

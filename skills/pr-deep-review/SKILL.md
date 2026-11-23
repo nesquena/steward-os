@@ -99,11 +99,12 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      screenshot them).
    - Unless the outcome is **no run**: the suite's checks from [quality
      gates](../../docs/lifecycle/quality-gates.md#1-the-test-suite--the-primary-line) gate 1. Judge
-     the run by exit status and its summary (a run that found no tests is not a pass), and run the
-     old-against-new differential for changes with a runtime effect whose inputs can be replayed (a
-     claim of no behaviour change doesn't exempt a change, and every difference it shows is a
-     finding). One that applies but wasn't run leaves the gate not all-clear; when none applies, the
-     verdict says so and why.
+     the run by exit status and its summary (a run that found no tests is not a pass), confirm each
+     guard or branch a fix adds fails a test when broken on its own (not only when the whole fix is
+     reverted), and run the old-against-new differential for changes with a runtime effect whose
+     inputs can be replayed (a claim of no behaviour change doesn't exempt a change, and every
+     difference it shows is a finding). One that applies but wasn't run leaves the gate not
+     all-clear; when none applies, the verdict says so and why.
    - Always, where trunk's accepted configuration has CI: gate 5's check that the runs trunk's
      workflows would start for this PR exist and ran in full for this exact head.
 6. **If the outcome is no run, stop without an all-clear unless verified human evidence supplies
