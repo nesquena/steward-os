@@ -45,12 +45,15 @@ Quality starts before the fix, not after:
   no tests is not a pass.
 - Every fix adds a regression test. The suite only grows; coverage is a ratchet.
 - **Break each guard a change adds, changes or removes, on both sides.** For every guard, refusal
-  rule or branch a change adds, changes or removes, break it alone so it lets through a case it must refuse, and
-  again so it refuses a case it must let through. Cover every case the change moved (newly refused
-  or newly allowed) and each condition of a combined guard on its own. A test must fail for every
-  break, not only when the whole change is reverted; a break that stays green is a missing test.
-  Restore the files after each break, and re-run only the test files that cover the mutated code,
-  not the full suite per mutant.
+  rule or branch a change adds, changes or removes, break it alone so it lets through a case it
+  must refuse, and again so it refuses a case it must let through. For a branch that picks between
+  outcomes rather than refusing, send a case from each side down the other path. For a guard the
+  change removes, the break is putting it back: a test must fail because a case that must now pass
+  is refused. Where a direction can't be produced, say which and why. Cover every case the change
+  moved (newly refused or newly allowed) and each condition of a combined guard on its own. A test
+  must fail for every break, not only when the whole change is reverted; a break that stays green
+  is a missing test. Restore the files after each break, and re-run only the test files that cover
+  the mutated code, not the full suite per mutant.
 - A green suite is necessary but **not sufficient** — it only covers what's been written. That's why
   the other gates exist.
 - **Coverage-delta check** (worth building as the system matures): confirm the new regression test
@@ -144,7 +147,7 @@ or ordering bug wearing a costume.
 
 ## Untrusted-code execution
 
-Gates 1, 4, and 5 all *run* the PR's code: the suite (with any differential), the driven
+Gates 1, 4, and 5 all *run* the PR's code: the suite (with any differential and the guard check), the driven
 interaction, the re-run before merge. When the PR is untrusted, treat that code as
 adversarial. **Never run it unsandboxed.** Run inside a locked-down sandbox with no network and no
 credential access that fails closed if it can't be built. If contributor-code execution is switched

@@ -1517,21 +1517,33 @@ class QualityGateContractTest < Minitest::Test
   def test_gate_one_breaks_each_added_or_changed_guard
     gates = read('docs', 'lifecycle', 'quality-gates.md')
     gate1 = gates[/### 1\. The test suite .*?(?= ### 2\. )/m] or flunk('gate 1 section missing')
-    assert_includes gate1, '**Break each guard a change adds, changes or removes, on both sides.** For every guard, ' \
-                           'refusal rule or branch a change adds, changes or removes, break it alone so it lets through a case it ' \
-                           'must refuse, and again so it refuses a case it must let through. Cover every case the ' \
-                           'change moved (newly refused or newly allowed) and each condition of a combined guard on ' \
-                           'its own. A test must fail for every break, not only when the whole change is reverted; ' \
-                           'a break that stays green is a missing test.'
-    assert_includes gate1, 're-run only the test files that cover the mutated code, not the full suite per mutant.'
+    assert_includes gate1, '**Break each guard a change adds, changes or removes, on both sides.** For every ' \
+                           'guard, refusal rule or branch a change adds, changes or removes, break it alone so it ' \
+                           'lets through a case it must refuse, and again so it refuses a case it must let through. ' \
+                           'For a branch that picks between outcomes rather than refusing, send a case from each ' \
+                           'side down the other path. For a guard the change removes, the break is putting it back: ' \
+                           'a test must fail because a case that must now pass is refused. Where a direction can\'t ' \
+                           'be produced, say which and why. Cover every case the change moved (newly refused or ' \
+                           'newly allowed) and each condition of a combined guard on its own. A test must fail for ' \
+                           'every break, not only when the whole change is reverted; a break that stays green is a ' \
+                           'missing test.'
+    assert_includes gate1, 'Restore the files after each break, and re-run only the test files that cover the ' \
+                           'mutated code, not the full suite per mutant.'
+    assert_includes gates, 'the suite (with any differential and the guard check)'
     assert_includes skill_step('pr-deep-review', 5),
                     'break each guard, refusal rule or branch the change adds, changes or removes on both ' \
-                    'sides as gate 1 says (a test fails for every break, not only when the whole change is ' \
-                    'reverted)'
-    verification = read('skills', 'pr-deep-review', 'SKILL.md').split('## Verification').last
+                    'sides as gate 1 says (a removed guard is put back, and an outcome branch sends a case down ' \
+                    'the other path; a test fails for every break, not only when the whole change is reverted)'
+    assert_includes skill_step('pr-deep-review', 5),
+                    'A differential or guard check that applies but wasn\'t run, or a break that stayed green, ' \
+                    'leaves the gate not all-clear'
+    skill = read('skills', 'pr-deep-review', 'SKILL.md')
+    flunk('Verification section missing') unless skill.include?(' ## Verification ')
+    verification = skill.split(' ## Verification ').last
     assert_includes verification, '- Each guard, refusal rule or branch the change adds, changes or removes failed a ' \
-                                  'test when broken alone on each side, for every case the change moved and each ' \
-                                  'condition of a combined guard.'
+                                  'test when broken alone on each side (put back, for a removed guard), for every case ' \
+                                  'the change moved and each condition of a combined guard; a direction that can\'t be ' \
+                                  'produced is named, with the reason.'
     assert_includes skill_step('pr-deep-review', 6),
                     '(the suite with any differential and the guard check, visual verification)'
     assert_includes read('docs', 'reference', 'security-spine.md'),
