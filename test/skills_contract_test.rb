@@ -723,14 +723,19 @@ class ProjectShapeContractTest < Minitest::Test
 
   def test_sensitive_surfaces_divert_flaws_and_deep_lane_feature_prs
     spine = read('docs', 'reference', 'security-spine.md')
-    assert_includes spine, 'a bug or flaw report (or a fix PR) naming a surface in the adopter\'s ' \
-                           '`security_sensitive_surfaces` list (e.g. `auth`, `payments`, `crypto`) is suspected ' \
-                           'until a human clears it. A feature PR that only touches a listed subsystem routes to ' \
-                           'the deep lane rather than diverting, unless signal 1 or 2 fires.'
+    assert_includes spine, 'a report (or a fix PR) naming a surface in the adopter\'s `security_sensitive_surfaces` ' \
+                           'list (e.g. `auth`, `payments`, `crypto`) is suspected until a human clears it. The one ' \
+                           'exception is a PR that only adds a feature there: it routes to the deep lane rather than ' \
+                           'diverting, unless signal 1 or 2 fires. Judge the kind from the diff, not the PR\'s title ' \
+                           'or label: a PR that changes a check, validation, permission or secret handling on the ' \
+                           'surface counts as a fix, and one that isn\'t plainly a feature diverts.'
+    assert_includes spine, '| a feature request (an issue) naming a listed sensitive surface | **divert** |'
     assert_includes spine, '| a feature PR touching a listed sensitive surface, with no signal 1 or 2 | **deep lane** |'
     assert_includes skill_step('pr-triage', 2),
-                    'A bug or flaw fix on a `security_sensitive_surfaces` subsystem diverts; a feature PR that ' \
-                    'only touches that subsystem goes to the deep lane (step 5) unless signal 1 or 2 fires.'
+                    'A PR on a `security_sensitive_surfaces` subsystem diverts, unless it only adds a feature ' \
+                    'there, judged from the diff rather than its title or label, and signal 1 or 2 doesn\'t ' \
+                    'fire: that one isn\'t a step-2 hit, and step 5 routes it to the deep lane if it passes ' \
+                    'steps 3 and 4.'
   end
 
   def test_board_rule_covers_every_output
@@ -877,7 +882,7 @@ class ProjectShapeContractTest < Minitest::Test
     pitfalls = read('skills', 'triage-scoreboard', 'SKILL.md').split('## Pitfalls').last.split('## Verification').first
     assert_includes pitfalls, '**A missing fact is not a zero.** A fact missing on some items, not all, is reported ' \
                               'and never treated as zero. ' \
-                              'The inert-dimension rule covers a fact missing on every item.'
+                              'The inert-dimension rule covers a fact missing on every item of a kind that has at least two items.'
   end
 
   def test_quickstart_does_not_require_github

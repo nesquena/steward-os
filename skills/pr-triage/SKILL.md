@@ -32,9 +32,10 @@ Also load it for a PR with a stale judgment an agent set (step 8). Runs
 2. **Vulnerability pre-check (unconditional first pass, before any public action).** Run the
    [vulnerability divert](../../docs/reference/security-spine.md#6-the-vulnerability-divert) on the
    PR's title, description, diff, and linked issues — a "fix" can itself disclose a live exploit,
-   PoC, or unfixed sibling. A bug or flaw fix on a `security_sensitive_surfaces` subsystem diverts;
-   a feature PR that only touches that subsystem goes to the deep lane (step 5) unless signal 1 or
-   2 fires. On a hit: take **no** public action (no comment, no public review, no
+   PoC, or unfixed sibling. A PR on a `security_sensitive_surfaces` subsystem diverts, unless it
+   only adds a feature there, judged from the diff rather than its title or label, and signal 1 or
+   2 doesn't fire: that one isn't a step-2 hit, and step 5 routes it to the deep lane if it passes
+   steps 3 and 4. On a hit: take **no** public action (no comment, no public review, no
    fix-spec bounce that reproduces the exploit, no routing record on a public surface), route the PR
    to the private path (`security_contact` → `alarms_to` → private index; never public, never a silent
    no-op), and let a human coordinate the fix (private patch, advisory, then merge). Then stop public

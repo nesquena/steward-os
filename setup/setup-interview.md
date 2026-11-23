@@ -182,8 +182,8 @@ The system can't screen PRs/issues for fit without knowing what "fits."
     private security advisories). Leave blank to fail closed: route to alarms; if that is also blank,
     hold in a confirmed-private index and raise setup — never public, never silently dropped.
     Optionally list any sensitive surfaces (e.g. `auth`, `payments`) so a report naming one is
-    treated as suspected. → `security.security_contact`,
-    `security.security_sensitive_surfaces`; [the vulnerability divert](../docs/reference/security-spine.md#6-the-vulnerability-divert).
+    treated as suspected (a PR that only adds a feature there goes to the deep lane instead).
+    → `security.security_contact`, `security.security_sensitive_surfaces`; [the vulnerability divert](../docs/reference/security-spine.md#6-the-vulnerability-divert).
 
 ## Section 7 — Scheduled jobs *(optional, grows over time)*
 21. **Which jobs do you want running, and how often?** (scoreboard refresh, chat monitor, issue

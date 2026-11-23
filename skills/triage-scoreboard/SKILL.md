@@ -160,7 +160,8 @@ displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job
   integer in the rubric's range, the bypass marker in `scope_fit`, or an empty cell. A clamped
   value hides a judge scoring on a different rubric.
 - **A missing fact is not a zero.** A fact missing on some items, not all, is reported and never
-  treated as zero. The inert-dimension rule covers a fact missing on every item.
+  treated as zero. The inert-dimension rule covers a fact missing on every item of a kind that has
+  at least two items.
 - **Evidence presence is not a verdict** — `✓` means the evidence exists to review, not that it's
   clean. The authoritative gate still runs at merge.
 - **Re-run cheaply** — this should be incremental and idempotent; it's a ranking, not an action.
