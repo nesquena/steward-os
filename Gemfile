@@ -11,7 +11,7 @@ gem "jekyll-relative-links", "~> 0.9", ">= 0.9.2"
 # The markdown parser Jekyll renders with. bin/anchor-lint reads links and
 # heading ids straight out of it rather than predicting them, so it depends on
 # these directly and not just through jekyll.
-gem "kramdown", "~> 2.5"
+gem "kramdown", "~> 2.6"
 gem "kramdown-parser-gfm", "~> 1.1"
 
 # The cmark-gfm renderer GitHub uses for the files _config.yml excludes from the
