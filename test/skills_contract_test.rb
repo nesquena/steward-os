@@ -1542,3 +1542,45 @@ class ProposalRefsContractTest < Minitest::Test
                     'the gate.'
   end
 end
+
+class NamedFixIsAHypothesisContractTest < Minitest::Test
+  # A cause or fix someone names is checked, not built as given; briefs and fix-specs say which is which.
+  def read(*path)
+    File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
+  end
+
+  LINK = '([a named fix is a hypothesis](../reference/reviewing-at-volume.md#wrong-premise-beats-bad-code))'
+
+  def test_a_named_cause_or_fix_is_a_hypothesis
+    home = read('docs', 'reference', 'reviewing-at-volume.md')
+    assert_includes home, 'This repo adds that the check above (verify the claim and the intent) applies to a ' \
+                          'cause or fix someone else names too: a report\'s diagnosis, a reviewer\'s suggested fix, ' \
+                          'a brief\'s premise. Each is a hypothesis. Check it against the failure and against what ' \
+                          'the code must keep doing before you build it, and when the evidence disagrees, say so ' \
+                          'with the evidence instead of building the named fix.'
+    assert_includes home, 'So a brief or fix-spec for a fix gives the failure and how to reproduce it first, and ' \
+                          'labels any cause or fix it suggests as a suggestion; a patch handed over to apply puts ' \
+                          'the failure ahead of its table of cases.'
+  end
+
+  def test_a_brief_gives_the_failure_first_and_labels_any_fix
+    agents = read('docs', 'playbooks', 'working-with-other-agents.md')
+    assert_includes agents, 'A brief for a fix gives the failure and how to reproduce it first (with a patch, ahead ' \
+                            'of its table of cases) and labels any cause or fix it suggests as a suggestion, so the ' \
+                            'executor tests it instead of building it as the spec ' + LINK
+  end
+
+  def test_a_fix_spec_gives_the_failure_first_and_labels_any_fix
+    step4 = read('skills', 'pr-deep-review', 'SKILL.md')[/ 4\. \*\*.*?(?= 5\. \*\*)/m].to_s
+    assert_includes step4, 'fix-spec: the failure and its repro first, and any cause or fix you suggest labeled ' \
+                           'as a suggestion ([a named fix is a ' \
+                           'hypothesis](../../docs/reference/reviewing-at-volume.md#wrong-premise-beats-bad-code)).'
+    assert_includes read('docs', 'lifecycle', 'pr-lifecycle.md'),
+                    'fix-spec (the failure and its repro first, any cause or fix you suggest labeled as a ' \
+                    'suggestion: [a named fix is a ' \
+                    'hypothesis](../reference/reviewing-at-volume.md#wrong-premise-beats-bad-code))'
+    assert_includes read('docs', 'lifecycle', 'contributor-recognition.md'),
+                    'with the failure and its repro first and any cause or fix you suggest labeled as a ' \
+                    'suggestion ' + LINK
+  end
+end
