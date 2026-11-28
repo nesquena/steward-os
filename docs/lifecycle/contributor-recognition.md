@@ -63,7 +63,8 @@ Recognition is also growth. The same ledger and the community surfaces feed a fu
 
 ## Bounce with care
 When you send a PR back, the *how* matters for whether the contributor comes back:
-- give an **exact, reproducible fix-spec**, not a vague "needs work";
+- give an **exact, reproducible fix-spec**, not a vague "needs work", with the failure and its repro
+  first and any cause or fix you suggest labeled as a suggestion ([a named fix is a hypothesis](../reference/reviewing-at-volume.md#wrong-premise-beats-bad-code));
 - reconcile against the live thread first so you don't pile on duplicate feedback;
 - if the blocker is purely mechanical (a rebase, a couple of test fixes), consider fixing it
   yourself on their branch instead of bouncing — and still credit them.

@@ -98,8 +98,10 @@ files at the PR's head *and* on the trunk to see what changed. Inert reading nee
 exercising the change runs the PR's code, so decide first whether it may run under the
 [sandbox rule](../reference/security-spine.md#4-the-sandbox-untrusted-code-execution). For every
 flaw, decide:
-- **Bounce** — leave an exact, reproducible fix-spec and let the author iterate. Reconcile against
-  the live thread first so you don't duplicate feedback.
+- **Bounce** — leave an exact, reproducible fix-spec (the failure and its repro first, any cause or
+  fix you suggest labeled as a suggestion: [a named fix is a hypothesis](../reference/reviewing-at-volume.md#wrong-premise-beats-bad-code))
+  and let the author iterate. Reconcile against the live thread
+  first so you don't duplicate feedback.
 - **Fix it yourself** (Builder) — for mechanical blockers (a rebase, a few failing tests, a small
   nit), fix on the author's branch and preserve their authorship. Don't wait on the contributor for
   a mechanical unblock, unless no [independent reader](quality-gates.md#independent-readers) is

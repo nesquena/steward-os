@@ -156,6 +156,10 @@ source.**
   ([independent readers](../lifecycle/quality-gates.md#independent-readers)).
 - **The executor re-checks before acting,** including the brief's premises (the function, file or
   behaviour it names). A premise that doesn't hold is reported before building, not built around.
+- **The failure first, any fix labeled.** A brief for a fix gives the failure and how to reproduce it
+  first (with a patch, ahead of its table of cases) and labels any cause or fix it suggests as a
+  suggestion, so the executor tests it instead of building it as the spec
+  ([a named fix is a hypothesis](../reference/reviewing-at-volume.md#wrong-premise-beats-bad-code)).
 - **Identifiers out, conclusions re-derived.** Results come back as pointers (a tag SHA, a digest, a
   URL). The requester checks them at the canonical source, never in the worker's own files or logs.
 - **Isolation per command.** A worker sets its home and config on every command that touches a

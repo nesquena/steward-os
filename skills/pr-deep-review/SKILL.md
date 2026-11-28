@@ -66,8 +66,11 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
      repeat this step, pre-scan included, before the next run.
 3. **Exercise the change.** Outcome **no run**: skip this step.
 4. **For each flaw, decide bounce vs. fix:**
-   - **Bounce** with an *exact, reproducible* fix-spec. Reconcile against the live thread first so
-     you don't duplicate feedback.
+   - **Bounce** with an *exact, reproducible* fix-spec: the failure and its repro first, and any
+     cause or fix you suggest labeled as a suggestion
+     ([a named fix is a hypothesis](../../docs/reference/reviewing-at-volume.md#wrong-premise-beats-bad-code)).
+     Reconcile against the live thread first so you don't
+     duplicate feedback.
    - **Fix it yourself** (Builder) for mechanical blockers (rebase, a few failing tests, a small
      nit) — on the author's branch, preserving authorship. Outcome **no run**: bounce instead; a
      fix you can't run is a fix you can't verify. With no independent reader for the fixed head

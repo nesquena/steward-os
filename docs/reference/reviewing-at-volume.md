@@ -60,6 +60,14 @@ Cannot-reproduce and incoherent both routinely turn out to be environment gaps o
 problems, so they warrant a needinfo or a recommendation, not an unattended close. The sweeper's job
 is to avoid wrongly closing legitimate work.
 
+This repo adds that the check above (verify the claim and the intent) applies to a cause or fix
+someone else names too: a report's diagnosis, a reviewer's suggested fix, a brief's premise. Each is
+a hypothesis. Check it against the failure and against what the code must keep doing before you
+build it, and when the evidence disagrees, say so with the evidence instead of building the named
+fix. So a brief or fix-spec for a fix gives the failure and how to reproduce it first, and labels
+any cause or fix it suggests as a suggestion; a patch handed over to apply puts the failure ahead of
+its table of cases.
+
 ---
 
 ## Widen to the whole class before you merge
