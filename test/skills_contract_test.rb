@@ -513,6 +513,11 @@ class ProjectShapeContractTest < Minitest::Test
   def test_shape_never_skips_the_divert_questions
     assert_includes section0, 'Shape answers never skip question 20 (the security contact) or question 22 ' \
                               '(the alarms route).'
+    full = read('setup', 'setup-interview.md')
+    assert_includes full[/ 22\. \*\*.*?(?=---| 23\. \*\*|\z)/m].to_s,
+                    'The alarms route is always asked, even when the rest of this section is skipped.'
+    assert_includes full, '## Section 7 — Scheduled jobs *(optional, grows over time; the alarms route in question ' \
+                          '22 is always asked)*'
   end
 
   def test_section_six_says_which_questions_are_always_asked
@@ -520,7 +525,7 @@ class ProjectShapeContractTest < Minitest::Test
     full = read('setup', 'setup-interview.md')
     assert_includes full, "## Section 6 — Secrets & safety *#{rule}* 18. **Where do credentials live?**"
     assert_includes full[/ 19\. \*\*.*?(?= 20\. \*\*)/m].to_s, '**Will the system ever execute contributor code?**'
-    assert_includes setup_step(2), "posture, secrets & safety #{rule}."
+    assert_includes setup_step(2), "posture, secrets & safety #{rule}, and the alarms route (question 22)."
   end
 
   def test_membrane_bar_is_stricter_than_band_a
@@ -568,6 +573,13 @@ class ProjectShapeContractTest < Minitest::Test
   end
 
   def test_board_location_has_a_fallback
+    # Level 1 runs no scheduled jobs, so the template starts the refresh off.
+    template = YAML.safe_load(File.read(File.join(ROOT, 'setup', 'config.template.yaml'), encoding: 'UTF-8'))
+    refresh = template.fetch('scheduled_jobs').fetch('jobs').find { |job| job.fetch('name') == 'scoreboard-refresh' }
+    assert_equal false, refresh.fetch('enabled')
+    assert_includes read('docs', 'reference', 'adoption-levels.md'),
+                    'turn `scoreboard-refresh` on once the board has a location no more visible than its issues; the ' \
+                    'template ships it off'
     assert_includes section0, 'set `scoreboard-refresh` to `enabled: false` and leave a TODO naming the location'
     assert_includes read('setup', 'setup-interview.md'),
                     'or that question was skipped (Section 0), set `scoreboard-refresh` to `enabled: false`.'
@@ -702,7 +714,7 @@ class ProjectShapeContractTest < Minitest::Test
     refute_includes step, 'The default covers issues only.'
     assert_includes step, 'Rank PRs and issues separately; sort issues, and with no project weights PRs too, on ' \
                           'their judgment dimensions\' weighted sum first, and on their mechanical dimensions only between ' \
-                          'equal sums.'
+                          'equal sums; where age breaks a tie, the older item ranks first.'
     playbook = read('docs', 'playbooks', 'triage-scoreboard.md')
     assert_includes playbook, 'With no weights set by the project, both issues and PRs weigh their judgment ' \
                               'dimensions equally and use mechanical dimensions only to break ties. Weights the ' \
@@ -711,6 +723,7 @@ class ProjectShapeContractTest < Minitest::Test
     assert_includes playbook, 'Judgment dimensions should outweigh mechanical ones'
     assert_includes playbook, 'Sort issues, and with no project weights PRs too, on their judgment dimensions\' ' \
                               'weighted sum first, and on their mechanical dimensions only between equal sums'
+    assert_includes playbook, 'never reverse unequal ones. Where age breaks a tie, the older item ranks first.'
   end
 
   def test_inert_dimensions_require_at_least_two_items
@@ -1354,6 +1367,16 @@ class BoardFormatContractTest < Minitest::Test
     assert_includes s, 'The board\'s first line is `<!-- board-format: board-1 -->`.'
     assert_includes s, '`Rows: <n>`, the row count.'
     assert_includes s, 'columns are `kind | repository | id | title | lane | scope_fit | criticality | risk | flag`'
+    assert_includes s, '`lane` is set on PR rows only: `fast` or `deep`, the lanes'
+    assert_includes s, 'with `+screenshot` added when the PR also needs the screenshot gate (`deep+screenshot`). ' \
+                       'It is empty when the board holds no lane for the PR; any other value parses and is carried unchanged.'
+    triage = read('skills', 'pr-triage', 'SKILL.md')
+    assert_includes triage, '**fast lane** (`fast` on the board)'
+    assert_includes triage, '**deep lane** (`deep`; → `pr-deep-review`)'
+    assert_includes triage, '**screenshot/UX gate** on top of its lane (`+screenshot`;'
+    lifecycle = read('docs', 'lifecycle', 'pr-lifecycle.md')
+    assert_includes lifecycle, 'larger/riskier → deep lane; needs-UI → + screenshot gate'
+    assert_includes lifecycle, '**Screenshot/UX gate** — on top of either lane, anything with a visible surface.'
     assert_includes s, 'or four tokens, `<value> <setter> <stamp> <rubric>`, with a fifth, `stale`, when the value is stale.'
     assert_includes s, '`-` and `stale` are reserved.'
     assert_includes s, 'an unparseable cell makes the board unreadable.'
@@ -1363,7 +1386,6 @@ class BoardFormatContractTest < Minitest::Test
                        'lines aren\'t rows.'
     assert_includes s, '`Stale: issues <n>, PRs <n>`.'
     assert_includes s, '`Inert: issues <dimensions or none>; PRs <dimensions or none>`.'
-    assert_includes s, '`lane` is set on PR rows only.'
     assert_includes s, 'setter: `human`, `agent`, `legacy`, or `-` for none.'
     assert_includes s, 'stamp: the routine\'s output, `-` for none, or `stale`.'
     assert_includes s, 'rubric: the rubric identifier, or `-` for none.'
@@ -1540,6 +1562,43 @@ class ProposalRefsContractTest < Minitest::Test
     assert_includes skill_step('pr-deep-review', 5),
                     'each from its own copy:** the commits pinned in step 1, read again the same way just before ' \
                     'the gate.'
+  end
+end
+
+class SameClassRoundsContractTest < Minitest::Test
+  # Two review rounds finding the same class go to a human with a recommendation. Whitespace-folded.
+  def read(*path)
+    File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
+  end
+
+  def test_repeat_findings_go_to_a_human
+    gates = read('docs', 'lifecycle', 'quality-gates.md')
+    assert_includes gates, 'Where a change goes through review in rounds, two rounds in a row that each find a ' \
+                           'problem of the same class (another hole in one rule, another case of one kind) are a ' \
+                           'signal, not bad luck. Stop fixing in rounds and ' \
+                           'bring a human the choice, with a recommendation: keep the approach and fix the class as a ' \
+                           'whole, simplify it, or drop that part.'
+    assert_includes gates, 'For a refusal rule (a denylist, a permission check, an input filter), the ' \
+                           'recommendation is usually the new shape [bug shape ' \
+                           '13](../reference/bug-shapes.md#13-the-refusal-rule-fixed-one-hole-at-a-time) describes.'
+    assert_includes read('docs', 'reference', 'bug-shapes.md'),
+                    'After two rounds in a row that each reproduce one, stop patching and bring a human the choice ' \
+                    '([when rounds keep finding the same ' \
+                    'class](../lifecycle/quality-gates.md#when-rounds-keep-finding-the-same-class)); the usual ' \
+                    'recommendation is a new shape for the rule (an allowlist, or parsing the input\'s structure ' \
+                    'instead of matching patterns).'
+    step7 = read('skills', 'pr-deep-review', 'SKILL.md')[/ 7\. \*\*.*?(?= 8\. \*\*)/m].to_s
+    assert_includes step7, 'When two rounds in a row each find the same class of problem, stop fixing in rounds and ' \
+                           'bring a human the choice, with a recommendation ([when rounds keep finding the same ' \
+                           'class](../../docs/lifecycle/quality-gates.md#when-rounds-keep-finding-the-same-class)); ' \
+                           'the gate stays not all-clear until the human\'s choice is carried out and a fresh ' \
+                           're-run is clear.'
+    step6 = read('skills', 'pr-deep-review', 'SKILL.md')[/ 6\. \*\*.*?(?= 7\. \*\*)/m].to_s
+    assert_includes step6, 'Review findings still go to the author, or to a human when they meet step 7\'s ' \
+                           'same-class rule;'
+    assert_includes read('docs', 'lifecycle', 'pr-lifecycle.md'),
+                    'rounds that keep finding the same class [go to a ' \
+                    'human](quality-gates.md#when-rounds-keep-finding-the-same-class).'
   end
 end
 

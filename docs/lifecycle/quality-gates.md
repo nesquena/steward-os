@@ -96,6 +96,15 @@ skips these files. Some hosts don't run PR-triggered workflows while a branch ca
 so a green tally on its head can be the push run alone. Confirm the branch merges cleanly and that
 those runs exist for that exact head; a missing or partial one leaves gate 5 not all-clear.
 
+## When rounds keep finding the same class
+Where a change goes through review in rounds, two rounds in a row that each find a problem of the
+same class (another hole in one rule, another case of one kind) are a signal, not bad luck. Stop
+fixing in rounds and bring a human the choice, with a recommendation: keep the approach and fix the
+class as a whole, simplify it, or drop that part. For a refusal rule (a denylist, a permission
+check, an input filter), the recommendation is usually the new shape
+[bug shape 13](../reference/bug-shapes.md#13-the-refusal-rule-fixed-one-hole-at-a-time) describes.
+See also [pull up a level](../playbooks/proactive-sweep.md#rules-that-keep-it-cheap-and-honest).
+
 ## Independent readers
 Gates 2 and 3 count only when their reader didn't write the change. A reader wrote it if it made
 any commit in the PR's range, trunk to head: authoring, fixing, rebasing, absorbing or

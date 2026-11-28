@@ -57,9 +57,10 @@ Also load it for a PR with a stale judgment an agent set (step 8). Runs
 4. **Marginal-benefit screen [1].** "What would real users concretely lose if we never merged this?"
    If "nothing concrete" → maintainer-review or close, regardless of code quality.
 5. **Route [2].** Sort the survivors:
-   - small + clean + narrow + no design Q → **fast lane**
-   - medium/large / sensitive subsystem / design judgment → **deep lane** (→ `pr-deep-review`)
-   - visible surface → **screenshot/UX gate** (request before/after at config'd viewports)
+   - small + clean + narrow + no design Q → **fast lane** (`fast` on the board)
+   - medium/large / sensitive subsystem / design judgment → **deep lane** (`deep`; → `pr-deep-review`)
+   - visible surface → **screenshot/UX gate** on top of its lane (`+screenshot`; request
+     before/after at config'd viewports)
    - `hold` / draft → **skip entirely** (hard block)
 6. **Record the routing and the judgment** on the
    [scoreboard](../../docs/playbooks/triage-scoreboard.md): the lane, plus `scope_fit` (or the

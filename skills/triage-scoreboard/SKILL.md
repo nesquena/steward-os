@@ -107,7 +107,7 @@ displaced value once a run has named it, see Pitfalls). Ideal as a scheduled job
    Weights the project sets replace the equal weights.
    Rank PRs and issues separately; sort issues, and with no project weights PRs too, on their
    judgment dimensions' weighted sum first, and on their mechanical dimensions only between equal
-   sums. An item with no
+   sums; where age breaks a tie, the older item ranks first. An item with no
    judgment at all leaves the ranking for the
    [not yet judged](../../docs/playbooks/triage-scoreboard.md#not-yet-judged) section; an item with
    some judgment ranks, and an empty dimension counts as unjudged for that dimension. Promote items

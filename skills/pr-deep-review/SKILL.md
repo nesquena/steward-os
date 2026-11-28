@@ -110,7 +110,8 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
    - Always, where trunk's accepted configuration has CI: gate 5's check that the runs trunk's
      workflows would start for this PR exist and ran in full for this exact head.
 6. **If the outcome is no run, stop without an all-clear unless verified human evidence supplies
-   the missing execution legs.** Review findings still go to the author; there is no release
+   the missing execution legs.** Review findings still go to the author, or to a human when
+   they meet step 7's same-class rule; there is no release
    hand-off while any required leg/finding is missing or unresolved. Tell the human which runs
    were skipped and why:
    - *switch off* → configure a sandbox, or the human runs the skipped gates themselves;
@@ -131,10 +132,13 @@ description: Deep-review a routed PR and run the authoritative quality gate befo
    or changed trunk voids prior gate evidence. Don't substitute CI for a skipped suite.
 7. **Resolve every required finding and compute the aggregate verdict.** If the gate finds
    something, Builder fixes it (or bounces under step 4's no-run or no-independent-reader
-   restriction), then the gate **re-runs** on the new head. Loop until both independent reading legs
-   and all execution legs are fresh and clear, with no unresolved required findings. Only then
-   record aggregate all-clear, identifying any execution legs supplied *by human run* and their
-   verified receipt pointers.
+   restriction), then the gate **re-runs** on the new head. When two rounds in a row each find the
+   same class of problem, stop fixing in rounds and bring a human the choice, with a recommendation
+   ([when rounds keep finding the same class](../../docs/lifecycle/quality-gates.md#when-rounds-keep-finding-the-same-class));
+   the gate stays not all-clear until the human's choice is carried out and a fresh re-run is clear.
+   Loop until both independent reading legs and all execution legs are fresh and clear, with no
+   unresolved required findings. Only then record aggregate all-clear, identifying any execution legs
+   supplied *by human run* and their verified receipt pointers.
 8. **Add the regression test** for any fix so the [living suite](../../docs/lifecycle/quality-gates.md)
    grows. If you rebuilt the worktree, re-apply your hand-fix to the fresh tree (a 3-dot diff
    captures only the PR's commits, not your post-merge fix). Any added test/fix changes the head:
