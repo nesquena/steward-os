@@ -1564,3 +1564,40 @@ class ProposalRefsContractTest < Minitest::Test
                     'the gate.'
   end
 end
+
+class SameClassRoundsContractTest < Minitest::Test
+  # Two review rounds finding the same class go to a human with a recommendation. Whitespace-folded.
+  def read(*path)
+    File.read(File.join(ROOT, *path), encoding: 'UTF-8').gsub(/\s+/, ' ')
+  end
+
+  def test_repeat_findings_go_to_a_human
+    gates = read('docs', 'lifecycle', 'quality-gates.md')
+    assert_includes gates, 'Where a change goes through review in rounds, two rounds in a row that each find a ' \
+                           'problem of the same class (another hole in one rule, another case of one kind) are a ' \
+                           'signal, not bad luck. Stop fixing in rounds and ' \
+                           'bring a human the choice, with a recommendation: keep the approach and fix the class as a ' \
+                           'whole, simplify it, or drop that part.'
+    assert_includes gates, 'For a refusal rule (a denylist, a permission check, an input filter), the ' \
+                           'recommendation is usually the new shape [bug shape ' \
+                           '13](../reference/bug-shapes.md#13-the-refusal-rule-fixed-one-hole-at-a-time) describes.'
+    assert_includes read('docs', 'reference', 'bug-shapes.md'),
+                    'After two rounds in a row that each reproduce one, stop patching and bring a human the choice ' \
+                    '([when rounds keep finding the same ' \
+                    'class](../lifecycle/quality-gates.md#when-rounds-keep-finding-the-same-class)); the usual ' \
+                    'recommendation is a new shape for the rule (an allowlist, or parsing the input\'s structure ' \
+                    'instead of matching patterns).'
+    step7 = read('skills', 'pr-deep-review', 'SKILL.md')[/ 7\. \*\*.*?(?= 8\. \*\*)/m].to_s
+    assert_includes step7, 'When two rounds in a row each find the same class of problem, stop fixing in rounds and ' \
+                           'bring a human the choice, with a recommendation ([when rounds keep finding the same ' \
+                           'class](../../docs/lifecycle/quality-gates.md#when-rounds-keep-finding-the-same-class)); ' \
+                           'the gate stays not all-clear until the human\'s choice is carried out and a fresh ' \
+                           're-run is clear.'
+    step6 = read('skills', 'pr-deep-review', 'SKILL.md')[/ 6\. \*\*.*?(?= 7\. \*\*)/m].to_s
+    assert_includes step6, 'Review findings still go to the author, or to a human when they meet step 7\'s ' \
+                           'same-class rule;'
+    assert_includes read('docs', 'lifecycle', 'pr-lifecycle.md'),
+                    'rounds that keep finding the same class [go to a ' \
+                    'human](quality-gates.md#when-rounds-keep-finding-the-same-class).'
+  end
+end

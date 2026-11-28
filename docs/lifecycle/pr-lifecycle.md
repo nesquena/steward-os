@@ -136,7 +136,8 @@ a gate with a skipped run is not all-clear.
 A green CI is necessary but not sufficient — the authoritative gate has repeatedly caught real
 regressions that green CI and prior review missed. If the gate finds something, the Builder fixes it
 and the gate re-runs, its two reviews from a reader that didn't make the fix
-([independent readers](quality-gates.md#independent-readers)). Only an all-clear gate advances to
+([independent readers](quality-gates.md#independent-readers)); rounds that keep finding the same
+class [go to a human](quality-gates.md#when-rounds-keep-finding-the-same-class). Only an all-clear gate advances to
 merge.
 
 ## [5] Merge + release
