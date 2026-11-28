@@ -133,7 +133,8 @@ spotlight). A stale flag still promotes, marked stale. Judgment dimensions shoul
 mechanical ones: the mechanical dimensions say how an item stands, the judgment says whether it
 matters. Sort issues, and with no project weights PRs too, on their judgment dimensions' weighted
 sum first, and on their mechanical dimensions only between equal sums: mechanical signals break ties
-between equal judgments and never reverse unequal ones.
+between equal judgments and never reverse unequal ones. Where age breaks a tie, the older item ranks
+first.
 
 ### Not yet judged
 An item with no judgment at all can't be ranked against judged ones: its composite rests on
@@ -292,7 +293,11 @@ ranking. Every open item has exactly one row: not yet judged is a table that hol
 as a row, the first five open and the rest beneath them, collapsed. Released but open and the
 "review these first" short-list are lists, not tables, and their lines aren't rows. A table row's
 columns are `kind | repository | id | title | lane | scope_fit | criticality | risk | flag`, then
-the mechanical columns and the evidence tags. `lane` is set on PR rows only.
+the mechanical columns and the evidence tags. `lane` is set on PR rows only: `fast` or `deep`,
+the lanes [`pr-triage`](https://github.com/nesquena/steward-os/blob/main/skills/pr-triage/SKILL.md)
+step 5 routes to, with `+screenshot` added when the PR also needs the screenshot gate
+(`deep+screenshot`). It is empty when the board holds no lane for the PR; any other value parses and
+is carried unchanged.
 
 **A judgment cell** is empty, or four tokens, `<value> <setter> <stamp> <rubric>`, with a fifth,
 `stale`, when the value is stale.

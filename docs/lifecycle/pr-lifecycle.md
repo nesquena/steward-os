@@ -32,7 +32,7 @@ gates are strict and the merge is never on a single agent's say-so.
  [1] MARGINAL-BENEFIT SCREEN   "what would users lose if we never merged this?"
     │   → "nothing concrete" → maintainer-review / close
     ▼
- [2] ROUTING   small+clean+narrow → fast lane | larger/riskier → deep lane | needs-UI → screenshot gate
+ [2] ROUTING   small+clean+narrow → fast lane | larger/riskier → deep lane; needs-UI → + screenshot gate
     ▼
  [3] DEEP REVIEW   read the whole diff, reproduce, run the quality gates (Reviewer)
     │   → flaws → bounce with an exact fix-spec, or fix it yourself (Builder)
@@ -86,9 +86,9 @@ Sort the cleared PRs by where they should go:
 - **Fast lane** — small diff, narrow scope, no conflicts, no design questions. These can ship same
   session after the gate.
 - **Deep lane** — medium/large, touches sensitive subsystems, or needs a design judgment.
-- **Screenshot/UX gate** — anything with a visible surface. Request before/after screenshots at the
-  relevant viewports; a visible change is verified visually, not just by tests. (See
-  [quality gates](quality-gates.md#4-visual-verification).)
+- **Screenshot/UX gate** — on top of either lane, anything with a visible surface. Request
+  before/after screenshots at the relevant viewports; a visible change is verified visually, not
+  just by tests. (See [quality gates](quality-gates.md#4-visual-verification).)
 - **Hold / draft** — parked or not-ready. Skip entirely; never act on a held or draft PR.
 
 ## [3] Deep review (Reviewer + Builder)

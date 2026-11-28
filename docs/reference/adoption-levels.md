@@ -28,7 +28,9 @@ Add the read-only autonomous layer: a [triage scoreboard](../playbooks/triage-sc
 ranks open work, a "what's waiting on us" digest, and, where reports arrive off the tracker,
 [`issue-capture`](https://github.com/nesquena/steward-os/blob/main/skills/issue-capture/SKILL.md).
 Nothing acts on the world yet — these just *surface* what needs attention so your
-Band-B sessions are sharper. Cost: a few scheduled jobs. Value: nothing falls through the cracks.
+Band-B sessions are sharper. Cost: a few scheduled jobs (turn `scoreboard-refresh` on once the
+board has a location no more visible than its issues; the template ships it off). Value: nothing
+falls through the cracks.
 
 ## Level 3 — Mechanical autonomous actions (Band A, watchdogged)
 Promote the safe, mechanical actions to autonomous, each with a [watchdog](../playbooks/watchdog-pattern.md):

@@ -185,7 +185,7 @@ The system can't screen PRs/issues for fit without knowing what "fits."
     treated as suspected. → `security.security_contact`,
     `security.security_sensitive_surfaces`; [the vulnerability divert](../docs/reference/security-spine.md#6-the-vulnerability-divert).
 
-## Section 7 — Scheduled jobs *(optional, grows over time)*
+## Section 7 — Scheduled jobs *(optional, grows over time; the alarms route in question 22 is always asked)*
 21. **Which jobs do you want running, and how often?** (scoreboard refresh, chat monitor, issue
     capture, mentions sweep, announcements, label-sync, issue-autoclose, the watchdog, a fleet
     heartbeat.) Start with a few; add as you climb the autonomy ladder. →
@@ -195,7 +195,8 @@ The system can't screen PRs/issues for fit without knowing what "fits."
     `scoreboard-refresh` to `enabled: false`.
 22. **How does steward output reach you?** Default is a pull-based index you check (discovery);
     pushing a digest to a chat channel is an optional add-on. Also: where should watchdog alarms go?
-    → [the output loop](../docs/playbooks/output-loop.md).
+    → [the output loop](../docs/playbooks/output-loop.md). The alarms route is always asked, even
+    when the rest of this section is skipped.
 
 ## Section 8 — Labels & contributor trust *(optional — skip any block marked `not_applicable`)*
 23. **Which labels should the taxonomy cover?** (If `labels` wasn't marked `not_applicable`.)
